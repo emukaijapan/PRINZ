@@ -126,10 +126,15 @@ struct HomeView: View {
     
     private var catchCopyView: some View {
         VStack(spacing: 12) {
-            // サブタイトル
-            Text("既読無視を救う")
-                .font(.title2)
+            // メインキャッチコピー
+            Text("既読のまま、")
+                .font(.title)
                 .fontWeight(.bold)
+                .foregroundColor(.white)
+            
+            Text("終わらせない。")
+                .font(.largeTitle)
+                .fontWeight(.black)
                 .foregroundStyle(
                     LinearGradient(
                         colors: [.neonPurple, .neonCyan],
@@ -137,11 +142,6 @@ struct HomeView: View {
                         endPoint: .trailing
                     )
                 )
-            
-            Text("AI返信の王子様")
-                .font(.largeTitle)
-                .fontWeight(.black)
-                .foregroundColor(.white)
             
             // 説明文
             Text("スクショをアップするだけ\n最適な返信をAIが提案します")
