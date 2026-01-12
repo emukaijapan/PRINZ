@@ -15,32 +15,35 @@ struct ManualInputView: View {
     
     var body: some View {
         ZStack {
-            // 背景
-            LinearGradient(
-                colors: [
-                    Color(hex: "#E8E0F0"),
-                    Color(hex: "#F0F8FF")
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
+            // ダークテーマ背景
+            Color.darkBackground.ignoresSafeArea()
             
             VStack(spacing: 20) {
                 // 説明テキスト
-                Text("相手のメッセージを入力してください")
-                    .font(.headline)
-                    .foregroundColor(.black.opacity(0.8))
-                    .padding(.top, 20)
+                VStack(spacing: 8) {
+                    Text("相手のメッセージを入力")
+                        .font(.headline)
+                        .foregroundColor(.white)
+                    
+                    Text("返信したい相手のメッセージを貼り付けてね")
+                        .font(.subheadline)
+                        .foregroundColor(.white.opacity(0.6))
+                }
+                .padding(.top, 20)
                 
                 // テキスト入力エリア
                 TextEditor(text: $inputText)
                     .frame(minHeight: 150)
                     .padding()
+                    .foregroundColor(.white)
+                    .scrollContentBackground(.hidden)
                     .background(
                         RoundedRectangle(cornerRadius: 16)
-                            .fill(Color.white)
-                            .shadow(color: .black.opacity(0.1), radius: 5)
+                            .fill(Color.glassBackground)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .stroke(Color.glassBorder, lineWidth: 1)
+                            )
                     )
                     .padding(.horizontal)
                 
@@ -49,13 +52,13 @@ struct ManualInputView: View {
                     Text("状況を選択")
                         .font(.subheadline)
                         .fontWeight(.semibold)
-                        .foregroundColor(.black.opacity(0.7))
+                        .foregroundColor(.white.opacity(0.7))
                         .padding(.horizontal)
                     
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 10) {
                             ForEach(Context.allCases, id: \.self) { context in
-                                ContextButton(
+                                ContextTagButton(
                                     context: context,
                                     isSelected: selectedContext == context
                                 ) {
@@ -79,19 +82,17 @@ struct ManualInputView: View {
                     }
                     .font(.headline)
                     .fontWeight(.bold)
-                    .foregroundColor(.white)
+                    .foregroundColor(.black)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
                     .background(
-                        RoundedRectangle(cornerRadius: 30)
-                            .fill(
-                                LinearGradient(
-                                    colors: [.neonPurple, .neonCyan],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
-                            )
+                        LinearGradient(
+                            colors: [.neonPurple, .neonCyan],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
                     )
+                    .cornerRadius(30)
                     .shadow(color: .neonPurple.opacity(0.4), radius: 10)
                 }
                 .disabled(inputText.isEmpty)
@@ -111,9 +112,9 @@ struct ManualInputView: View {
     }
 }
 
-// MARK: - Context Button
+// MARK: - Context Tag Button（ダークテーマ対応）
 
-struct ContextButton: View {
+struct ContextTagButton: View {
     let context: Context
     let isSelected: Bool
     let action: () -> Void
@@ -126,13 +127,16 @@ struct ContextButton: View {
                     .font(.subheadline)
                     .fontWeight(.medium)
             }
-            .foregroundColor(isSelected ? .white : .black)
+            .foregroundColor(isSelected ? .black : .white)
             .padding(.horizontal, 16)
             .padding(.vertical, 10)
             .background(
                 Capsule()
-                    .fill(isSelected ? Color.neonPurple : Color.white)
-                    .shadow(color: isSelected ? .neonPurple.opacity(0.4) : .black.opacity(0.1), radius: 5)
+                    .fill(isSelected ? Color.neonCyan : Color.glassBackground)
+            )
+            .overlay(
+                Capsule()
+                    .stroke(isSelected ? Color.neonCyan : Color.glassBorder, lineWidth: 1)
             )
         }
     }

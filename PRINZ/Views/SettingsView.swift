@@ -10,6 +10,11 @@ import SwiftUI
 struct SettingsView: View {
     @AppStorage("userAge") private var userAge: Double = 25
     @AppStorage("userGender") private var userGender: String = "未設定"
+    @AppStorage("personalType") private var personalTypeRaw: String = PersonalType.natural.rawValue
+    
+    private var personalType: PersonalType {
+        PersonalType(rawValue: personalTypeRaw) ?? .natural
+    }
     
     private let genderOptions = ["男性", "女性", "その他", "未設定"]
     
@@ -20,9 +25,12 @@ struct SettingsView: View {
                 Color.darkBackground.ignoresSafeArea()
                 
                 ScrollView {
-                    VStack(spacing: 30) {
+                    VStack(spacing: 24) {
                         // ヘッダー
                         headerView
+                        
+                        // パーソナルタイプ設定
+                        personalTypeSettingView
                         
                         // 年齢設定
                         ageSettingView
@@ -35,7 +43,7 @@ struct SettingsView: View {
                     .padding()
                 }
             }
-            .navigationTitle("設定")
+            .navigationTitle("個人設定")
             .navigationBarTitleDisplayMode(.large)
         }
     }
@@ -45,7 +53,7 @@ struct SettingsView: View {
     private var headerView: some View {
         VStack(spacing: 12) {
             Image(systemName: "crown.fill")
-                .font(.system(size: 60))
+                .font(.system(size: 50))
                 .foregroundStyle(
                     LinearGradient(
                         colors: [.neonPurple, .neonCyan],
@@ -55,42 +63,96 @@ struct SettingsView: View {
                 )
                 .shadow(color: .neonPurple, radius: 20)
             
-            Text("PRINZ")
-                .font(.largeTitle)
-                .fontWeight(.black)
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: [.neonPurple, .neonCyan],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                )
+            Text("あなたのタイプを設定")
+                .font(.title3)
+                .fontWeight(.bold)
+                .foregroundColor(.white)
+            
+            Text("AIがあなたらしい返信を提案します")
+                .font(.subheadline)
+                .foregroundColor(.white.opacity(0.6))
         }
-        .padding(.top, 20)
+        .padding(.top, 10)
+    }
+    
+    // MARK: - Personal Type Setting
+    
+    private var personalTypeSettingView: some View {
+        GlassCard(glowColor: .neonPurple) {
+            VStack(alignment: .leading, spacing: 16) {
+                HStack {
+                    Text("パーソナルタイプ")
+                        .font(.headline)
+                        .foregroundColor(.neonPurple)
+                    
+                    Spacer()
+                    
+                    Text("\(personalType.emoji) \(personalType.displayName)")
+                        .font(.subheadline)
+                        .fontWeight(.bold)
+                        .foregroundColor(.neonCyan)
+                }
+                
+                // タイプグリッド
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+                    ForEach(PersonalType.allCases, id: \.self) { type in
+                        Button(action: {
+                            personalTypeRaw = type.rawValue
+                        }) {
+                            HStack(spacing: 6) {
+                                Text(type.emoji)
+                                    .font(.caption)
+                                Text(type.displayName)
+                                    .font(.caption)
+                                    .fontWeight(.medium)
+                            }
+                            .foregroundColor(personalType == type ? .black : .white.opacity(0.8))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 10)
+                            .background(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .fill(personalType == type ? Color.neonCyan : Color.glassBackground)
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .stroke(personalType == type ? Color.neonCyan : Color.glassBorder, lineWidth: 1)
+                            )
+                        }
+                    }
+                }
+                
+                // 選択中のタイプの説明
+                if let description = PersonalType(rawValue: personalTypeRaw)?.description {
+                    Text(description)
+                        .font(.caption)
+                        .foregroundColor(.white.opacity(0.5))
+                        .padding(.top, 4)
+                }
+            }
+        }
     }
     
     // MARK: - Age Setting
     
     private var ageSettingView: some View {
-        GlassCard(glowColor: .neonPurple) {
+        GlassCard(glowColor: .neonCyan) {
             VStack(alignment: .leading, spacing: 16) {
                 HStack {
                     Text("年齢")
                         .font(.headline)
-                        .foregroundColor(.neonPurple)
+                        .foregroundColor(.neonCyan)
                     
                     Spacer()
                     
                     Text("\(Int(userAge))歳")
                         .font(.title2)
                         .fontWeight(.bold)
-                        .foregroundColor(.neonCyan)
+                        .foregroundColor(.neonPurple)
                 }
                 
-                // カスタムスライダー
                 VStack(spacing: 8) {
                     Slider(value: $userAge, in: 18...60, step: 1)
-                        .accentColor(.neonPurple)
+                        .accentColor(.neonCyan)
                     
                     HStack {
                         Text("18")
@@ -109,13 +171,12 @@ struct SettingsView: View {
     // MARK: - Gender Setting
     
     private var genderSettingView: some View {
-        GlassCard(glowColor: .neonCyan) {
+        GlassCard(glowColor: .neonPurple) {
             VStack(alignment: .leading, spacing: 16) {
                 Text("性別")
                     .font(.headline)
-                    .foregroundColor(.neonCyan)
+                    .foregroundColor(.neonPurple)
                 
-                // ゲーミング風ボタングリッド
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
                     ForEach(genderOptions, id: \.self) { option in
                         Button(action: {
@@ -124,23 +185,16 @@ struct SettingsView: View {
                             Text(option)
                                 .font(.subheadline)
                                 .fontWeight(.semibold)
-                                .foregroundColor(userGender == option ? .neonCyan : .white.opacity(0.6))
+                                .foregroundColor(userGender == option ? .black : .white.opacity(0.6))
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 12)
                                 .background(
                                     RoundedRectangle(cornerRadius: 12)
-                                        .fill(userGender == option ? Color.glassBackground : Color.clear)
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 12)
-                                                .stroke(
-                                                    userGender == option ? Color.neonCyan : Color.glassBorder,
-                                                    lineWidth: userGender == option ? 2 : 1
-                                                )
-                                        )
+                                        .fill(userGender == option ? Color.neonPurple : Color.glassBackground)
                                 )
-                                .shadow(
-                                    color: userGender == option ? Color.neonCyan.opacity(0.5) : .clear,
-                                    radius: 10
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(userGender == option ? Color.neonPurple : Color.glassBorder, lineWidth: 1)
                                 )
                         }
                     }

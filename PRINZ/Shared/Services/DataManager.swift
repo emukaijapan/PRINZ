@@ -13,6 +13,9 @@ class DataManager {
     private let appGroupIdentifier = "group.com.prinz.app"
     private let historyFileName = "reply_history.json"
     
+    /// 履歴の最大件数（容量節約のため）
+    private let maxHistoryCount = 30
+    
     private init() {}
     
     // MARK: - App Group Container
@@ -32,9 +35,9 @@ class DataManager {
         var history = loadHistory()
         history.insert(reply, at: 0) // 新しいものを先頭に
         
-        // 最大100件まで保存
-        if history.count > 100 {
-            history = Array(history.prefix(100))
+        // 最大件数まで保存（30件）
+        if history.count > maxHistoryCount {
+            history = Array(history.prefix(maxHistoryCount))
         }
         
         saveHistory(history)
@@ -45,8 +48,8 @@ class DataManager {
         var history = loadHistory()
         history.insert(contentsOf: replies, at: 0)
         
-        if history.count > 100 {
-            history = Array(history.prefix(100))
+        if history.count > maxHistoryCount {
+            history = Array(history.prefix(maxHistoryCount))
         }
         
         saveHistory(history)
@@ -87,7 +90,7 @@ class DataManager {
             encoder.outputFormatting = .prettyPrinted
             let data = try encoder.encode(history)
             try data.write(to: fileURL)
-            print("✅ Saved \(history.count) replies to history")
+            print("✅ Saved \(history.count) replies to history (max: \(maxHistoryCount))")
         } catch {
             print("❌ Failed to save history: \(error)")
         }

@@ -12,68 +12,64 @@ struct ReplyResultView: View {
     let extractedText: String
     let context: Context
     
-    @State private var generatedReplies: [Reply] = []
-    @State private var focusKeyword = ""
-    @State private var selectedReply: Reply?
-    @State private var showCustomize = false
+    // 状態管理
+    @State private var isAnalyzing = true
+    @State private var currentToneIndex = 0  // 安牌→ちょい攻め→変化球のサイクル
+    @State private var replyStack: [Reply] = []  // スタック形式で積み上げ
+    @State private var cachedReplies: [ReplyType: [Reply]] = [:]  // キャッシュ
+    @State private var mainMessage = ""
+    @State private var isShortMode = true  // 短文モード（デフォルト）
     @State private var copiedReplyId: UUID?
+    
+    private let toneTypes: [ReplyType] = [.safe, .chill, .witty]
     
     var body: some View {
         ZStack {
-            // 背景
-            LinearGradient(
-                colors: [
-                    Color(hex: "#E8E0F0"),
-                    Color(hex: "#F0F8FF")
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
+            // ダークテーマ背景
+            Color.darkBackground.ignoresSafeArea()
             
-            ScrollView {
-                VStack(spacing: 20) {
-                    // 画像またはテキストプレビュー
-                    if let image = image {
-                        Image(uiImage: image)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(maxHeight: 200)
-                            .cornerRadius(12)
-                            .shadow(color: .black.opacity(0.1), radius: 5)
-                    } else if !extractedText.isEmpty {
-                        textPreviewView
-                    }
-                    
-                    // フォーカスキーワード入力
-                    focusKeywordInput
-                    
-                    // AI回答セクション
-                    aiAnswerSection
-                    
-                    // 返信案リスト
-                    repliesListView
-                    
-                    Spacer(minLength: 100)
-                }
-                .padding()
-            }
-            
-            // 下部ボタン
-            VStack {
-                Spacer()
-                bottomButton
+            if isAnalyzing {
+                // 解析演出
+                AnalyzingView()
+            } else {
+                // メインコンテンツ
+                mainContentView
             }
         }
         .navigationTitle("AI回答")
         .navigationBarTitleDisplayMode(.inline)
-        .navigationDestination(isPresented: $showCustomize) {
-            if let reply = selectedReply {
-                ReplyCustomizeView(reply: reply, context: context)
-            }
-        }
         .onAppear {
-            generateReplies()
+            startAnalysis()
+        }
+    }
+    
+    // MARK: - Main Content
+    
+    private var mainContentView: some View {
+        VStack(spacing: 0) {
+            ScrollView {
+                VStack(spacing: 16) {
+                    // 抽出テキストプレビュー
+                    if !extractedText.isEmpty {
+                        textPreviewView
+                    }
+                    
+                    // メインメッセージ入力
+                    mainMessageInput
+                    
+                    // AI回答セクション
+                    aiAnswerSection
+                    
+                    // 返信スタック
+                    replyStackView
+                    
+                    Spacer(minLength: 120)
+                }
+                .padding()
+            }
+            
+            // 下部固定ボタン
+            bottomButtonsView
         }
     }
     
@@ -83,36 +79,50 @@ struct ReplyResultView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("抽出テキスト")
                 .font(.caption)
-                .foregroundColor(.gray)
+                .foregroundColor(.white.opacity(0.5))
             
             Text(extractedText)
                 .font(.body)
-                .foregroundColor(.black)
+                .foregroundColor(.white)
                 .padding()
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(
                     RoundedRectangle(cornerRadius: 12)
-                        .fill(Color.white)
-                        .shadow(color: .black.opacity(0.1), radius: 5)
+                        .fill(Color.glassBackground)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(Color.glassBorder, lineWidth: 1)
+                        )
                 )
         }
     }
     
-    // MARK: - Focus Keyword
+    // MARK: - Main Message Input
     
-    private var focusKeywordInput: some View {
+    private var mainMessageInput: some View {
         HStack {
-            Image(systemName: "text.magnifyingglass")
-                .foregroundColor(.gray)
+            Image(systemName: "sparkles")
+                .foregroundColor(.neonCyan)
             
-            TextField("フォーカスする言葉を教えて", text: $focusKeyword)
+            TextField("何をメインで伝える？", text: $mainMessage)
+                .foregroundColor(.white)
                 .font(.body)
+            
+            if !mainMessage.isEmpty {
+                Button(action: regenerateWithMainMessage) {
+                    Image(systemName: "arrow.clockwise")
+                        .foregroundColor(.neonPurple)
+                }
+            }
         }
         .padding()
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(Color.white)
-                .shadow(color: .black.opacity(0.1), radius: 3)
+                .fill(Color.glassBackground)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.glassBorder, lineWidth: 1)
+                )
         )
     }
     
@@ -136,56 +146,153 @@ struct ReplyResultView: View {
         .padding(.top, 10)
     }
     
-    // MARK: - Replies List
+    // MARK: - Reply Stack
     
-    private var repliesListView: some View {
+    private var replyStackView: some View {
         VStack(spacing: 12) {
-            ForEach(generatedReplies) { reply in
+            ForEach(replyStack) { reply in
                 ReplyBubbleCard(
                     reply: reply,
                     isCopied: copiedReplyId == reply.id,
                     onTap: {
                         copyReply(reply)
-                    },
-                    onCustomize: {
-                        selectedReply = reply
-                        showCustomize = true
                     }
                 )
             }
         }
     }
     
-    // MARK: - Bottom Button
+    // MARK: - Bottom Buttons
     
-    private var bottomButton: some View {
-        Button(action: {
-            // 大人な返信を取得（将来実装）
-        }) {
-            HStack {
-                Text("😈")
-                Text("ちょっと大人な返信をゲット")
-                    .fontWeight(.semibold)
+    private var bottomButtonsView: some View {
+        VStack(spacing: 12) {
+            // 長文/短文切り替え
+            HStack(spacing: 12) {
+                Button(action: { isShortMode = true }) {
+                    Text("短文")
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                        .foregroundColor(isShortMode ? .black : .white)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 8)
+                        .background(
+                            Capsule()
+                                .fill(isShortMode ? Color.neonCyan : Color.glassBackground)
+                        )
+                }
+                
+                Button(action: { isShortMode = false }) {
+                    Text("長文")
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                        .foregroundColor(!isShortMode ? .black : .white)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 8)
+                        .background(
+                            Capsule()
+                                .fill(!isShortMode ? Color.neonCyan : Color.glassBackground)
+                        )
+                }
+                
+                Spacer()
             }
-            .foregroundColor(.black)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 14)
-            .background(
-                Capsule()
-                    .fill(Color.white)
-                    .shadow(color: .black.opacity(0.15), radius: 10)
-            )
+            
+            // メインボタン: トーンサイクル
+            Button(action: cycleNextTone) {
+                HStack {
+                    Text(currentToneEmoji)
+                    Text(currentToneLabel)
+                        .fontWeight(.bold)
+                }
+                .foregroundColor(.black)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 16)
+                .background(
+                    LinearGradient(
+                        colors: [.neonPurple, .neonCyan],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .cornerRadius(30)
+                .shadow(color: .neonPurple.opacity(0.5), radius: 10)
+            }
         }
         .padding()
+        .background(
+            Color.darkBackground
+                .ignoresSafeArea(edges: .bottom)
+        )
+    }
+    
+    // MARK: - Computed Properties
+    
+    private var currentToneEmoji: String {
+        switch toneTypes[currentToneIndex] {
+        case .safe: return "🛡️"
+        case .chill: return "🔥"
+        case .witty: return "⚡"
+        }
+    }
+    
+    private var currentToneLabel: String {
+        switch toneTypes[currentToneIndex] {
+        case .safe: return "安牌で返信"
+        case .chill: return "ちょい攻めで返信"
+        case .witty: return "変化球で返信"
+        }
     }
     
     // MARK: - Actions
     
-    private func generateReplies() {
-        generatedReplies = ReplyGenerator.shared.generateReplies(
-            for: extractedText,
-            context: context
-        )
+    private func startAnalysis() {
+        // 初回解析演出（1.5秒）
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            withAnimation {
+                isAnalyzing = false
+            }
+            generateInitialReplies()
+        }
+    }
+    
+    private func generateInitialReplies() {
+        // 全トーンの返信をキャッシュ
+        for toneType in toneTypes {
+            let replies = ReplyGenerator.shared.generateReplies(
+                for: extractedText,
+                context: context,
+                type: toneType
+            )
+            cachedReplies[toneType] = replies
+        }
+        
+        // 最初のトーン（安牌）をスタックに追加
+        if let safeReplies = cachedReplies[.safe] {
+            replyStack = safeReplies
+        }
+    }
+    
+    private func cycleNextTone() {
+        // 次のトーンへ
+        currentToneIndex = (currentToneIndex + 1) % toneTypes.count
+        let nextTone = toneTypes[currentToneIndex]
+        
+        // キャッシュから取得
+        if let cached = cachedReplies[nextTone] {
+            // スタックに追加（上に積む）
+            withAnimation {
+                replyStack.insert(contentsOf: cached, at: 0)
+            }
+        }
+    }
+    
+    private func regenerateWithMainMessage() {
+        // キャッシュクリア＆初回から再生成
+        cachedReplies.removeAll()
+        replyStack.removeAll()
+        currentToneIndex = 0
+        isAnalyzing = true
+        startAnalysis()
     }
     
     private func copyReply(_ reply: Reply) {
@@ -195,10 +302,59 @@ struct ReplyResultView: View {
         // 履歴に保存
         DataManager.shared.saveReply(reply)
         
-        // 少し後にリセット
         DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
             if copiedReplyId == reply.id {
                 copiedReplyId = nil
+            }
+        }
+    }
+}
+
+// MARK: - Analyzing View
+
+struct AnalyzingView: View {
+    @State private var rotation: Double = 0
+    @State private var scale: CGFloat = 1.0
+    
+    var body: some View {
+        VStack(spacing: 24) {
+            ZStack {
+                // レーダー演出
+                ForEach(0..<3) { index in
+                    Circle()
+                        .stroke(Color.neonPurple.opacity(0.3 - Double(index) * 0.1), lineWidth: 2)
+                        .frame(width: CGFloat(100 + index * 40), height: CGFloat(100 + index * 40))
+                        .rotationEffect(.degrees(rotation))
+                }
+                
+                // 中央のクラウン
+                Image(systemName: "crown.fill")
+                    .font(.system(size: 50))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [.neonPurple, .neonCyan],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .scaleEffect(scale)
+            }
+            
+            Text("AI回答作成中...")
+                .font(.title3)
+                .fontWeight(.bold)
+                .foregroundColor(.white)
+            
+            Text("最適な返信を分析しています")
+                .font(.subheadline)
+                .foregroundColor(.white.opacity(0.6))
+        }
+        .onAppear {
+            withAnimation(.linear(duration: 3).repeatForever(autoreverses: false)) {
+                rotation = 360
+            }
+            withAnimation(.easeInOut(duration: 1).repeatForever(autoreverses: true)) {
+                scale = 1.2
             }
         }
     }
@@ -210,7 +366,6 @@ struct ReplyBubbleCard: View {
     let reply: Reply
     let isCopied: Bool
     let onTap: () -> Void
-    let onCustomize: () -> Void
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -228,32 +383,22 @@ struct ReplyBubbleCard: View {
             // 返信テキスト
             Text(reply.text)
                 .font(.body)
-                .foregroundColor(.black)
+                .foregroundColor(.white)
                 .padding()
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(
                     RoundedRectangle(cornerRadius: 16)
-                        .fill(Color.white)
+                        .fill(Color.glassBackground)
                 )
-            
-            // カスタマイズボタン
-            HStack {
-                Spacer()
-                Button(action: onCustomize) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "slider.horizontal.3")
-                        Text("カスタマイズ")
-                            .font(.caption)
-                    }
-                    .foregroundColor(.neonPurple)
-                }
-            }
         }
         .padding()
         .background(
             RoundedRectangle(cornerRadius: 20)
-                .fill(Color.white.opacity(0.5))
-                .shadow(color: .black.opacity(0.1), radius: 8)
+                .fill(Color.glassBackground)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .stroke(Color.glassBorder, lineWidth: 1)
+                )
         )
         .onTapGesture {
             onTap()
@@ -280,9 +425,9 @@ struct ReplyBubbleCard: View {
     
     private var typeColor: Color {
         switch reply.type {
-        case .safe: return .blue
+        case .safe: return .neonCyan
         case .chill: return .orange
-        case .witty: return .purple
+        case .witty: return .neonPurple
         }
     }
 }

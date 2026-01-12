@@ -12,6 +12,7 @@ struct HomeView: View {
     @State private var selectedItem: PhotosPickerItem?
     @State private var selectedImage: UIImage?
     @State private var showManualInput = false
+    @State private var showContextSelection = false
     @State private var showReplyResult = false
     @State private var isProcessing = false
     @State private var extractedText = ""
@@ -20,17 +21,8 @@ struct HomeView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                // 背景グラデーション（RIZZ風の淡いグラデーション）
-                LinearGradient(
-                    colors: [
-                        Color(hex: "#E8E0F0"),
-                        Color(hex: "#F0F8FF"),
-                        Color(hex: "#E0F0E8")
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-                .ignoresSafeArea()
+                // ダークテーマ背景（履歴画面と統一）
+                Color.darkBackground.ignoresSafeArea()
                 
                 VStack(spacing: 0) {
                     // ヘッダー
@@ -42,7 +34,7 @@ struct HomeView: View {
                             // キャッチコピー
                             catchCopyView
                             
-                            // サンプルプレビュー
+                            // サンプルプレビュー（LINE会話成功イメージ）
                             samplePreviewView
                             
                             Spacer(minLength: 100)
@@ -64,6 +56,16 @@ struct HomeView: View {
                     context: selectedContext
                 )
             }
+            .sheet(isPresented: $showContextSelection) {
+                ContextSelectionSheet(
+                    selectedContext: $selectedContext,
+                    onConfirm: {
+                        showContextSelection = false
+                        showReplyResult = true
+                    }
+                )
+                .presentationDetents([.medium])
+            }
             .onChange(of: selectedItem) { _, newItem in
                 handleImageSelection(newItem)
             }
@@ -77,7 +79,7 @@ struct HomeView: View {
             Button(action: {}) {
                 Image(systemName: "line.3.horizontal")
                     .font(.title2)
-                    .foregroundColor(.black.opacity(0.6))
+                    .foregroundColor(.white.opacity(0.6))
             }
             
             Spacer()
@@ -93,6 +95,7 @@ struct HomeView: View {
                             endPoint: .trailing
                         )
                     )
+                    .shadow(color: .neonPurple.opacity(0.5), radius: 10)
                 
                 Text("PRINZ")
                     .font(.title)
@@ -110,59 +113,105 @@ struct HomeView: View {
             Spacer()
             
             Button(action: {}) {
-                Image(systemName: "plus")
+                Image(systemName: "gearshape.fill")
                     .font(.title2)
-                    .foregroundColor(.neonCyan)
+                    .foregroundColor(.white.opacity(0.6))
             }
         }
         .padding(.horizontal)
         .padding(.top, 8)
     }
     
-    // MARK: - Catch Copy
+    // MARK: - Catch Copy（キャッチコピー）
     
     private var catchCopyView: some View {
-        VStack(spacing: 8) {
-            Text("スクショをアップ")
-                .font(.title)
+        VStack(spacing: 12) {
+            // サブタイトル
+            Text("既読無視を救う")
+                .font(.title2)
                 .fontWeight(.bold)
-                .foregroundColor(.black)
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [.neonPurple, .neonCyan],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
             
-            Text("チャットやバイオの")
-                .font(.title3)
-                .foregroundColor(.black.opacity(0.7))
+            Text("AI返信の王子様")
+                .font(.largeTitle)
+                .fontWeight(.black)
+                .foregroundColor(.white)
+            
+            // 説明文
+            Text("スクショをアップするだけ\n最適な返信をAIが提案します")
+                .font(.subheadline)
+                .foregroundColor(.white.opacity(0.6))
+                .multilineTextAlignment(.center)
         }
-        .padding(.top, 20)
+        .padding(.top, 30)
     }
     
-    // MARK: - Sample Preview
+    // MARK: - Sample Preview（LINE会話成功イメージ）
     
     private var samplePreviewView: some View {
         ZStack {
-            // サンプル画像のプレースホルダー
-            RoundedRectangle(cornerRadius: 20)
-                .fill(Color.white.opacity(0.5))
-                .frame(height: 300)
-                .overlay(
-                    VStack(spacing: 16) {
-                        if let image = selectedImage {
-                            Image(uiImage: image)
-                                .resizable()
-                                .scaledToFit()
-                                .cornerRadius(12)
-                                .padding()
-                        } else {
-                            Image(systemName: "photo.on.rectangle.angled")
-                                .font(.system(size: 60))
-                                .foregroundColor(.gray.opacity(0.5))
+            // ガラスカード
+            GlassCard(glowColor: .neonPurple) {
+                VStack(spacing: 16) {
+                    if let image = selectedImage {
+                        Image(uiImage: image)
+                            .resizable()
+                            .scaledToFit()
+                            .cornerRadius(12)
+                    } else {
+                        // LINE会話サンプル表示
+                        VStack(spacing: 12) {
+                            // サンプル会話
+                            HStack {
+                                Spacer()
+                                Text("今日ありがとう！楽しかった😊")
+                                    .font(.subheadline)
+                                    .padding(12)
+                                    .background(Color.neonPurple.opacity(0.3))
+                                    .cornerRadius(16)
+                            }
                             
-                            Text("スクリーンショットをアップロード")
-                                .font(.subheadline)
-                                .foregroundColor(.gray)
+                            HStack {
+                                Text("こちらこそ！\nまた行こうね✨")
+                                    .font(.subheadline)
+                                    .padding(12)
+                                    .background(Color.white.opacity(0.1))
+                                    .cornerRadius(16)
+                                Spacer()
+                            }
+                            
+                            HStack {
+                                Spacer()
+                                VStack(alignment: .trailing, spacing: 4) {
+                                    Text("👑 PRINZが提案")
+                                        .font(.caption2)
+                                        .foregroundColor(.neonCyan)
+                                    Text("来週の土曜、空いてる？")
+                                        .font(.subheadline)
+                                        .padding(12)
+                                        .background(
+                                            LinearGradient(
+                                                colors: [.neonPurple.opacity(0.5), .neonCyan.opacity(0.3)],
+                                                startPoint: .leading,
+                                                endPoint: .trailing
+                                            )
+                                        )
+                                        .cornerRadius(16)
+                                }
+                            }
                         }
+                        .foregroundColor(.white)
+                        .padding()
                     }
-                )
-                .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 5)
+                }
+            }
+            .frame(height: 280)
         }
     }
     
@@ -175,61 +224,55 @@ struct HomeView: View {
                 HStack {
                     if isProcessing {
                         ProgressView()
-                            .tint(.white)
+                            .tint(.black)
                     } else {
+                        Image(systemName: "photo.on.rectangle.angled")
                         Text("スクショをアップ")
                             .font(.headline)
                             .fontWeight(.bold)
                     }
                 }
-                .foregroundColor(.white)
+                .foregroundColor(.black)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 16)
                 .background(
-                    RoundedRectangle(cornerRadius: 30)
-                        .fill(Color.black)
+                    LinearGradient(
+                        colors: [.neonPurple, .neonCyan],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
                 )
+                .cornerRadius(30)
+                .shadow(color: .neonPurple.opacity(0.5), radius: 10)
             }
             .disabled(isProcessing)
             
-            // サブボタン
-            HStack(spacing: 12) {
-                Button(action: {
-                    showManualInput = true
-                }) {
+            // サブボタン: 手動で入力のみ
+            Button(action: {
+                showManualInput = true
+            }) {
+                HStack {
+                    Image(systemName: "keyboard")
                     Text("手動で入力")
-                        .font(.subheadline)
-                        .fontWeight(.medium)
-                        .foregroundColor(.black)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                        .background(
-                            RoundedRectangle(cornerRadius: 20)
-                                .fill(Color.white)
-                                .shadow(color: .black.opacity(0.1), radius: 5)
-                        )
                 }
-                
-                Button(action: {
-                    // ピックアップライン機能（将来実装）
-                }) {
-                    Text("ピックアップラインをゲット")
-                        .font(.subheadline)
-                        .fontWeight(.medium)
-                        .foregroundColor(.black)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                        .background(
+                .font(.subheadline)
+                .fontWeight(.medium)
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+                .background(
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(Color.glassBackground)
+                        .overlay(
                             RoundedRectangle(cornerRadius: 20)
-                                .fill(Color.white)
-                                .shadow(color: .black.opacity(0.1), radius: 5)
+                                .stroke(Color.glassBorder, lineWidth: 1)
                         )
-                }
+                )
             }
         }
         .padding()
         .background(
-            Color.white.opacity(0.9)
+            Color.darkBackground
                 .ignoresSafeArea(edges: .bottom)
         )
     }
@@ -264,13 +307,98 @@ struct HomeView: View {
                 switch result {
                 case .success(let text):
                     extractedText = text
-                    showReplyResult = true
+                    // 状況選択モーダルを表示
+                    showContextSelection = true
                 case .failure(let error):
                     print("OCR Error: \(error)")
-                    // エラーでも結果画面へ遷移（テキストなしで）
                     extractedText = ""
-                    showReplyResult = true
+                    showContextSelection = true
                 }
+            }
+        }
+    }
+    
+    /// 画面リセット
+    func resetState() {
+        selectedItem = nil
+        selectedImage = nil
+        extractedText = ""
+        selectedContext = .matchStart
+    }
+}
+
+// MARK: - Context Selection Sheet
+
+struct ContextSelectionSheet: View {
+    @Binding var selectedContext: Context
+    let onConfirm: () -> Void
+    
+    var body: some View {
+        ZStack {
+            Color.darkBackground.ignoresSafeArea()
+            
+            VStack(spacing: 20) {
+                // タイトル
+                VStack(spacing: 8) {
+                    Text("状況を選択")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .foregroundColor(.white)
+                    
+                    Text("どんなシチュエーション？")
+                        .font(.subheadline)
+                        .foregroundColor(.white.opacity(0.6))
+                }
+                .padding(.top, 20)
+                
+                // タググリッド
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                    ForEach(Context.allCases, id: \.self) { context in
+                        Button(action: {
+                            selectedContext = context
+                        }) {
+                            HStack(spacing: 8) {
+                                Text(context.emoji)
+                                Text(context.displayName)
+                                    .font(.subheadline)
+                                    .fontWeight(.medium)
+                            }
+                            .foregroundColor(selectedContext == context ? .black : .white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(selectedContext == context ? Color.neonCyan : Color.glassBackground)
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(selectedContext == context ? Color.neonCyan : Color.glassBorder, lineWidth: 1)
+                            )
+                        }
+                    }
+                }
+                .padding(.horizontal)
+                
+                Spacer()
+                
+                // 確定ボタン
+                Button(action: onConfirm) {
+                    Text("AIに相談する")
+                        .font(.headline)
+                        .fontWeight(.bold)
+                        .foregroundColor(.black)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(
+                            LinearGradient(
+                                colors: [.neonPurple, .neonCyan],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .cornerRadius(30)
+                }
+                .padding()
             }
         }
     }

@@ -7,11 +7,15 @@
 
 import Foundation
 
+/// 会話の状況タグ（日本向け）
 enum Context: String, Codable, CaseIterable {
     case matchStart = "マッチ直後"
     case dateProposal = "デート打診"
-    case fight = "喧嘩"
     case checkInterest = "脈あり確認"
+    case dailyChat = "日常会話"
+    case afterDate = "デート後"
+    case followUp = "フォロー"
+    case fight = "喧嘩"  // 後ろに配置
     
     var displayName: String {
         return self.rawValue
@@ -21,8 +25,11 @@ enum Context: String, Codable, CaseIterable {
         switch self {
         case .matchStart: return "✨"
         case .dateProposal: return "📅"
-        case .fight: return "💢"
         case .checkInterest: return "💭"
+        case .dailyChat: return "💬"
+        case .afterDate: return "🌙"
+        case .followUp: return "📲"
+        case .fight: return "💢"
         }
     }
 }
