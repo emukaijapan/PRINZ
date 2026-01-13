@@ -8,22 +8,36 @@
 import SwiftUI
 
 extension Color {
-    // MARK: - Neon Colors (Cyberpunk Palette)
+    // MARK: - Magic Gradient Colors（魔法のグラデーション）
     
-    /// ネオンパープル - メインアクセントカラー
+    /// 深い紫（夜）- グラデーション上部
+    static let magicPurple = Color(red: 0.2, green: 0.0, blue: 0.3)
+    
+    /// ローズピンク（夜明け/成就）- グラデーション下部
+    static let magicPink = Color(red: 0.8, green: 0.2, blue: 0.5)
+    
+    /// ネオンパープル - アクセントカラー
     static let neonPurple = Color(hex: "#D000FF")
     
     /// ネオンシアン - サブアクセントカラー
     static let neonCyan = Color(hex: "#00FFFF")
     
-    /// ダークバックグラウンド - ピュアブラック
-    static let darkBackground = Color(hex: "#000000")
+    // MARK: - Background
+    
+    /// 魔法のグラデーション背景
+    static var magicGradient: LinearGradient {
+        LinearGradient(
+            gradient: Gradient(colors: [magicPurple, magicPink]),
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+    }
     
     /// グラスバックグラウンド - 半透明の暗色
-    static let glassBackground = Color.white.opacity(0.05)
+    static let glassBackground = Color.white.opacity(0.1)
     
     /// グラスボーダー - 半透明の明色
-    static let glassBorder = Color.white.opacity(0.1)
+    static let glassBorder = Color.white.opacity(0.2)
     
     // MARK: - Hex Initializer
     
@@ -50,5 +64,14 @@ extension Color {
             blue:  Double(b) / 255,
             opacity: Double(a) / 255
         )
+    }
+}
+
+// MARK: - Magic Background View
+
+struct MagicBackground: View {
+    var body: some View {
+        Color.magicGradient
+            .ignoresSafeArea()
     }
 }

@@ -13,7 +13,8 @@ struct ReplyResultView: View {
     let context: Context
     
     // 状態管理
-    @State private var isAnalyzing = true
+    @State private var isAnalyzing = false  // 最初はfalse、生成ボタンで開始
+    @State private var hasGenerated = false  // 生成済みフラグ
     @State private var currentToneIndex = 0  // 安牌→ちょい攻め→変化球のサイクル
     @State private var replyStack: [Reply] = []  // スタック形式で積み上げ
     @State private var cachedReplies: [ReplyType: [Reply]] = [:]  // キャッシュ
@@ -25,8 +26,8 @@ struct ReplyResultView: View {
     
     var body: some View {
         ZStack {
-            // ダークテーマ背景
-            Color.darkBackground.ignoresSafeArea()
+            // 魔法のグラデーション背景
+            MagicBackground()
             
             if isAnalyzing {
                 // 解析演出
@@ -38,9 +39,6 @@ struct ReplyResultView: View {
         }
         .navigationTitle("AI回答")
         .navigationBarTitleDisplayMode(.inline)
-        .onAppear {
-            startAnalysis()
-        }
     }
     
     // MARK: - Main Content
@@ -57,13 +55,16 @@ struct ReplyResultView: View {
                     // メインメッセージ入力
                     mainMessageInput
                     
-                    // AI回答セクション
-                    aiAnswerSection
+                    // 生成済みの場合のみ表示
+                    if hasGenerated {
+                        // AI回答セクション
+                        aiAnswerSection
+                        
+                        // 返信スタック
+                        replyStackView
+                    }
                     
-                    // 返信スタック
-                    replyStackView
-                    
-                    Spacer(minLength: 120)
+                    Spacer(minLength: 150)
                 }
                 .padding()
             }
@@ -108,7 +109,7 @@ struct ReplyResultView: View {
                 .foregroundColor(.white)
                 .font(.body)
             
-            if !mainMessage.isEmpty {
+            if !mainMessage.isEmpty && hasGenerated {
                 Button(action: regenerateWithMainMessage) {
                     Image(systemName: "arrow.clockwise")
                         .foregroundColor(.neonPurple)
@@ -166,61 +167,79 @@ struct ReplyResultView: View {
     
     private var bottomButtonsView: some View {
         VStack(spacing: 12) {
-            // 長文/短文切り替え
-            HStack(spacing: 12) {
-                Button(action: { isShortMode = true }) {
-                    Text("短文")
-                        .font(.subheadline)
-                        .fontWeight(.medium)
-                        .foregroundColor(isShortMode ? .black : .white)
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 8)
-                        .background(
-                            Capsule()
-                                .fill(isShortMode ? Color.neonCyan : Color.glassBackground)
-                        )
+            // オプション行: トーン選択 + 長文/短文
+            HStack(spacing: 8) {
+                // トーン選択ボタン（安牌/ちょい攻め/変化球）
+                Button(action: cycleNextTone) {
+                    HStack(spacing: 4) {
+                        Text(currentToneEmoji)
+                            .font(.caption)
+                        Text(toneTypes[currentToneIndex].displayName)
+                            .font(.caption)
+                            .fontWeight(.medium)
+                    }
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(
+                        Capsule()
+                            .fill(Color.glassBackground)
+                            .overlay(
+                                Capsule()
+                                    .stroke(Color.neonPurple, lineWidth: 1)
+                            )
+                    )
                 }
                 
-                Button(action: { isShortMode = false }) {
-                    Text("長文")
-                        .font(.subheadline)
-                        .fontWeight(.medium)
-                        .foregroundColor(!isShortMode ? .black : .white)
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 8)
-                        .background(
-                            Capsule()
-                                .fill(!isShortMode ? Color.neonCyan : Color.glassBackground)
-                        )
+                // 長文/短文切り替え
+                Button(action: { isShortMode.toggle() }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: isShortMode ? "text.alignleft" : "doc.text")
+                            .font(.caption)
+                        Text(isShortMode ? "短文" : "長文")
+                            .font(.caption)
+                            .fontWeight(.medium)
+                    }
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(
+                        Capsule()
+                            .fill(Color.glassBackground)
+                            .overlay(
+                                Capsule()
+                                    .stroke(Color.neonCyan, lineWidth: 1)
+                            )
+                    )
                 }
                 
                 Spacer()
             }
             
-            // メインボタン: トーンサイクル
-            Button(action: cycleNextTone) {
+            // メインボタン: 回答を生成
+            Button(action: generateReply) {
                 HStack {
-                    Text(currentToneEmoji)
-                    Text(currentToneLabel)
+                    Image(systemName: "sparkles")
+                    Text(hasGenerated ? "別の回答を生成" : "回答を生成")
                         .fontWeight(.bold)
                 }
-                .foregroundColor(.black)
+                .foregroundColor(.white)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 16)
                 .background(
                     LinearGradient(
-                        colors: [.neonPurple, .neonCyan],
+                        colors: [.magicPurple, .magicPink],
                         startPoint: .leading,
                         endPoint: .trailing
                     )
                 )
                 .cornerRadius(30)
-                .shadow(color: .neonPurple.opacity(0.5), radius: 10)
+                .shadow(color: .magicPink.opacity(0.5), radius: 10)
             }
         }
         .padding()
         .background(
-            Color.darkBackground
+            Color.magicPurple.opacity(0.8)
                 .ignoresSafeArea(edges: .bottom)
         )
     }
@@ -235,64 +254,49 @@ struct ReplyResultView: View {
         }
     }
     
-    private var currentToneLabel: String {
-        switch toneTypes[currentToneIndex] {
-        case .safe: return "安牌で返信"
-        case .chill: return "ちょい攻めで返信"
-        case .witty: return "変化球で返信"
-        }
-    }
-    
     // MARK: - Actions
     
-    private func startAnalysis() {
-        // 初回解析演出（1.5秒）
+    private func generateReply() {
+        isAnalyzing = true
+        
+        // 解析演出（1.5秒）
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
             withAnimation {
                 isAnalyzing = false
+                hasGenerated = true
             }
-            generateInitialReplies()
-        }
-    }
-    
-    private func generateInitialReplies() {
-        // 全トーンの返信をキャッシュ
-        for toneType in toneTypes {
-            let replies = ReplyGenerator.shared.generateReplies(
-                for: extractedText,
-                context: context,
-                type: toneType
-            )
-            cachedReplies[toneType] = replies
-        }
-        
-        // 最初のトーン（安牌）をスタックに追加
-        if let safeReplies = cachedReplies[.safe] {
-            replyStack = safeReplies
+            
+            let currentTone = toneTypes[currentToneIndex]
+            
+            // キャッシュにない場合のみ生成
+            if cachedReplies[currentTone] == nil {
+                let replies = ReplyGenerator.shared.generateReplies(
+                    for: extractedText,
+                    context: context,
+                    type: currentTone
+                )
+                cachedReplies[currentTone] = replies
+            }
+            
+            // スタックに追加（上に積む）
+            if let replies = cachedReplies[currentTone] {
+                withAnimation {
+                    replyStack.insert(contentsOf: replies, at: 0)
+                }
+            }
         }
     }
     
     private func cycleNextTone() {
-        // 次のトーンへ
         currentToneIndex = (currentToneIndex + 1) % toneTypes.count
-        let nextTone = toneTypes[currentToneIndex]
-        
-        // キャッシュから取得
-        if let cached = cachedReplies[nextTone] {
-            // スタックに追加（上に積む）
-            withAnimation {
-                replyStack.insert(contentsOf: cached, at: 0)
-            }
-        }
     }
     
     private func regenerateWithMainMessage() {
         // キャッシュクリア＆初回から再生成
         cachedReplies.removeAll()
         replyStack.removeAll()
-        currentToneIndex = 0
-        isAnalyzing = true
-        startAnalysis()
+        hasGenerated = false
+        generateReply()
     }
     
     private func copyReply(_ reply: Reply) {
@@ -332,7 +336,7 @@ struct AnalyzingView: View {
                     .font(.system(size: 50))
                     .foregroundStyle(
                         LinearGradient(
-                            colors: [.neonPurple, .neonCyan],
+                            colors: [.magicPurple, .magicPink],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )

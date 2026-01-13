@@ -15,8 +15,8 @@ struct ManualInputView: View {
     
     var body: some View {
         ZStack {
-            // ダークテーマ背景
-            Color.darkBackground.ignoresSafeArea()
+            // 魔法のグラデーション背景
+            MagicBackground()
             
             VStack(spacing: 20) {
                 // 説明テキスト
@@ -82,18 +82,18 @@ struct ManualInputView: View {
                     }
                     .font(.headline)
                     .fontWeight(.bold)
-                    .foregroundColor(.black)
+                    .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 16)
                     .background(
                         LinearGradient(
-                            colors: [.neonPurple, .neonCyan],
+                            colors: [.magicPurple, .magicPink],
                             startPoint: .leading,
                             endPoint: .trailing
                         )
                     )
                     .cornerRadius(30)
-                    .shadow(color: .neonPurple.opacity(0.4), radius: 10)
+                    .shadow(color: .magicPink.opacity(0.4), radius: 10)
                 }
                 .disabled(inputText.isEmpty)
                 .opacity(inputText.isEmpty ? 0.5 : 1.0)
@@ -112,7 +112,7 @@ struct ManualInputView: View {
     }
 }
 
-// MARK: - Context Tag Button（ダークテーマ対応）
+// MARK: - Context Tag Button
 
 struct ContextTagButton: View {
     let context: Context
@@ -127,16 +127,16 @@ struct ContextTagButton: View {
                     .font(.subheadline)
                     .fontWeight(.medium)
             }
-            .foregroundColor(isSelected ? .black : .white)
+            .foregroundColor(isSelected ? .white : .white.opacity(0.8))
             .padding(.horizontal, 16)
             .padding(.vertical, 10)
             .background(
                 Capsule()
-                    .fill(isSelected ? Color.neonCyan : Color.glassBackground)
+                    .fill(isSelected ? Color.magicPink : Color.glassBackground)
             )
             .overlay(
                 Capsule()
-                    .stroke(isSelected ? Color.neonCyan : Color.glassBorder, lineWidth: 1)
+                    .stroke(isSelected ? Color.magicPink : Color.glassBorder, lineWidth: 1)
             )
         }
     }

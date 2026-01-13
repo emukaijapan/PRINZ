@@ -21,8 +21,8 @@ struct SettingsView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                // 背景
-                Color.darkBackground.ignoresSafeArea()
+                // 魔法のグラデーション背景
+                MagicBackground()
                 
                 ScrollView {
                     VStack(spacing: 24) {
@@ -56,12 +56,12 @@ struct SettingsView: View {
                 .font(.system(size: 50))
                 .foregroundStyle(
                     LinearGradient(
-                        colors: [.neonPurple, .neonCyan],
+                        colors: [.magicPurple, .magicPink],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
                 )
-                .shadow(color: .neonPurple, radius: 20)
+                .shadow(color: .magicPink, radius: 20)
             
             Text("あなたのタイプを設定")
                 .font(.title3)
@@ -78,19 +78,19 @@ struct SettingsView: View {
     // MARK: - Personal Type Setting
     
     private var personalTypeSettingView: some View {
-        GlassCard(glowColor: .neonPurple) {
+        GlassCard(glowColor: .magicPink) {
             VStack(alignment: .leading, spacing: 16) {
                 HStack {
                     Text("パーソナルタイプ")
                         .font(.headline)
-                        .foregroundColor(.neonPurple)
+                        .foregroundColor(.white)
                     
                     Spacer()
                     
                     Text("\(personalType.emoji) \(personalType.displayName)")
                         .font(.subheadline)
                         .fontWeight(.bold)
-                        .foregroundColor(.neonCyan)
+                        .foregroundColor(.magicPink)
                 }
                 
                 // タイプグリッド
@@ -106,16 +106,16 @@ struct SettingsView: View {
                                     .font(.caption)
                                     .fontWeight(.medium)
                             }
-                            .foregroundColor(personalType == type ? .black : .white.opacity(0.8))
+                            .foregroundColor(personalType == type ? .white : .white.opacity(0.8))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 10)
                             .background(
                                 RoundedRectangle(cornerRadius: 10)
-                                    .fill(personalType == type ? Color.neonCyan : Color.glassBackground)
+                                    .fill(personalType == type ? Color.magicPink : Color.glassBackground)
                             )
                             .overlay(
                                 RoundedRectangle(cornerRadius: 10)
-                                    .stroke(personalType == type ? Color.neonCyan : Color.glassBorder, lineWidth: 1)
+                                    .stroke(personalType == type ? Color.magicPink : Color.glassBorder, lineWidth: 1)
                             )
                         }
                     }
@@ -140,19 +140,19 @@ struct SettingsView: View {
                 HStack {
                     Text("年齢")
                         .font(.headline)
-                        .foregroundColor(.neonCyan)
+                        .foregroundColor(.white)
                     
                     Spacer()
                     
                     Text("\(Int(userAge))歳")
                         .font(.title2)
                         .fontWeight(.bold)
-                        .foregroundColor(.neonPurple)
+                        .foregroundColor(.neonCyan)
                 }
                 
                 VStack(spacing: 8) {
                     Slider(value: $userAge, in: 18...60, step: 1)
-                        .accentColor(.neonCyan)
+                        .accentColor(.magicPink)
                     
                     HStack {
                         Text("18")
@@ -171,11 +171,11 @@ struct SettingsView: View {
     // MARK: - Gender Setting
     
     private var genderSettingView: some View {
-        GlassCard(glowColor: .neonPurple) {
+        GlassCard(glowColor: .magicPurple) {
             VStack(alignment: .leading, spacing: 16) {
                 Text("性別")
                     .font(.headline)
-                    .foregroundColor(.neonPurple)
+                    .foregroundColor(.white)
                 
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
                     ForEach(genderOptions, id: \.self) { option in
@@ -185,16 +185,16 @@ struct SettingsView: View {
                             Text(option)
                                 .font(.subheadline)
                                 .fontWeight(.semibold)
-                                .foregroundColor(userGender == option ? .black : .white.opacity(0.6))
+                                .foregroundColor(userGender == option ? .white : .white.opacity(0.6))
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 12)
                                 .background(
                                     RoundedRectangle(cornerRadius: 12)
-                                        .fill(userGender == option ? Color.neonPurple : Color.glassBackground)
+                                        .fill(userGender == option ? Color.magicPurple : Color.glassBackground)
                                 )
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 12)
-                                        .stroke(userGender == option ? Color.neonPurple : Color.glassBorder, lineWidth: 1)
+                                        .stroke(userGender == option ? Color.magicPurple : Color.glassBorder, lineWidth: 1)
                                 )
                         }
                     }

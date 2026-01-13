@@ -21,8 +21,8 @@ struct HomeView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                // ダークテーマ背景（履歴画面と統一）
-                Color.darkBackground.ignoresSafeArea()
+                // 魔法のグラデーション背景
+                MagicBackground()
                 
                 VStack(spacing: 0) {
                     // ヘッダー
@@ -68,6 +68,12 @@ struct HomeView: View {
             }
             .onChange(of: selectedItem) { _, newItem in
                 handleImageSelection(newItem)
+            }
+            .onChange(of: showReplyResult) { _, isShowing in
+                // 結果画面から戻ったら写真をリセット
+                if !isShowing {
+                    resetState()
+                }
             }
         }
     }
@@ -335,7 +341,7 @@ struct ContextSelectionSheet: View {
     
     var body: some View {
         ZStack {
-            Color.darkBackground.ignoresSafeArea()
+            Color.magicGradient.ignoresSafeArea()
             
             VStack(spacing: 20) {
                 // タイトル

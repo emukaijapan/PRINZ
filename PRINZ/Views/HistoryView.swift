@@ -13,8 +13,8 @@ struct HistoryView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                // 背景
-                Color.darkBackground.ignoresSafeArea()
+                // 魔法のグラデーション背景
+                MagicBackground()
                 
                 if history.isEmpty {
                     emptyStateView
@@ -28,7 +28,7 @@ struct HistoryView: View {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: clearHistory) {
                         Image(systemName: "trash")
-                            .foregroundColor(.neonPurple)
+                            .foregroundColor(.magicPink)
                     }
                 }
             }
@@ -46,19 +46,19 @@ struct HistoryView: View {
                 .font(.system(size: 80))
                 .foregroundStyle(
                     LinearGradient(
-                        colors: [.neonPurple, .neonCyan],
+                        colors: [.magicPurple, .magicPink],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
                 )
-                .shadow(color: .neonPurple, radius: 20)
+                .shadow(color: .magicPink, radius: 20)
             
             Text("まだ履歴がありません")
                 .font(.title2)
                 .fontWeight(.bold)
                 .foregroundColor(.white)
             
-            Text("Share Extensionから返信案を生成してみましょう")
+            Text("返信案をコピーすると履歴に保存されます")
                 .font(.subheadline)
                 .foregroundColor(.white.opacity(0.6))
                 .multilineTextAlignment(.center)
@@ -95,9 +95,10 @@ struct HistoryView: View {
 
 struct HistoryCard: View {
     let reply: Reply
+    @State private var showCopied = false
     
     var body: some View {
-        GlassCard(glowColor: reply.type == .safe ? .neonCyan : .neonPurple) {
+        GlassCard(glowColor: .magicPink) {
             VStack(alignment: .leading, spacing: 12) {
                 // ヘッダー
                 HStack {
@@ -107,14 +108,14 @@ struct HistoryCard: View {
                     Text(reply.context.displayName)
                         .font(.subheadline)
                         .fontWeight(.semibold)
-                        .foregroundColor(.neonCyan)
+                        .foregroundColor(.magicPink)
                     
                     Spacer()
                     
                     Text(reply.type.displayName)
                         .font(.caption)
                         .fontWeight(.bold)
-                        .foregroundColor(reply.type == .safe ? .neonCyan : .neonPurple)
+                        .foregroundColor(.white)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
                         .background(
@@ -122,7 +123,7 @@ struct HistoryCard: View {
                                 .fill(Color.glassBackground)
                                 .overlay(
                                     Capsule()
-                                        .stroke(reply.type == .safe ? Color.neonCyan : Color.neonPurple, lineWidth: 1)
+                                        .stroke(Color.magicPink, lineWidth: 1)
                                 )
                         )
                 }
@@ -132,15 +133,28 @@ struct HistoryCard: View {
                     .font(.body)
                     .foregroundColor(.white)
                 
-                // タイムスタンプ
-                Text(reply.timestamp.formatted(date: .abbreviated, time: .shortened))
-                    .font(.caption)
-                    .foregroundColor(.white.opacity(0.5))
+                // タイムスタンプ & コピー状態
+                HStack {
+                    Text(reply.timestamp.formatted(date: .abbreviated, time: .shortened))
+                        .font(.caption)
+                        .foregroundColor(.white.opacity(0.5))
+                    
+                    Spacer()
+                    
+                    if showCopied {
+                        Label("コピー済み", systemImage: "checkmark.circle.fill")
+                            .font(.caption)
+                            .foregroundColor(.green)
+                    }
+                }
             }
         }
         .onTapGesture {
             UIPasteboard.general.string = reply.text
-            // TODO: トースト通知を表示
+            showCopied = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                showCopied = false
+            }
         }
     }
 }
