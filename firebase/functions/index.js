@@ -1,0 +1,247 @@
+/**
+ * PRINZ Firebase Cloud Functions
+ * 
+ * OpenAI APIへのセキュアなプロキシ
+ * - APIキー秘匿
+ * - Rate Limiting
+ * - ユーザー認証
+ */
+
+const functions = require("firebase-functions");
+const admin = require("firebase-admin");
+const OpenAI = require("openai");
+
+admin.initializeApp();
+
+// Firestore参照
+const db = admin.firestore();
+
+// OpenAIクライアント（環境変数からAPIキー取得）
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+// Rate Limiting設定
+const DAILY_FREE_LIMIT = 5;  // 無料ユーザーの1日の上限
+const PREMIUM_LIMIT = 100;   // プレミアムユーザーの1日の上限
+
+/**
+ * AI返信生成 Cloud Function
+ * 
+ * リクエストボディ:
+ * {
+ *   "message": "相手のメッセージ",
+ *   "personalType": "知的系",
+ *   "gender": "男性",
+ *   "ageGroup": "20代前半",
+ *   "relationship": "マッチ直後"
+ * }
+ */
+exports.generateReply = functions
+  .region("asia-northeast1")  // 東京リージョン
+  .https.onCall(async (data, context) => {
+    
+    // 認証チェック（Firebase Auth）
+    if (!context.auth) {
+      throw new functions.https.HttpsError(
+        "unauthenticated",
+        "認証が必要です"
+      );
+    }
+    
+    const userId = context.auth.uid;
+    
+    // Rate Limiting チェック
+    const allowed = await checkRateLimit(userId);
+    if (!allowed) {
+      throw new functions.https.HttpsError(
+        "resource-exhausted",
+        "本日の利用上限に達しました。プレミアムにアップグレードしてください。"
+      );
+    }
+    
+    // 入力検証
+    const { message, personalType, gender, ageGroup, relationship } = data;
+    
+    if (!message || !personalType || !gender || !ageGroup) {
+      throw new functions.https.HttpsError(
+        "invalid-argument",
+        "必須パラメータが不足しています"
+      );
+    }
+    
+    try {
+      // OpenAI API呼び出し
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [
+          {
+            role: "system",
+            content: createSystemPrompt(personalType, gender, ageGroup),
+          },
+          {
+            role: "user",
+            content: createUserPrompt(message, relationship),
+          },
+        ],
+        temperature: 0.8,
+        max_tokens: 1000,
+        response_format: { type: "json_object" },
+      });
+      
+      // レスポンス解析
+      const content = completion.choices[0].message.content;
+      const replies = JSON.parse(content);
+      
+      // 利用回数を記録
+      await incrementUsageCount(userId);
+      
+      return {
+        success: true,
+        replies: replies.replies,
+        remainingToday: await getRemainingCount(userId),
+      };
+      
+    } catch (error) {
+      console.error("OpenAI API Error:", error);
+      throw new functions.https.HttpsError(
+        "internal",
+        "AI回答の生成に失敗しました"
+      );
+    }
+  });
+
+/**
+ * Rate Limitチェック
+ */
+async function checkRateLimit(userId) {
+  const today = getTodayString();
+  const usageRef = db.collection("usage").doc(`${userId}_${today}`);
+  const usageDoc = await usageRef.get();
+  
+  if (!usageDoc.exists) {
+    return true;
+  }
+  
+  const usage = usageDoc.data();
+  const isPremium = await checkPremiumStatus(userId);
+  const limit = isPremium ? PREMIUM_LIMIT : DAILY_FREE_LIMIT;
+  
+  return usage.count < limit;
+}
+
+/**
+ * 利用回数をインクリメント
+ */
+async function incrementUsageCount(userId) {
+  const today = getTodayString();
+  const usageRef = db.collection("usage").doc(`${userId}_${today}`);
+  
+  await usageRef.set({
+    count: admin.firestore.FieldValue.increment(1),
+    lastUsed: admin.firestore.FieldValue.serverTimestamp(),
+  }, { merge: true });
+}
+
+/**
+ * 残り利用回数を取得
+ */
+async function getRemainingCount(userId) {
+  const today = getTodayString();
+  const usageRef = db.collection("usage").doc(`${userId}_${today}`);
+  const usageDoc = await usageRef.get();
+  
+  const isPremium = await checkPremiumStatus(userId);
+  const limit = isPremium ? PREMIUM_LIMIT : DAILY_FREE_LIMIT;
+  
+  if (!usageDoc.exists) {
+    return limit;
+  }
+  
+  return Math.max(0, limit - usageDoc.data().count);
+}
+
+/**
+ * プレミアムステータスチェック
+ */
+async function checkPremiumStatus(userId) {
+  const userRef = db.collection("users").doc(userId);
+  const userDoc = await userRef.get();
+  
+  if (!userDoc.exists) {
+    return false;
+  }
+  
+  return userDoc.data().isPremium === true;
+}
+
+/**
+ * 今日の日付文字列を取得（YYYY-MM-DD）
+ */
+function getTodayString() {
+  const now = new Date();
+  return now.toISOString().split("T")[0];
+}
+
+/**
+ * システムプロンプト生成
+ */
+function createSystemPrompt(personalType, gender, ageGroup) {
+  const personalDescriptions = {
+    "知的系": "博識で論理的。知的な語彙を使い、スマートな会話を展開する。",
+    "熱血系": "情熱的でエネルギーに溢れている。ストレートな表現を好み、相手を引っ張る。",
+    "優しい系": "とにかく優しく、包容力がある。相手を肯定し、安心感を与える言葉を選ぶ。",
+    "おもしろ系": "ユーモアセンス抜群。ボケやツッコミを交え、相手を笑わせることを最優先する。",
+    "クール系": "感情を表に出しすぎず、余裕がある。短文で核心を突く、ミステリアスな色気を持つ。",
+    "誠実系": "嘘をつかない誠実さ。丁寧な言葉遣いで、真剣に向き合う姿勢を見せる。",
+    "アクティブ系": "フットワークが軽く、ノリが良い。絵文字も適度に使い、明るくテンポ良い会話をする。",
+    "シャイ系": "少し奥手で謙虚。丁寧すぎるくらい丁寧だが、そこが可愛げに見えるように。",
+    "ミステリアス系": "生活感を見せない。詩的な表現や、意味深な言葉で相手の興味を惹く。",
+    "ナチュラル系": "飾らない等身大。親しみやすく、友達のような距離感でリラックスして話す。",
+  };
+
+  return `あなたは恋愛戦略のプロフェッショナルであり、優秀なゴーストライターです。
+以下の「ユーザー属性」と「性格設定」を持つ人物になりきって、相手の心を動かす返信を考えてください。
+
+【ユーザー属性】
+- 性別: ${gender}
+- 年代: ${ageGroup}
+
+【性格設定: ${personalType}】
+${personalDescriptions[personalType] || "自然体でありのまま"}
+
+【重要事項】
+- ユーザーの「年代」と「性別」に完全に同調した言葉遣いをすること。
+- 若いユーザーなら若者言葉や自然な崩し方を、年配のユーザーなら落ち着いた表現を選ぶこと。
+- 違和感のある「おじさん/おばさん構文」や、逆に年齢にそぐわない無理な若作りは避けること。
+- 文脈に合わせて、絵文字や記号を適切に使用すること。
+
+【出力ルール】
+- 以下の3つのカテゴリ（安牌、ちょい攻め、変化球）の返信案を作成すること。
+- 長さは「短文（1〜3文程度）」とし、LINEやチャットとして自然なテンポにすること。
+- 必ず以下のJSON形式のみを出力すること。前置きや挨拶は一切不要。
+
+【カテゴリ定義】
+1. safe (安牌): 無難で失敗しない。相手に共感し、会話を維持する。
+2. aggressive (ちょい攻め): 好意を匂わせる。デートに誘う。距離を一歩縮める。
+3. unique (変化球): 相手の予想を裏切る。笑いを取る。鋭い視点やツッコミ。
+
+【JSONフォーマット】
+{
+  "replies": [
+    {"type": "safe", "text": "（安牌な返信）", "reasoning": "（解説）"},
+    {"type": "aggressive", "text": "（攻めた返信）", "reasoning": "（解説）"},
+    {"type": "unique", "text": "（変化球な返信）", "reasoning": "（解説）"}
+  ]
+}`;
+}
+
+/**
+ * ユーザープロンプト生成
+ */
+function createUserPrompt(message, relationship) {
+  return `相手のメッセージ: "${message}"
+現在の関係性: ${relationship || "マッチング中"}
+
+このメッセージに対して、指定されたJSONフォーマットで3パターンの返信を作成してください。`;
+}
