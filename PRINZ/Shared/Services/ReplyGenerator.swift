@@ -12,11 +12,44 @@ class ReplyGenerator {
     
     private init() {}
     
+    // MARK: - OpenAI API連携
+    
+    /// OpenAI APIを使用して返信を生成
+    func generateRepliesWithAI(
+        message: String,
+        context: Context,
+        personalType: PersonalType,
+        gender: UserGender,
+        ageGroup: UserAgeGroup
+    ) async throws -> [Reply] {
+        
+        let relationship = context.displayName
+        
+        let aiReplies = try await OpenAIService.shared.generateReplies(
+            message: message,
+            personalType: personalType,
+            gender: gender,
+            ageGroup: ageGroup,
+            relationship: relationship
+        )
+        
+        // AIGeneratedReplyをReplyに変換
+        return aiReplies.compactMap { aiReply in
+            guard let replyType = ReplyType.from(apiType: aiReply.type) else {
+                return nil
+            }
+            return Reply(
+                text: aiReply.text,
+                type: replyType,
+                context: context,
+                reasoning: aiReply.reasoning
+            )
+        }
+    }
+    
+    // MARK: - モック生成（フォールバック用）
+    
     /// モックAI: コンテキストに応じた返信案を生成
-    /// - Parameters:
-    ///   - extractedText: OCRで抽出されたテキスト
-    ///   - context: 会話のコンテキスト
-    /// - Returns: 3つの返信案（安牌、ちょい攻め、変化球）
     func generateReplies(for extractedText: String, context: Context) -> [Reply] {
         return [
             generateReply(for: extractedText, context: context, type: .safe),
@@ -87,6 +120,20 @@ class ReplyGenerator {
             case .chill: return "ちょっと冷静になろう"
             case .witty: return "そっちこそどうなの？"
             }
+        }
+    }
+}
+
+// MARK: - ReplyType Extension
+
+extension ReplyType {
+    /// APIのタイプ文字列からReplyTypeを取得
+    static func from(apiType: String) -> ReplyType? {
+        switch apiType.lowercased() {
+        case "safe": return .safe
+        case "aggressive": return .chill
+        case "unique": return .witty
+        default: return nil
         }
     }
 }

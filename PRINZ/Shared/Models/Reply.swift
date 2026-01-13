@@ -13,13 +13,22 @@ struct Reply: Identifiable, Codable {
     let type: ReplyType
     let context: Context
     let timestamp: Date
+    let reasoning: String?  // AI生成時の解説（オプション）
     
-    init(id: UUID = UUID(), text: String, type: ReplyType, context: Context, timestamp: Date = Date()) {
+    init(
+        id: UUID = UUID(),
+        text: String,
+        type: ReplyType,
+        context: Context,
+        timestamp: Date = Date(),
+        reasoning: String? = nil
+    ) {
         self.id = id
         self.text = text
         self.type = type
         self.context = context
         self.timestamp = timestamp
+        self.reasoning = reasoning
     }
 }
 
