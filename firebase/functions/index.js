@@ -16,10 +16,17 @@ admin.initializeApp();
 // Firestore参照
 const db = admin.firestore();
 
-// OpenAIクライアント（環境変数からAPIキー取得）
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// OpenAIクライアント（遅延初期化 - 実行時に環境変数からAPIキー取得）
+let openai = null;
+
+function getOpenAIClient() {
+  if (!openai) {
+    openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+  }
+  return openai;
+}
 
 // Rate Limiting設定
 const DAILY_FREE_LIMIT = 5;  // 無料ユーザーの1日の上限
@@ -40,7 +47,7 @@ const PREMIUM_LIMIT = 100;   // プレミアムユーザーの1日の上限
 exports.generateReply = functions
   .region("asia-northeast1")  // 東京リージョン
   .https.onCall(async (data, context) => {
-    
+
     // 認証チェック（Firebase Auth）
     if (!context.auth) {
       throw new functions.https.HttpsError(
@@ -48,9 +55,9 @@ exports.generateReply = functions
         "認証が必要です"
       );
     }
-    
+
     const userId = context.auth.uid;
-    
+
     // Rate Limiting チェック
     const allowed = await checkRateLimit(userId);
     if (!allowed) {
@@ -59,20 +66,20 @@ exports.generateReply = functions
         "本日の利用上限に達しました。プレミアムにアップグレードしてください。"
       );
     }
-    
+
     // 入力検証
     const { message, personalType, gender, ageGroup, relationship } = data;
-    
+
     if (!message || !personalType || !gender || !ageGroup) {
       throw new functions.https.HttpsError(
         "invalid-argument",
         "必須パラメータが不足しています"
       );
     }
-    
+
     try {
       // OpenAI API呼び出し
-      const completion = await openai.chat.completions.create({
+      const completion = await getOpenAIClient().chat.completions.create({
         model: "gpt-4o-mini",
         messages: [
           {
@@ -88,20 +95,20 @@ exports.generateReply = functions
         max_tokens: 1000,
         response_format: { type: "json_object" },
       });
-      
+
       // レスポンス解析
       const content = completion.choices[0].message.content;
       const replies = JSON.parse(content);
-      
+
       // 利用回数を記録
       await incrementUsageCount(userId);
-      
+
       return {
         success: true,
         replies: replies.replies,
         remainingToday: await getRemainingCount(userId),
       };
-      
+
     } catch (error) {
       console.error("OpenAI API Error:", error);
       throw new functions.https.HttpsError(
@@ -118,15 +125,15 @@ async function checkRateLimit(userId) {
   const today = getTodayString();
   const usageRef = db.collection("usage").doc(`${userId}_${today}`);
   const usageDoc = await usageRef.get();
-  
+
   if (!usageDoc.exists) {
     return true;
   }
-  
+
   const usage = usageDoc.data();
   const isPremium = await checkPremiumStatus(userId);
   const limit = isPremium ? PREMIUM_LIMIT : DAILY_FREE_LIMIT;
-  
+
   return usage.count < limit;
 }
 
@@ -136,7 +143,7 @@ async function checkRateLimit(userId) {
 async function incrementUsageCount(userId) {
   const today = getTodayString();
   const usageRef = db.collection("usage").doc(`${userId}_${today}`);
-  
+
   await usageRef.set({
     count: admin.firestore.FieldValue.increment(1),
     lastUsed: admin.firestore.FieldValue.serverTimestamp(),
@@ -150,14 +157,14 @@ async function getRemainingCount(userId) {
   const today = getTodayString();
   const usageRef = db.collection("usage").doc(`${userId}_${today}`);
   const usageDoc = await usageRef.get();
-  
+
   const isPremium = await checkPremiumStatus(userId);
   const limit = isPremium ? PREMIUM_LIMIT : DAILY_FREE_LIMIT;
-  
+
   if (!usageDoc.exists) {
     return limit;
   }
-  
+
   return Math.max(0, limit - usageDoc.data().count);
 }
 
@@ -167,11 +174,11 @@ async function getRemainingCount(userId) {
 async function checkPremiumStatus(userId) {
   const userRef = db.collection("users").doc(userId);
   const userDoc = await userRef.get();
-  
+
   if (!userDoc.exists) {
     return false;
   }
-  
+
   return userDoc.data().isPremium === true;
 }
 

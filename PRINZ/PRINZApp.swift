@@ -6,10 +6,15 @@
 //
 
 import SwiftUI
+import Firebase
 
 @main
 struct PRINZApp: App {
     init() {
+        // Firebase初期化
+        FirebaseApp.configure()
+        print("✅ Firebase initialized")
+        
         // App Group初期化（データ共有用）
         setupAppGroup()
     }

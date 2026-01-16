@@ -37,3 +37,12 @@ fastlane/test_output
 
 # Code Injection
 iOSInjectionProject/
+
+# Environment Variables (secrets)
+.env
+.env.local
+.env.*.local
+
+# Firebase (contains API keys)
+GoogleService-Info.plist
+firebase/functions/node_modules/
