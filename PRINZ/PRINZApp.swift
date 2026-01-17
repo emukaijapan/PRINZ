@@ -7,6 +7,7 @@
 
 import SwiftUI
 import Firebase
+import Combine
 
 /// アプリ全体の状態管理
 class AppState: ObservableObject {
