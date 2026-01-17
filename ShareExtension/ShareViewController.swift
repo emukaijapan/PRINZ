@@ -187,35 +187,18 @@ struct ShareExtensionView: View {
                 .padding(.horizontal)
             }
             
-            // ボタン群
-            VStack(spacing: 10) {
-                // PRINZアプリを開くボタン
-                Button(action: openMainApp) {
-                    HStack {
-                        Image(systemName: "arrow.up.forward.app.fill")
-                        Text("PRINZアプリを開く")
-                            .fontWeight(.semibold)
-                    }
-                    .foregroundColor(.black)
+            // 閉じるボタン
+            Button(action: closeExtension) {
+                Text("完了")
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
+                    .padding(.vertical, 12)
                     .background(
-                        LinearGradient(
-                            colors: [.neonCyan, .neonPurple],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
+                        RoundedRectangle(cornerRadius: 20)
+                            .fill(Color.glassBackground)
                     )
-                    .cornerRadius(25)
-                }
-                
-                // 閉じるボタン
-                Button(action: closeExtension) {
-                    Text("閉じる")
-                        .font(.subheadline)
-                        .fontWeight(.medium)
-                        .foregroundColor(.white.opacity(0.7))
-                }
             }
             .padding(.horizontal)
         }
@@ -380,29 +363,6 @@ struct ShareExtensionView: View {
     private func copyReply(_ reply: Reply) {
         UIPasteboard.general.string = reply.text
         print("📋 Copied: \(reply.text.prefix(50))...")
-    }
-    
-    private func openMainApp() {
-        // App Groupにデータを保存（メインアプリで読み込み用）
-        if let image = loadedImage, let context = selectedContext {
-            _ = SharedImageManager.shared.saveSharedData(image: image, context: context)
-        }
-        
-        // URL Schemeでメインアプリを起動（iOS制限により動作しない場合あり）
-        guard let url = URL(string: "prinz://open?source=share") else {
-            closeExtension()
-            return
-        }
-        
-        // Share Extensionから起動を試行
-        extensionContext?.open(url, completionHandler: { success in
-            if success {
-                print("✅ Opened main app via URL Scheme")
-            } else {
-                print("⚠️ Could not open main app (iOS restriction)")
-            }
-            self.closeExtension()
-        })
     }
     
     private func closeExtension() {
