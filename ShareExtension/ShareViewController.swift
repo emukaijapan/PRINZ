@@ -55,8 +55,8 @@ struct ShareExtensionView: View {
     
     var body: some View {
         ZStack {
-            // 背景
-            Color.darkBackground.ignoresSafeArea()
+            // 背景 - メインアプリと統一
+            MagicBackground()
             
             VStack {
                 // ヘッダー

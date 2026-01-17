@@ -357,34 +357,33 @@ struct ContextSelectionSheet: View {
                 }
                 .padding(.top, 20)
                 
-                // タググリッド - 2列、縦配置で文字切れ防止
-                LazyVGrid(columns: [
-                    GridItem(.flexible(), spacing: 12),
-                    GridItem(.flexible(), spacing: 12)
-                ], spacing: 12) {
+                // コンテキストボタン - コンパクトな縦リスト
+                VStack(spacing: 8) {
                     ForEach(Context.allCases, id: \.self) { context in
                         Button(action: {
                             selectedContext = context
                         }) {
-                            VStack(spacing: 6) {
+                            HStack(spacing: 10) {
                                 Text(context.emoji)
-                                    .font(.title2)
+                                    .font(.body)
                                 Text(context.displayName)
                                     .font(.subheadline)
                                     .fontWeight(.medium)
-                                    .lineLimit(1)
-                                    .minimumScaleFactor(0.8)
+                                Spacer()
+                                if selectedContext == context {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .foregroundColor(.neonCyan)
+                                }
                             }
-                            .foregroundColor(selectedContext == context ? .black : .white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
-                            .padding(.horizontal, 8)
+                            .foregroundColor(selectedContext == context ? .neonCyan : .white)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 10)
                             .background(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .fill(selectedContext == context ? Color.neonCyan : Color.glassBackground)
+                                RoundedRectangle(cornerRadius: 10)
+                                    .fill(selectedContext == context ? Color.neonCyan.opacity(0.15) : Color.glassBackground)
                             )
                             .overlay(
-                                RoundedRectangle(cornerRadius: 12)
+                                RoundedRectangle(cornerRadius: 10)
                                     .stroke(selectedContext == context ? Color.neonCyan : Color.glassBorder, lineWidth: 1)
                             )
                         }

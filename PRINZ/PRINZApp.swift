@@ -31,14 +31,21 @@ class AppState: ObservableObject {
             sharedContext = data.context
             launchedFromShare = true
             print("✅ AppState: Loaded shared data from ShareExtension")
+            // 注意: ここではファイルをクリアしない（処理完了後にクリア）
         }
     }
     
-    /// 共有データをクリア
-    func clearSharedData() {
+    /// 共有データをクリア（UI状態のみ）
+    func clearUIState() {
         sharedImage = nil
         sharedContext = nil
         launchedFromShare = false
+        print("🔄 AppState: UI state cleared")
+    }
+    
+    /// 共有データを完全にクリア（ファイル含む）
+    func clearSharedData() {
+        clearUIState()
         SharedImageManager.shared.clearSharedData()
     }
 }

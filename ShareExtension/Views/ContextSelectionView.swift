@@ -11,48 +11,48 @@ struct ContextSelectionView: View {
     let onSelect: (Context) -> Void
     
     var body: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: 20) {
             // タイトル
-            VStack(spacing: 8) {
+            VStack(spacing: 6) {
                 Text("状況を選択")
-                    .font(.title2)
+                    .font(.headline)
                     .fontWeight(.bold)
                     .foregroundColor(.white)
                 
                 Text("どんなシチュエーションですか？")
-                    .font(.subheadline)
+                    .font(.caption)
                     .foregroundColor(.white.opacity(0.6))
             }
             
-            // コンテキストボタン - 2列グリッド
-            LazyVGrid(columns: [
-                GridItem(.flexible(), spacing: 12),
-                GridItem(.flexible(), spacing: 12)
-            ], spacing: 12) {
+            // コンテキストボタン - コンパクトな縦リスト
+            VStack(spacing: 8) {
                 ForEach(Context.allCases, id: \.self) { context in
                     Button(action: {
                         onSelect(context)
                     }) {
-                        VStack(spacing: 8) {
+                        HStack(spacing: 10) {
                             Text(context.emoji)
-                                .font(.title)
+                                .font(.body)
                             
                             Text(context.displayName)
                                 .font(.subheadline)
                                 .fontWeight(.medium)
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.8)
+                            
+                            Spacer()
+                            
+                            Image(systemName: "chevron.right")
+                                .font(.caption)
+                                .foregroundColor(.white.opacity(0.4))
                         }
                         .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                        .padding(.horizontal, 8)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 10)
                         .background(
-                            RoundedRectangle(cornerRadius: 12)
+                            RoundedRectangle(cornerRadius: 10)
                                 .fill(Color.glassBackground)
                                 .overlay(
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .stroke(Color.neonPurple.opacity(0.5), lineWidth: 1)
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .stroke(Color.neonPurple.opacity(0.3), lineWidth: 1)
                                 )
                         )
                     }
@@ -70,3 +70,4 @@ struct ContextSelectionView: View {
         ContextSelectionView(onSelect: { _ in })
     }
 }
+
