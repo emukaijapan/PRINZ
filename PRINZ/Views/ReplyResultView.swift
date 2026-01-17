@@ -286,9 +286,9 @@ struct ReplyResultView: View {
     
     private func generateAIReply(with message: String) {
         // TODO: 設定画面からユーザー情報を取得
-        let personalType: PersonalType = .fun  // デフォルト
+        let personalType: PersonalType = .funny  // デフォルト
         let gender: UserGender = .male  // デフォルト
-        let ageGroup: UserAgeGroup = .twenties  // デフォルト
+        let ageGroup: UserAgeGroup = .early20s  // デフォルト
         
         Task {
             do {
