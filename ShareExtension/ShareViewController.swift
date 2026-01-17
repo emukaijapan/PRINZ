@@ -143,15 +143,19 @@ struct ShareExtensionView: View {
     
     private var inputAndContextView: some View {
         VStack(spacing: 20) {
-            // 画像プレビュー（小さめ）
+            // 上部スペース（画面を上に伸ばす）
+            Spacer()
+                .frame(height: 40)
+            
+            // 画像プレビュー（大きめに）
             if let image = loadedImage {
                 Image(uiImage: image)
                     .resizable()
                     .scaledToFit()
-                    .frame(maxHeight: 120)
-                    .cornerRadius(8)
+                    .frame(maxHeight: 180)  // 120 → 180 (+50%)
+                    .cornerRadius(12)
                     .overlay(
-                        RoundedRectangle(cornerRadius: 8)
+                        RoundedRectangle(cornerRadius: 12)
                             .stroke(Color.glassBorder, lineWidth: 1)
                     )
             }
@@ -159,8 +163,8 @@ struct ShareExtensionView: View {
             // メッセージ入力
             VStack(alignment: .leading, spacing: 8) {
                 Text("PRINZに任せたい内容")
-                    .font(.caption)
-                    .foregroundColor(.white.opacity(0.6))
+                    .font(.subheadline)
+                    .foregroundColor(.white.opacity(0.7))
                 
                 TextField("例: 次のデートに誘いたい", text: $userMessage)
                     .textFieldStyle(.plain)
@@ -177,28 +181,28 @@ struct ShareExtensionView: View {
             }
             
             // 状況選択
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 10) {
                 Text("状況を選択")
-                    .font(.caption)
-                    .foregroundColor(.white.opacity(0.6))
+                    .font(.subheadline)
+                    .foregroundColor(.white.opacity(0.7))
                 
-                // コンパクトな横スクロール
+                // 横スクロール（少し大きめに）
                 ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
+                    HStack(spacing: 10) {
                         ForEach(Context.allCases, id: \.self) { context in
                             Button(action: {
                                 selectedContext = context
                             }) {
                                 HStack(spacing: 6) {
                                     Text(context.emoji)
-                                        .font(.caption)
+                                        .font(.subheadline)
                                     Text(context.displayName)
-                                        .font(.caption)
+                                        .font(.subheadline)
                                         .fontWeight(.medium)
                                 }
                                 .foregroundColor(selectedContext == context ? .black : .white)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 8)
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 10)
                                 .background(
                                     Capsule()
                                         .fill(selectedContext == context ? Color.neonCyan : Color.glassBackground)
@@ -222,7 +226,7 @@ struct ShareExtensionView: View {
                 }
                 .foregroundColor(.black)
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
+                .padding(.vertical, 16)
                 .background(
                     LinearGradient(
                         colors: [.neonCyan, .neonPurple],
@@ -234,8 +238,11 @@ struct ShareExtensionView: View {
                 .opacity(selectedContext == nil ? 0.5 : 1)
             }
             .disabled(selectedContext == nil)
+            
+            Spacer()
+                .frame(height: 20)
         }
-        .padding()
+        .padding(.horizontal, 20)
     }
     
     // MARK: - Generating View
