@@ -49,6 +49,9 @@ const DEV_MODE = true;
  */
 exports.generateReply = functions
   .region("asia-northeast1")  // 東京リージョン
+  .runWith({
+    secrets: ["OPENAI_API_KEY"],  // Secret Managerから取得
+  })
   .https.onCall(async (data, context) => {
 
     // 認証チェック（MVP開発モードでは緩和）
@@ -58,6 +61,7 @@ exports.generateReply = functions
       // 開発モード: 認証なしでも許可、デバイスIDまたはランダムIDを使用
       userId = context.auth?.uid || data.deviceId || `dev_${Date.now()}`;
       console.log(`[DEV MODE] User ID: ${userId}`);
+      // DEV_MODEではRate Limitingをスキップ
     } else {
       // 本番モード: 認証必須
       if (!context.auth) {
@@ -67,15 +71,15 @@ exports.generateReply = functions
         );
       }
       userId = context.auth.uid;
-    }
 
-    // Rate Limiting チェック
-    const allowed = await checkRateLimit(userId);
-    if (!allowed) {
-      throw new functions.https.HttpsError(
-        "resource-exhausted",
-        "本日の利用上限に達しました。プレミアムにアップグレードしてください。"
-      );
+      // Rate Limiting チェック（本番のみ）
+      const allowed = await checkRateLimit(userId);
+      if (!allowed) {
+        throw new functions.https.HttpsError(
+          "resource-exhausted",
+          "本日の利用上限に達しました。プレミアムにアップグレードしてください。"
+        );
+      }
     }
 
     // 入力検証
@@ -122,13 +126,17 @@ exports.generateReply = functions
       console.log(`[generateReply] OpenAI Response: ${content.substring(0, 100)}...`);
       const replies = JSON.parse(content);
 
-      // 利用回数を記録
-      await incrementUsageCount(userId);
+      // 利用回数を記録（本番のみ）
+      let remainingToday = 999;  // DEV_MODEではダミー値
+      if (!DEV_MODE) {
+        await incrementUsageCount(userId);
+        remainingToday = await getRemainingCount(userId);
+      }
 
       return {
         success: true,
         replies: replies.replies,
-        remainingToday: await getRemainingCount(userId),
+        remainingToday: remainingToday,
       };
 
     } catch (error) {
