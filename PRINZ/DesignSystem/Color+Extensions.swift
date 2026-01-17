@@ -24,6 +24,9 @@ extension Color {
     
     // MARK: - Background
     
+    /// ダークバックグラウンド - ShareExtension用
+    static let darkBackground = Color(red: 0.05, green: 0.02, blue: 0.1)
+    
     /// 魔法のグラデーション背景
     static var magicGradient: LinearGradient {
         LinearGradient(
