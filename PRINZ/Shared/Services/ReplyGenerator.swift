@@ -113,13 +113,6 @@ class ReplyGenerator {
             case .chill: return "久しぶり！会いたいね"
             case .witty: return "生きてる？笑"
             }
-            
-        case .fight:
-            switch type {
-            case .safe: return "ごめん、言い過ぎた"
-            case .chill: return "ちょっと冷静になろう"
-            case .witty: return "そっちこそどうなの？"
-            }
         }
     }
 }

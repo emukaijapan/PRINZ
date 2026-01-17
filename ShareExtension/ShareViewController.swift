@@ -44,10 +44,11 @@ struct ShareExtensionView: View {
     @State private var generatedReplies: [Reply] = []
     @State private var errorMessage: String?
     @State private var isGenerating = false
+    @State private var userMessage: String = ""  // ユーザー入力メッセージ
     
     enum ShareStep {
         case loading
-        case contextSelection
+        case inputAndContext  // 入力+状況選択画面
         case generating
         case results
         case error
@@ -58,29 +59,27 @@ struct ShareExtensionView: View {
             // 背景 - メインアプリと統一
             MagicBackground()
             
-            VStack {
+            VStack(spacing: 0) {
                 // ヘッダー
                 headerView
                 
-                Spacer()
-                
                 // メインコンテンツ
-                Group {
-                    switch currentStep {
-                    case .loading:
-                        loadingView
-                    case .contextSelection:
-                        ContextSelectionView(onSelect: handleContextSelection)
-                    case .generating:
-                        generatingView
-                    case .results:
-                        resultsView
-                    case .error:
-                        errorView
+                ScrollView {
+                    Group {
+                        switch currentStep {
+                        case .loading:
+                            loadingView
+                        case .inputAndContext:
+                            inputAndContextView
+                        case .generating:
+                            generatingView
+                        case .results:
+                            resultsView
+                        case .error:
+                            errorView
+                        }
                     }
                 }
-                
-                Spacer()
             }
         }
         .preferredColorScheme(.dark)
@@ -137,6 +136,106 @@ struct ShareExtensionView: View {
             Text("画像を読み込み中...")
                 .foregroundColor(.white.opacity(0.7))
         }
+        .padding(.vertical, 40)
+    }
+    
+    // MARK: - Input and Context View
+    
+    private var inputAndContextView: some View {
+        VStack(spacing: 20) {
+            // 画像プレビュー（小さめ）
+            if let image = loadedImage {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(maxHeight: 120)
+                    .cornerRadius(8)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(Color.glassBorder, lineWidth: 1)
+                    )
+            }
+            
+            // メッセージ入力
+            VStack(alignment: .leading, spacing: 8) {
+                Text("PRINZに任せたい内容")
+                    .font(.caption)
+                    .foregroundColor(.white.opacity(0.6))
+                
+                TextField("例: 次のデートに誘いたい", text: $userMessage)
+                    .textFieldStyle(.plain)
+                    .foregroundColor(.white)
+                    .padding()
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color.glassBackground)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(Color.glassBorder, lineWidth: 1)
+                            )
+                    )
+            }
+            
+            // 状況選択
+            VStack(alignment: .leading, spacing: 8) {
+                Text("状況を選択")
+                    .font(.caption)
+                    .foregroundColor(.white.opacity(0.6))
+                
+                // コンパクトな横スクロール
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(Context.allCases, id: \.self) { context in
+                            Button(action: {
+                                selectedContext = context
+                            }) {
+                                HStack(spacing: 6) {
+                                    Text(context.emoji)
+                                        .font(.caption)
+                                    Text(context.displayName)
+                                        .font(.caption)
+                                        .fontWeight(.medium)
+                                }
+                                .foregroundColor(selectedContext == context ? .black : .white)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 8)
+                                .background(
+                                    Capsule()
+                                        .fill(selectedContext == context ? Color.neonCyan : Color.glassBackground)
+                                )
+                                .overlay(
+                                    Capsule()
+                                        .stroke(selectedContext == context ? Color.neonCyan : Color.glassBorder, lineWidth: 1)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // 生成ボタン
+            Button(action: startGeneration) {
+                HStack {
+                    Image(systemName: "sparkles")
+                    Text("回答を生成")
+                        .fontWeight(.bold)
+                }
+                .foregroundColor(.black)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 14)
+                .background(
+                    LinearGradient(
+                        colors: [.neonCyan, .neonPurple],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .cornerRadius(25)
+                .opacity(selectedContext == nil ? 0.5 : 1)
+            }
+            .disabled(selectedContext == nil)
+        }
+        .padding()
     }
     
     // MARK: - Generating View
@@ -264,7 +363,7 @@ struct ShareExtensionView: View {
                         
                         if let image = image {
                             loadedImage = image
-                            currentStep = .contextSelection
+                            currentStep = .inputAndContext
                         } else {
                             showError("画像の形式が不正です")
                         }
@@ -277,8 +376,7 @@ struct ShareExtensionView: View {
         showError("画像が見つかりませんでした")
     }
     
-    private func handleContextSelection(_ context: Context) {
-        selectedContext = context
+    private func startGeneration() {
         currentStep = .generating
         
         // OCR実行 → AI生成
