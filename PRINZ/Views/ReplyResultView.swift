@@ -257,32 +257,112 @@ struct ReplyResultView: View {
     private func generateReply() {
         isAnalyzing = true
         
-        // 解析演出（1.5秒）
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-            withAnimation {
-                isAnalyzing = false
-                hasGenerated = true
-            }
-            
-            let currentTone = toneTypes[currentToneIndex]
-            
-            // キャッシュにない場合のみ生成
-            if cachedReplies[currentTone] == nil {
-                let replies = ReplyGenerator.shared.generateReplies(
-                    for: extractedText,
-                    context: context,
-                    type: currentTone
-                )
-                cachedReplies[currentTone] = replies
-            }
-            
-            // スタックに追加（上に積む）
-            if let replies = cachedReplies[currentTone] {
-                withAnimation {
-                    replyStack.insert(contentsOf: replies, at: 0)
+        // 画像からOCRでテキストを抽出
+        performOCRAndGenerate()
+    }
+    
+    private func performOCRAndGenerate() {
+        guard let image = image else {
+            // 画像がない場合は直接AI生成
+            generateAIReply(with: extractedText.isEmpty ? "メッセージ" : extractedText)
+            return
+        }
+        
+        // OCR実行
+        OCRService.shared.recognizeText(from: image) { result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let text):
+                    print("📝 OCR Result: \(text.prefix(100))...")
+                    generateAIReply(with: text.isEmpty ? extractedText : text)
+                case .failure(let error):
+                    print("❌ OCR Error: \(error)")
+                    // OCR失敗時は入力テキストを使用
+                    generateAIReply(with: extractedText.isEmpty ? "メッセージ" : extractedText)
                 }
             }
         }
+    }
+    
+    private func generateAIReply(with message: String) {
+        // TODO: 設定画面からユーザー情報を取得
+        let personalType: PersonalType = .fun  // デフォルト
+        let gender: UserGender = .male  // デフォルト
+        let ageGroup: UserAgeGroup = .twenties  // デフォルト
+        
+        Task {
+            do {
+                // Firebase経由でAI返信を生成
+                let result = try await FirebaseService.shared.generateReplies(
+                    message: message,
+                    personalType: personalType,
+                    gender: gender,
+                    ageGroup: ageGroup,
+                    relationship: context.displayName
+                )
+                
+                await MainActor.run {
+                    withAnimation {
+                        isAnalyzing = false
+                        hasGenerated = true
+                    }
+                    
+                    // 返信をスタックに追加
+                    withAnimation {
+                        replyStack.insert(contentsOf: result.replies, at: 0)
+                    }
+                    
+                    print("✅ Generated \(result.replies.count) replies, remaining: \(result.remainingToday)")
+                }
+                
+            } catch let error as FirebaseError {
+                await MainActor.run {
+                    handleGenerationError(error)
+                }
+            } catch {
+                await MainActor.run {
+                    print("❌ AI Generation Error: \(error)")
+                    // フォールバック: モック返信を使用
+                    fallbackToMockReplies()
+                }
+            }
+        }
+    }
+    
+    private func handleGenerationError(_ error: FirebaseError) {
+        print("❌ Firebase Error: \(error.localizedDescription)")
+        
+        switch error {
+        case .rateLimitExceeded:
+            // レート制限エラー時はモックを使用してUIは表示
+            fallbackToMockReplies()
+        case .unauthenticated:
+            // 認証エラー時もモックを使用
+            fallbackToMockReplies()
+        default:
+            // その他のエラーもモックでフォールバック
+            fallbackToMockReplies()
+        }
+    }
+    
+    private func fallbackToMockReplies() {
+        withAnimation {
+            isAnalyzing = false
+            hasGenerated = true
+        }
+        
+        let currentTone = toneTypes[currentToneIndex]
+        let replies = ReplyGenerator.shared.generateReplies(
+            for: extractedText.isEmpty ? "メッセージ" : extractedText,
+            context: context,
+            type: currentTone
+        )
+        
+        withAnimation {
+            replyStack.insert(contentsOf: replies, at: 0)
+        }
+        
+        print("⚠️ Using mock replies as fallback")
     }
     
     private func cycleNextTone() {

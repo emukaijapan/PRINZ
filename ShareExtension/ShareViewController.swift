@@ -17,7 +17,10 @@ class ShareViewController: UIViewController {
         super.viewDidLoad()
         
         // SwiftUIビューをホスト
-        let shareView = ShareExtensionView(extensionContext: extensionContext)
+        let shareView = ShareExtensionView(
+            extensionContext: extensionContext,
+            openMainApp: openMainApp
+        )
         hostingController = UIHostingController(rootView: shareView)
         
         if let hostingController = hostingController {
@@ -31,24 +34,43 @@ class ShareViewController: UIViewController {
         // 背景を透明に
         view.backgroundColor = .clear
     }
+    
+    /// メインアプリを開く
+    private func openMainApp() {
+        // URL Schemeでメインアプリを起動
+        let url = URL(string: "prinz://open?source=share")!
+        
+        // ShareExtensionからアプリを開く（iOS 13+）
+        var responder: UIResponder? = self
+        while responder != nil {
+            if let application = responder as? UIApplication {
+                application.open(url, options: [:], completionHandler: nil)
+                break
+            }
+            responder = responder?.next
+        }
+        
+        // 少し遅延してからExtensionを閉じる
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+            self?.extensionContext?.completeRequest(returningItems: nil, completionHandler: nil)
+        }
+    }
 }
 
 // MARK: - ShareExtensionView (SwiftUI)
 
 struct ShareExtensionView: View {
     let extensionContext: NSExtensionContext?
+    let openMainApp: () -> Void
     
     @State private var currentStep: ShareStep = .loading
-    @State private var extractedText: String = ""
-    @State private var selectedContext: Context?
-    @State private var generatedReplies: [Reply] = []
+    @State private var loadedImage: UIImage?
     @State private var errorMessage: String?
     
     enum ShareStep {
         case loading
         case contextSelection
-        case scanning
-        case results
+        case launching
         case error
     }
     
@@ -70,14 +92,8 @@ struct ShareExtensionView: View {
                         loadingView
                     case .contextSelection:
                         ContextSelectionView(onSelect: handleContextSelection)
-                    case .scanning:
-                        ScanningAnimationView()
-                    case .results:
-                        ReplyOptionsView(
-                            replies: generatedReplies,
-                            onCopy: handleCopyReply,
-                            onClose: closeExtension
-                        )
+                    case .launching:
+                        launchingView
                     case .error:
                         errorView
                     }
@@ -142,6 +158,24 @@ struct ShareExtensionView: View {
         }
     }
     
+    // MARK: - Launching View
+    
+    private var launchingView: some View {
+        VStack(spacing: 20) {
+            Image(systemName: "arrow.up.forward.app.fill")
+                .font(.system(size: 50))
+                .foregroundColor(.neonCyan)
+            
+            Text("PRINZアプリを起動中...")
+                .font(.headline)
+                .foregroundColor(.white)
+            
+            Text("AI回答を生成します")
+                .font(.subheadline)
+                .foregroundColor(.white.opacity(0.6))
+        }
+    }
+    
     // MARK: - Error View
     
     private var errorView: some View {
@@ -159,7 +193,13 @@ struct ShareExtensionView: View {
             Button("閉じる") {
                 closeExtension()
             }
-            .neonButtonStyle(color: .purple)
+            .foregroundColor(.white)
+            .padding(.horizontal, 24)
+            .padding(.vertical, 12)
+            .background(
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(Color.glassBackground)
+            )
         }
     }
     
@@ -194,7 +234,7 @@ struct ShareExtensionView: View {
                         }
                         
                         if let image = image {
-                            // コンテキスト選択へ
+                            loadedImage = image
                             currentStep = .contextSelection
                         } else {
                             showError("画像の形式が不正です")
@@ -209,85 +249,23 @@ struct ShareExtensionView: View {
     }
     
     private func handleContextSelection(_ context: Context) {
-        selectedContext = context
-        currentStep = .scanning
-        
-        // OCR実行
-        performOCR()
-    }
-    
-    private func performOCR() {
-        guard let extensionContext = extensionContext,
-              let item = extensionContext.inputItems.first as? NSExtensionItem,
-              let attachments = item.attachments else {
+        guard let image = loadedImage else {
             showError("画像が見つかりませんでした")
             return
         }
         
-        for provider in attachments {
-            if provider.hasItemConformingToTypeIdentifier(UTType.image.identifier) {
-                provider.loadItem(forTypeIdentifier: UTType.image.identifier, options: nil) { (item, error) in
-                    var image: UIImage?
-                    
-                    if let url = item as? URL {
-                        image = UIImage(contentsOfFile: url.path)
-                    } else if let data = item as? Data {
-                        image = UIImage(data: data)
-                    } else if let img = item as? UIImage {
-                        image = img
-                    }
-                    
-                    guard let image = image else {
-                        DispatchQueue.main.async {
-                            showError("画像の読み込みに失敗しました")
-                        }
-                        return
-                    }
-                    
-                    // OCR実行
-                    OCRService.shared.recognizeText(from: image) { result in
-                        DispatchQueue.main.async {
-                            switch result {
-                            case .success(let text):
-                                extractedText = text
-                                print("📝 Extracted Text:\n\(text)")
-                                generateReplies()
-                            case .failure(let error):
-                                showError("テキスト認識に失敗しました: \(error.localizedDescription)")
-                            }
-                        }
-                    }
-                }
-                return
+        // App Groupに画像とコンテキストを保存
+        let success = SharedImageManager.shared.saveSharedData(image: image, context: context)
+        
+        if success {
+            currentStep = .launching
+            
+            // 少し遅延してからメインアプリを起動
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                openMainApp()
             }
-        }
-    }
-    
-    private func generateReplies() {
-        guard let context = selectedContext else { return }
-        
-        // 少し遅延を入れてアニメーションを見せる
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-            generatedReplies = ReplyGenerator.shared.generateReplies(
-                for: extractedText,
-                context: context
-            )
-            
-            // 履歴に保存
-            print("📝 ShareExtension: Saving \(generatedReplies.count) replies to history...")
-            DataManager.shared.saveReplies(generatedReplies)
-            print("✅ ShareExtension: Replies saved successfully")
-            
-            currentStep = .results
-        }
-    }
-    
-    private func handleCopyReply(_ reply: Reply) {
-        UIPasteboard.general.string = reply.text
-        
-        // 少し遅延してから閉じる
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            closeExtension()
+        } else {
+            showError("データの保存に失敗しました")
         }
     }
     
