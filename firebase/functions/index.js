@@ -4,7 +4,7 @@
  * OpenAI APIへのセキュアなプロキシ
  * - APIキー秘匿
  * - Rate Limiting
- * - ユーザー認証
+ * - ユーザー認証（MVP段階では緩和）
  */
 
 const functions = require("firebase-functions");
@@ -32,6 +32,9 @@ function getOpenAIClient() {
 const DAILY_FREE_LIMIT = 5;  // 無料ユーザーの1日の上限
 const PREMIUM_LIMIT = 100;   // プレミアムユーザーの1日の上限
 
+// MVP開発モード（本番リリース時はfalseに変更）
+const DEV_MODE = true;
+
 /**
  * AI返信生成 Cloud Function
  * 
@@ -48,15 +51,23 @@ exports.generateReply = functions
   .region("asia-northeast1")  // 東京リージョン
   .https.onCall(async (data, context) => {
 
-    // 認証チェック（Firebase Auth）
-    if (!context.auth) {
-      throw new functions.https.HttpsError(
-        "unauthenticated",
-        "認証が必要です"
-      );
-    }
+    // 認証チェック（MVP開発モードでは緩和）
+    let userId = "anonymous";
 
-    const userId = context.auth.uid;
+    if (DEV_MODE) {
+      // 開発モード: 認証なしでも許可、デバイスIDまたはランダムIDを使用
+      userId = context.auth?.uid || data.deviceId || `dev_${Date.now()}`;
+      console.log(`[DEV MODE] User ID: ${userId}`);
+    } else {
+      // 本番モード: 認証必須
+      if (!context.auth) {
+        throw new functions.https.HttpsError(
+          "unauthenticated",
+          "認証が必要です"
+        );
+      }
+      userId = context.auth.uid;
+    }
 
     // Rate Limiting チェック
     const allowed = await checkRateLimit(userId);

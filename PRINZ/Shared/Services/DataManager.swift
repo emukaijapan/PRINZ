@@ -39,10 +39,14 @@ class DataManager {
     
     // MARK: - Save Reply
     
-    /// 返信案を履歴に保存
+    /// 返信案を履歴に保存（重複排除）
     func saveReply(_ reply: Reply) {
         var history = loadHistory()
-        history.insert(reply, at: 0) // 新しいものを先頭に
+        
+        // 重複排除: 同じIDが既に存在しない場合のみ追加
+        if !history.contains(where: { $0.id == reply.id }) {
+            history.insert(reply, at: 0)
+        }
         
         // 最大件数まで保存（30件）
         if history.count > maxHistoryCount {
@@ -52,10 +56,20 @@ class DataManager {
         saveHistory(history)
     }
     
-    /// 複数の返信案を保存
+    /// 複数の返信案を保存（重複排除）
     func saveReplies(_ replies: [Reply]) {
         var history = loadHistory()
-        history.insert(contentsOf: replies, at: 0)
+        
+        // 既存IDのセットを作成
+        let existingIds = Set(history.map { $0.id })
+        
+        // 重複しないものだけフィルタリング
+        let newReplies = replies.filter { !existingIds.contains($0.id) }
+        
+        if !newReplies.isEmpty {
+            history.insert(contentsOf: newReplies, at: 0)
+            print("📝 DataManager: Added \(newReplies.count) new replies (filtered \(replies.count - newReplies.count) duplicates)")
+        }
         
         if history.count > maxHistoryCount {
             history = Array(history.prefix(maxHistoryCount))
