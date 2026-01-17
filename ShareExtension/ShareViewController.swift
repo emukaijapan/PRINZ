@@ -17,10 +17,7 @@ class ShareViewController: UIViewController {
         super.viewDidLoad()
         
         // SwiftUIビューをホスト
-        let shareView = ShareExtensionView(
-            extensionContext: extensionContext,
-            openMainApp: openMainApp
-        )
+        let shareView = ShareExtensionView(extensionContext: extensionContext)
         hostingController = UIHostingController(rootView: shareView)
         
         if let hostingController = hostingController {
@@ -34,43 +31,25 @@ class ShareViewController: UIViewController {
         // 背景を透明に
         view.backgroundColor = .clear
     }
-    
-    /// メインアプリを開く
-    private func openMainApp() {
-        // URL Schemeでメインアプリを起動
-        let url = URL(string: "prinz://open?source=share")!
-        
-        // ShareExtensionからアプリを開く（iOS 13+）
-        var responder: UIResponder? = self
-        while responder != nil {
-            if let application = responder as? UIApplication {
-                application.open(url, options: [:], completionHandler: nil)
-                break
-            }
-            responder = responder?.next
-        }
-        
-        // 少し遅延してからExtensionを閉じる
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
-            self?.extensionContext?.completeRequest(returningItems: nil, completionHandler: nil)
-        }
-    }
 }
 
 // MARK: - ShareExtensionView (SwiftUI)
 
 struct ShareExtensionView: View {
     let extensionContext: NSExtensionContext?
-    let openMainApp: () -> Void
     
     @State private var currentStep: ShareStep = .loading
     @State private var loadedImage: UIImage?
+    @State private var selectedContext: Context?
+    @State private var generatedReplies: [Reply] = []
     @State private var errorMessage: String?
+    @State private var isGenerating = false
     
     enum ShareStep {
         case loading
         case contextSelection
-        case launching
+        case generating
+        case results
         case error
     }
     
@@ -92,8 +71,10 @@ struct ShareExtensionView: View {
                         loadingView
                     case .contextSelection:
                         ContextSelectionView(onSelect: handleContextSelection)
-                    case .launching:
-                        launchingView
+                    case .generating:
+                        generatingView
+                    case .results:
+                        resultsView
                     case .error:
                         errorView
                     }
@@ -158,22 +139,87 @@ struct ShareExtensionView: View {
         }
     }
     
-    // MARK: - Launching View
+    // MARK: - Generating View
     
-    private var launchingView: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "arrow.up.forward.app.fill")
-                .font(.system(size: 50))
-                .foregroundColor(.neonCyan)
+    private var generatingView: some View {
+        VStack(spacing: 24) {
+            ScanningAnimationView()
             
-            Text("PRINZアプリを起動中...")
+            Text("AI回答を生成中...")
                 .font(.headline)
                 .foregroundColor(.white)
             
-            Text("AI回答を生成します")
+            Text("少々お待ちください")
                 .font(.subheadline)
                 .foregroundColor(.white.opacity(0.6))
         }
+    }
+    
+    // MARK: - Results View
+    
+    private var resultsView: some View {
+        VStack(spacing: 16) {
+            // タイトル
+            VStack(spacing: 8) {
+                HStack {
+                    Image(systemName: "sparkles")
+                        .foregroundColor(.neonCyan)
+                    Text("AI返信案")
+                        .font(.title3)
+                        .fontWeight(.bold)
+                        .foregroundColor(.white)
+                }
+                
+                Text("タップしてコピー")
+                    .font(.caption)
+                    .foregroundColor(.white.opacity(0.6))
+            }
+            
+            // 返信リスト
+            ScrollView {
+                VStack(spacing: 12) {
+                    ForEach(generatedReplies) { reply in
+                        ShareReplyCard(reply: reply) {
+                            copyReply(reply)
+                        }
+                    }
+                }
+                .padding(.horizontal)
+            }
+            
+            // ボタン群
+            VStack(spacing: 10) {
+                // PRINZアプリを開くボタン
+                Button(action: openMainApp) {
+                    HStack {
+                        Image(systemName: "arrow.up.forward.app.fill")
+                        Text("PRINZアプリを開く")
+                            .fontWeight(.semibold)
+                    }
+                    .foregroundColor(.black)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(
+                        LinearGradient(
+                            colors: [.neonCyan, .neonPurple],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .cornerRadius(25)
+                }
+                
+                // 閉じるボタン
+                Button(action: closeExtension) {
+                    Text("閉じる")
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                        .foregroundColor(.white.opacity(0.7))
+                }
+            }
+            .padding(.horizontal)
+        }
+        .padding(.vertical)
     }
     
     // MARK: - Error View
@@ -181,8 +227,8 @@ struct ShareExtensionView: View {
     private var errorView: some View {
         VStack(spacing: 20) {
             Image(systemName: "exclamationmark.triangle.fill")
-                .font(.system(size: 60))
-                .foregroundColor(.red)
+                .font(.system(size: 50))
+                .foregroundColor(.orange)
             
             Text(errorMessage ?? "エラーが発生しました")
                 .font(.headline)
@@ -249,24 +295,114 @@ struct ShareExtensionView: View {
     }
     
     private func handleContextSelection(_ context: Context) {
+        selectedContext = context
+        currentStep = .generating
+        
+        // OCR実行 → AI生成
+        performOCRAndGenerate()
+    }
+    
+    private func performOCRAndGenerate() {
         guard let image = loadedImage else {
             showError("画像が見つかりませんでした")
             return
         }
         
-        // App Groupに画像とコンテキストを保存
-        let success = SharedImageManager.shared.saveSharedData(image: image, context: context)
-        
-        if success {
-            currentStep = .launching
-            
-            // 少し遅延してからメインアプリを起動
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                openMainApp()
+        // OCR実行
+        OCRService.shared.recognizeText(from: image) { result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let text):
+                    print("📝 ShareExtension OCR: \(text.prefix(100))...")
+                    generateAIReplies(with: text)
+                case .failure(let error):
+                    print("❌ ShareExtension OCR Error: \(error)")
+                    // OCR失敗時はモック返信を使用
+                    fallbackToMockReplies()
+                }
             }
-        } else {
-            showError("データの保存に失敗しました")
         }
+    }
+    
+    private func generateAIReplies(with message: String) {
+        guard let context = selectedContext else {
+            fallbackToMockReplies()
+            return
+        }
+        
+        Task {
+            do {
+                // Firebase経由でAI返信を生成
+                let result = try await FirebaseService.shared.generateReplies(
+                    message: message,
+                    personalType: .funny,
+                    gender: .male,
+                    ageGroup: .early20s,
+                    relationship: context.displayName
+                )
+                
+                await MainActor.run {
+                    generatedReplies = result.replies
+                    
+                    // 履歴に保存
+                    DataManager.shared.saveReplies(result.replies)
+                    
+                    currentStep = .results
+                    print("✅ ShareExtension: Generated \(result.replies.count) replies")
+                }
+                
+            } catch {
+                await MainActor.run {
+                    print("❌ ShareExtension AI Error: \(error)")
+                    fallbackToMockReplies()
+                }
+            }
+        }
+    }
+    
+    private func fallbackToMockReplies() {
+        guard let context = selectedContext else {
+            showError("状況が選択されていません")
+            return
+        }
+        
+        let replies = ReplyGenerator.shared.generateReplies(
+            for: "メッセージ",
+            context: context
+        )
+        
+        generatedReplies = replies
+        DataManager.shared.saveReplies(replies)
+        currentStep = .results
+        print("⚠️ ShareExtension: Using mock replies")
+    }
+    
+    private func copyReply(_ reply: Reply) {
+        UIPasteboard.general.string = reply.text
+        print("📋 Copied: \(reply.text.prefix(50))...")
+    }
+    
+    private func openMainApp() {
+        // App Groupにデータを保存（メインアプリで読み込み用）
+        if let image = loadedImage, let context = selectedContext {
+            _ = SharedImageManager.shared.saveSharedData(image: image, context: context)
+        }
+        
+        // URL Schemeでメインアプリを起動（iOS制限により動作しない場合あり）
+        guard let url = URL(string: "prinz://open?source=share") else {
+            closeExtension()
+            return
+        }
+        
+        // Share Extensionから起動を試行
+        extensionContext?.open(url, completionHandler: { success in
+            if success {
+                print("✅ Opened main app via URL Scheme")
+            } else {
+                print("⚠️ Could not open main app (iOS restriction)")
+            }
+            self.closeExtension()
+        })
     }
     
     private func closeExtension() {
@@ -276,5 +412,85 @@ struct ShareExtensionView: View {
     private func showError(_ message: String) {
         errorMessage = message
         currentStep = .error
+    }
+}
+
+// MARK: - Share Reply Card
+
+struct ShareReplyCard: View {
+    let reply: Reply
+    let onTap: () -> Void
+    
+    @State private var isCopied = false
+    
+    private var typeColor: Color {
+        switch reply.type {
+        case .safe: return .neonCyan
+        case .chill: return .orange
+        case .witty: return .neonPurple
+        }
+    }
+    
+    private var typeIcon: String {
+        switch reply.type {
+        case .safe: return "shield.fill"
+        case .chill: return "flame.fill"
+        case .witty: return "sparkles"
+        }
+    }
+    
+    var body: some View {
+        Button(action: {
+            isCopied = true
+            onTap()
+        }) {
+            VStack(alignment: .leading, spacing: 10) {
+                // タイプバッジ
+                HStack {
+                    HStack(spacing: 4) {
+                        Image(systemName: typeIcon)
+                            .font(.caption)
+                        Text(reply.type.displayName)
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                    }
+                    .foregroundColor(typeColor)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+                    .background(
+                        Capsule()
+                            .fill(typeColor.opacity(0.15))
+                    )
+                    
+                    Spacer()
+                    
+                    if isCopied {
+                        HStack(spacing: 4) {
+                            Image(systemName: "checkmark.circle.fill")
+                            Text("コピー済み")
+                                .font(.caption)
+                        }
+                        .foregroundColor(.green)
+                    }
+                }
+                
+                // 返信テキスト
+                Text(reply.text)
+                    .font(.body)
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding()
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color.glassBackground)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(typeColor.opacity(0.3), lineWidth: 1)
+                    )
+            )
+        }
+        .buttonStyle(PlainButtonStyle())
     }
 }
