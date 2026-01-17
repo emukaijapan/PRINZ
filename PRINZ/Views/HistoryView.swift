@@ -9,6 +9,7 @@ import SwiftUI
 
 struct HistoryView: View {
     @State private var history: [Reply] = []
+    @Environment(\.scenePhase) private var scenePhase
     
     var body: some View {
         NavigationView {
@@ -35,6 +36,12 @@ struct HistoryView: View {
         }
         .onAppear {
             loadHistory()
+        }
+        .onChange(of: scenePhase) { newPhase in
+            if newPhase == .active {
+                loadHistory()
+                print("🔄 HistoryView: Reloaded history on app activation")
+            }
         }
     }
     
