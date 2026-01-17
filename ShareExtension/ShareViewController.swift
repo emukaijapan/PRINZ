@@ -274,7 +274,9 @@ struct ShareExtensionView: View {
             )
             
             // 履歴に保存
+            print("📝 ShareExtension: Saving \(generatedReplies.count) replies to history...")
             DataManager.shared.saveReplies(generatedReplies)
+            print("✅ ShareExtension: Replies saved successfully")
             
             currentStep = .results
         }
