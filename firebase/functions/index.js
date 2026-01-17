@@ -89,6 +89,16 @@ exports.generateReply = functions
     }
 
     try {
+      // APIキーの確認
+      const apiKey = process.env.OPENAI_API_KEY;
+      if (!apiKey) {
+        console.error("OPENAI_API_KEY is not set in environment variables");
+        throw new Error("OpenAI API key not configured");
+      }
+      console.log(`[generateReply] API Key exists: ${apiKey ? 'YES' : 'NO'}, length: ${apiKey?.length || 0}`);
+      console.log(`[generateReply] Message: ${message.substring(0, 50)}...`);
+      console.log(`[generateReply] PersonalType: ${personalType}, Gender: ${gender}, AgeGroup: ${ageGroup}`);
+
       // OpenAI API呼び出し
       const completion = await getOpenAIClient().chat.completions.create({
         model: "gpt-4o-mini",
@@ -109,6 +119,7 @@ exports.generateReply = functions
 
       // レスポンス解析
       const content = completion.choices[0].message.content;
+      console.log(`[generateReply] OpenAI Response: ${content.substring(0, 100)}...`);
       const replies = JSON.parse(content);
 
       // 利用回数を記録
@@ -121,10 +132,17 @@ exports.generateReply = functions
       };
 
     } catch (error) {
-      console.error("OpenAI API Error:", error);
+      console.error("=== OpenAI API Error Details ===");
+      console.error("Error Name:", error.name);
+      console.error("Error Message:", error.message);
+      console.error("Error Stack:", error.stack);
+      if (error.response) {
+        console.error("Response Status:", error.response.status);
+        console.error("Response Data:", JSON.stringify(error.response.data));
+      }
       throw new functions.https.HttpsError(
         "internal",
-        "AI回答の生成に失敗しました"
+        `AI回答の生成に失敗しました: ${error.message}`
       );
     }
   });
