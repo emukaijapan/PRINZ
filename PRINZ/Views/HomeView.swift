@@ -357,21 +357,28 @@ struct ContextSelectionSheet: View {
                 }
                 .padding(.top, 20)
                 
-                // タググリッド
-                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                // タググリッド - 2列、縦配置で文字切れ防止
+                LazyVGrid(columns: [
+                    GridItem(.flexible(), spacing: 12),
+                    GridItem(.flexible(), spacing: 12)
+                ], spacing: 12) {
                     ForEach(Context.allCases, id: \.self) { context in
                         Button(action: {
                             selectedContext = context
                         }) {
-                            HStack(spacing: 8) {
+                            VStack(spacing: 6) {
                                 Text(context.emoji)
+                                    .font(.title2)
                                 Text(context.displayName)
                                     .font(.subheadline)
                                     .fontWeight(.medium)
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.8)
                             }
                             .foregroundColor(selectedContext == context ? .black : .white)
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 12)
+                            .padding(.vertical, 14)
+                            .padding(.horizontal, 8)
                             .background(
                                 RoundedRectangle(cornerRadius: 12)
                                     .fill(selectedContext == context ? Color.neonCyan : Color.glassBackground)

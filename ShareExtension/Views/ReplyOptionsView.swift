@@ -13,39 +13,57 @@ struct ReplyOptionsView: View {
     let onClose: () -> Void
     
     var body: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: 20) {
             // タイトル
             VStack(spacing: 8) {
-                Text("返信案")
-                    .font(.title2)
-                    .fontWeight(.bold)
-                    .foregroundColor(.white)
+                HStack {
+                    Image(systemName: "sparkles")
+                        .foregroundColor(.neonCyan)
+                    Text("AI返信案")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .foregroundColor(.white)
+                }
                 
                 Text("タップしてコピー")
-                    .font(.subheadline)
+                    .font(.caption)
                     .foregroundColor(.white.opacity(0.6))
             }
             
             // 返信案リスト
-            VStack(spacing: 16) {
-                ForEach(replies) { reply in
-                    ReplyBubble(reply: reply) {
-                        onCopy(reply)
+            ScrollView {
+                VStack(spacing: 12) {
+                    ForEach(replies) { reply in
+                        ReplyBubble(reply: reply) {
+                            onCopy(reply)
+                        }
                     }
                 }
             }
             
             // 閉じるボタン
-            Button("閉じる") {
-                onClose()
+            Button(action: onClose) {
+                Text("閉じる")
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(
+                        RoundedRectangle(cornerRadius: 20)
+                            .fill(Color.glassBackground)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 20)
+                                    .stroke(Color.glassBorder, lineWidth: 1)
+                            )
+                    )
             }
-            .neonButtonStyle(color: .cyan, compact: true)
         }
         .padding()
     }
 }
 
-// MARK: - Reply Bubble (LINE風)
+// MARK: - Reply Bubble (シンプル版)
 
 struct ReplyBubble: View {
     let reply: Reply
@@ -53,42 +71,54 @@ struct ReplyBubble: View {
     
     @State private var isCopied = false
     
+    private var typeColor: Color {
+        switch reply.type {
+        case .safe: return .neonCyan
+        case .chill: return .orange
+        case .witty: return .neonPurple
+        }
+    }
+    
+    private var typeIcon: String {
+        switch reply.type {
+        case .safe: return "shield.fill"
+        case .chill: return "flame.fill"
+        case .witty: return "sparkles"
+        }
+    }
+    
     var body: some View {
         Button(action: {
             isCopied = true
             onTap()
         }) {
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 10) {
                 // タイプバッジ
                 HStack {
-                    Text(reply.type.displayName)
-                        .font(.caption)
-                        .fontWeight(.bold)
-                        .foregroundColor(reply.type == .safe ? .neonCyan : .neonPurple)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 4)
-                        .background(
-                            Capsule()
-                                .fill(Color.glassBackground)
-                                .overlay(
-                                    Capsule()
-                                        .stroke(
-                                            reply.type == .safe ? Color.neonCyan : Color.neonPurple,
-                                            lineWidth: 1
-                                        )
-                                )
-                        )
+                    HStack(spacing: 4) {
+                        Image(systemName: typeIcon)
+                            .font(.caption)
+                        Text(reply.type.displayName)
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                    }
+                    .foregroundColor(typeColor)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+                    .background(
+                        Capsule()
+                            .fill(typeColor.opacity(0.15))
+                    )
                     
                     Spacer()
                     
                     if isCopied {
                         HStack(spacing: 4) {
                             Image(systemName: "checkmark.circle.fill")
-                                .foregroundColor(.green)
                             Text("コピー済み")
                                 .font(.caption)
-                                .foregroundColor(.green)
                         }
+                        .foregroundColor(.green)
                     }
                 }
                 
@@ -102,27 +132,11 @@ struct ReplyBubble: View {
             .padding()
             .background(
                 RoundedRectangle(cornerRadius: 16)
-                    .fill(.ultraThinMaterial)
+                    .fill(Color.glassBackground)
                     .overlay(
                         RoundedRectangle(cornerRadius: 16)
-                            .stroke(
-                                LinearGradient(
-                                    colors: [
-                                        reply.type == .safe ? Color.neonCyan : Color.neonPurple,
-                                        reply.type == .safe ? Color.neonCyan.opacity(0.3) : Color.neonPurple.opacity(0.3)
-                                    ],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                ),
-                                lineWidth: 2
-                            )
+                            .stroke(typeColor.opacity(0.3), lineWidth: 1)
                     )
-            )
-            .shadow(
-                color: (reply.type == .safe ? Color.neonCyan : Color.neonPurple).opacity(0.4),
-                radius: 15,
-                x: 0,
-                y: 5
             )
         }
         .buttonStyle(PlainButtonStyle())
@@ -144,3 +158,4 @@ struct ReplyBubble: View {
         )
     }
 }
+

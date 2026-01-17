@@ -24,30 +24,39 @@ struct ContextSelectionView: View {
                     .foregroundColor(.white.opacity(0.6))
             }
             
-            // コンテキストボタン
-            VStack(spacing: 16) {
+            // コンテキストボタン - 2列グリッド
+            LazyVGrid(columns: [
+                GridItem(.flexible(), spacing: 12),
+                GridItem(.flexible(), spacing: 12)
+            ], spacing: 12) {
                 ForEach(Context.allCases, id: \.self) { context in
                     Button(action: {
                         onSelect(context)
                     }) {
-                        HStack(spacing: 12) {
+                        VStack(spacing: 8) {
                             Text(context.emoji)
                                 .font(.title)
                             
                             Text(context.displayName)
-                                .font(.headline)
-                                .fontWeight(.semibold)
-                            
-                            Spacer()
-                            
-                            Image(systemName: "chevron.right")
                                 .font(.subheadline)
+                                .fontWeight(.medium)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.8)
                         }
                         .foregroundColor(.white)
-                        .padding()
                         .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .padding(.horizontal, 8)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color.glassBackground)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(Color.neonPurple.opacity(0.5), lineWidth: 1)
+                                )
+                        )
                     }
-                    .neonButtonStyle(color: .purple)
+                    .buttonStyle(PlainButtonStyle())
                 }
             }
         }
