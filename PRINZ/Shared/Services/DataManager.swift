@@ -21,11 +21,20 @@ class DataManager {
     // MARK: - App Group Container
     
     private var containerURL: URL? {
-        FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupIdentifier)
+        let url = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupIdentifier)
+        if url == nil {
+            print("❌ DataManager: App Group container not found for: \(appGroupIdentifier)")
+        } else {
+            print("✅ DataManager: App Group container: \(url!.path)")
+        }
+        return url
     }
     
     private var historyFileURL: URL? {
-        containerURL?.appendingPathComponent(historyFileName)
+        guard let container = containerURL else { return nil }
+        let url = container.appendingPathComponent(historyFileName)
+        print("📁 DataManager: History file path: \(url.path)")
+        return url
     }
     
     // MARK: - Save Reply

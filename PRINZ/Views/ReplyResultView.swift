@@ -47,9 +47,9 @@ struct ReplyResultView: View {
         VStack(spacing: 0) {
             ScrollView {
                 VStack(spacing: 16) {
-                    // 抽出テキストプレビュー
-                    if !extractedText.isEmpty {
-                        textPreviewView
+                    // スクリーンショットプレビュー
+                    if image != nil {
+                        imagePreviewView
                     }
                     
                     // メインメッセージ入力
@@ -74,27 +74,25 @@ struct ReplyResultView: View {
         }
     }
     
-    // MARK: - Text Preview
+    // MARK: - Image Preview
     
-    private var textPreviewView: some View {
+    private var imagePreviewView: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("抽出テキスト")
+            Text("スクリーンショット")
                 .font(.caption)
                 .foregroundColor(.white.opacity(0.5))
             
-            Text(extractedText)
-                .font(.body)
-                .foregroundColor(.white)
-                .padding()
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color.glassBackground)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(Color.glassBorder, lineWidth: 1)
-                        )
-                )
+            if let image = image {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFit()
+                    .cornerRadius(12)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(Color.glassBorder, lineWidth: 1)
+                    )
+                    .frame(maxHeight: 200)
+            }
         }
     }
     
