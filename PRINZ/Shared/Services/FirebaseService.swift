@@ -131,8 +131,6 @@ extension Context {
             return .dateProposal
         } else if relationship.contains("日常") {
             return .dailyChat
-        } else if relationship.contains("喧嘩") {
-            return .fight
         } else if relationship.contains("フォロー") || relationship.contains("久しぶり") {
             return .followUp
         } else {
