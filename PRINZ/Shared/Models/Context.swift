@@ -15,7 +15,6 @@ enum Context: String, Codable, CaseIterable {
     case dailyChat = "日常会話"
     case afterDate = "デート後"
     case followUp = "フォロー"
-    case fight = "喧嘩"  // 後ろに配置
     
     var displayName: String {
         return self.rawValue
@@ -29,7 +28,7 @@ enum Context: String, Codable, CaseIterable {
         case .dailyChat: return "💬"
         case .afterDate: return "🌙"
         case .followUp: return "📲"
-        case .fight: return "💢"
         }
     }
 }
+
