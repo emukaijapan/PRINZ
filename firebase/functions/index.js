@@ -21,8 +21,17 @@ let openai = null;
 
 function getOpenAIClient() {
   if (!openai) {
+    const apiKey = process.env.OPENAI_API_KEY;
+    console.log(`[getOpenAIClient] API Key check: exists=${!!apiKey}, length=${apiKey?.length || 0}`);
+
+    if (!apiKey) {
+      throw new Error("OPENAI_API_KEY is not configured");
+    }
+
     openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
+      apiKey: apiKey,
+      timeout: 30000,  // 30秒タイムアウト
+      maxRetries: 2,   // 最大2回リトライ
     });
   }
   return openai;
