@@ -8,6 +8,7 @@
 import UIKit
 import SwiftUI
 import UniformTypeIdentifiers
+import Firebase
 
 class ShareViewController: UIViewController {
     
@@ -15,6 +16,12 @@ class ShareViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        // Firebase初期化（Share Extensionは別プロセスなので必要）
+        if FirebaseApp.app() == nil {
+            FirebaseApp.configure()
+            print("✅ ShareExtension: Firebase initialized")
+        }
         
         // SwiftUIビューをホスト
         let shareView = ShareExtensionView(extensionContext: extensionContext)
