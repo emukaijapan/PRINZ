@@ -1,0 +1,9 @@
+{
+  "auto_load_rules": true,
+  "rules_path": "~/.clinerules/.clinerules",
+  "check_interval": 300,
+  "notifications": {
+    "rule_updates": true,
+    "warnings": true
+  }
+}

@@ -1,0 +1,11 @@
+[plugins]
+auto_load = true
+
+[[plugin]]
+name = "clinerules"
+module = "clinerules_plugin"
+enabled = true
+priority = 100
+
+[hooks]
+task_start = "~/.clinerules/task_init.sh"
