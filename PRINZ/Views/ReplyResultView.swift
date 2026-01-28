@@ -403,42 +403,69 @@ struct ReplyResultView: View {
     private func performOCRAndGenerate() {
         guard let image = image else {
             // 画像がない場合は直接AI生成
-            generateAIReply(with: extractedText.isEmpty ? "メッセージ" : extractedText)
+            generateAIReply(with: extractedText.isEmpty ? "メッセージ" : extractedText, parsedChat: nil)
             return
         }
         
-        // OCR実行
-        OCRService.shared.recognizeText(from: image) { result in
+        // 座標付きOCR実行（話者分離用）
+        OCRService.shared.recognizeTextWithCoordinates(from: image) { result in
             DispatchQueue.main.async {
                 switch result {
-                case .success(let text):
-                    print("📝 OCR Result: \(text.prefix(100))...")
-                    generateAIReply(with: text.isEmpty ? extractedText : text)
+                case .success(let items):
+                    print("📝 OCR Result (with coordinates): \(items.count) items")
+                    for item in items.prefix(5) {
+                        print("  [\(item.isFromPartner ? "相手" : "自分")] x=\(String(format: "%.2f", item.normalizedX)): \(item.text.prefix(30))")
+                    }
+                    
+                    // 座標ベースで解析
+                    let parsedChat = ChatParser.shared.parseWithCoordinates(items)
+                    let partnerMessage = parsedChat.partnerMessagesText.isEmpty
+                        ? parsedChat.rawText
+                        : parsedChat.partnerMessagesText
+                    
+                    generateAIReply(with: partnerMessage, parsedChat: parsedChat)
+                    
                 case .failure(let error):
                     print("❌ OCR Error: \(error)")
-                    // OCR失敗時は入力テキストを使用
-                    generateAIReply(with: extractedText.isEmpty ? "メッセージ" : extractedText)
+                    // フォールバック: 通常のOCR
+                    fallbackToTextOCR()
                 }
             }
         }
     }
     
-    private func generateAIReply(with message: String) {
+    private func fallbackToTextOCR() {
+        guard let image = image else {
+            generateAIReply(with: extractedText.isEmpty ? "メッセージ" : extractedText, parsedChat: nil)
+            return
+        }
+        
+        OCRService.shared.recognizeText(from: image) { result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let text):
+                    let parsedChat = ChatParser.shared.parse(text)
+                    generateAIReply(with: text, parsedChat: parsedChat)
+                case .failure:
+                    generateAIReply(with: extractedText.isEmpty ? "メッセージ" : extractedText, parsedChat: nil)
+                }
+            }
+        }
+    }
+    
+    private func generateAIReply(with message: String, parsedChat: ParsedChat?) {
         // TODO: 設定画面からユーザー情報を取得
         let personalType: PersonalType = .funny  // デフォルト
         let gender: UserGender = .male  // デフォルト
         let ageGroup: UserAgeGroup = .early20s  // デフォルト
         
-        // OCRテキストを解析
-        let parsedChat = ChatParser.shared.parse(message)
-        
         // 相手からのメッセージのみを抽出
-        let partnerMessage = parsedChat.partnerMessagesText.isEmpty 
-            ? message 
-            : parsedChat.partnerMessagesText
+        let partnerMessage = parsedChat?.partnerMessagesText.isEmpty == false
+            ? parsedChat!.partnerMessagesText
+            : message
         
         print("📝 Parsed Chat:")
-        print("  Partner Name: \(parsedChat.partnerName ?? "不明")")
+        print("  Partner Name: \(parsedChat?.partnerName ?? "不明")")
         print("  Partner Messages: \(partnerMessage.prefix(100))...")
         print("  User Message: \(mainMessage.isEmpty ? "なし" : mainMessage)")
         print("  Short Mode: \(isShortMode)")
@@ -452,7 +479,7 @@ struct ReplyResultView: View {
                     gender: gender,
                     ageGroup: ageGroup,
                     relationship: context.displayName,
-                    partnerName: parsedChat.partnerName,
+                    partnerName: parsedChat?.partnerName,
                     userMessage: mainMessage.isEmpty ? nil : mainMessage,
                     isShortMode: isShortMode
                 )

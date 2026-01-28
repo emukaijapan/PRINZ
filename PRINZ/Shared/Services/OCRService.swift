@@ -13,6 +13,18 @@ class OCRService {
     
     private init() {}
     
+    /// OCR結果（座標情報付き）
+    struct OCRTextItem {
+        let text: String
+        let normalizedX: CGFloat  // 0.0 = 左端, 1.0 = 右端（中心のX座標）
+        let normalizedY: CGFloat  // 0.0 = 下端, 1.0 = 上端
+        
+        /// 相手のメッセージかどうか（画面左側）
+        var isFromPartner: Bool {
+            return normalizedX < 0.5
+        }
+    }
+    
     /// 画像からテキストを抽出（日本語対応）
     /// - Parameters:
     ///   - image: OCR対象の画像
@@ -57,6 +69,71 @@ class OCRService {
         request.usesLanguageCorrection = true
         
         // リクエスト実行
+        let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
+        
+        DispatchQueue.global(qos: .userInitiated).async {
+            do {
+                try handler.perform([request])
+            } catch {
+                completion(.failure(error))
+            }
+        }
+    }
+    
+    /// 画像からテキストを抽出（座標情報付き）
+    /// - Parameters:
+    ///   - image: OCR対象の画像
+    ///   - completion: 座標付きテキストアイテムの配列またはエラー
+    func recognizeTextWithCoordinates(from image: UIImage, completion: @escaping (Result<[OCRTextItem], Error>) -> Void) {
+        guard let resizedImage = image.resized(to: 2048),
+              let cgImage = resizedImage.cgImage else {
+            completion(.failure(OCRError.invalidImage))
+            return
+        }
+        
+        let request = VNRecognizeTextRequest { request, error in
+            if let error = error {
+                completion(.failure(error))
+                return
+            }
+            
+            guard let observations = request.results as? [VNRecognizedTextObservation] else {
+                completion(.failure(OCRError.noTextFound))
+                return
+            }
+            
+            // 座標情報付きでテキストを抽出
+            let textItems: [OCRTextItem] = observations.compactMap { observation in
+                guard let text = observation.topCandidates(1).first?.string else {
+                    return nil
+                }
+                
+                // boundingBoxの中心X座標を計算
+                // Vision座標系: 左下が原点、右上が(1,1)
+                let box = observation.boundingBox
+                let centerX = box.midX
+                let centerY = box.midY
+                
+                return OCRTextItem(
+                    text: text,
+                    normalizedX: centerX,
+                    normalizedY: centerY
+                )
+            }
+            
+            if textItems.isEmpty {
+                completion(.failure(OCRError.noTextFound))
+            } else {
+                // Y座標でソート（上から下へ = 1.0→0.0）
+                let sorted = textItems.sorted { $0.normalizedY > $1.normalizedY }
+                completion(.success(sorted))
+            }
+        }
+        
+        request.recognitionLanguages = ["ja-JP", "en-US"]
+        request.recognitionLevel = .accurate
+        request.usesLanguageCorrection = true
+        
         let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
         
         DispatchQueue.global(qos: .userInitiated).async {
