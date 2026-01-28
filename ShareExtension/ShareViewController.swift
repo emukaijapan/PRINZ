@@ -517,14 +517,36 @@ struct ShareExtensionView: View {
     }
     
     private func openMainApp() {
-        if let url = URL(string: "prinz://") {
-            extensionContext?.open(url, completionHandler: { success in
-                print(success ? "✅ Opened main app" : "❌ Failed to open main app")
-            })
-        }
-        // 少し待ってから閉じる
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+        guard let url = URL(string: "prinz://") else {
             closeExtension()
+            return
+        }
+        
+        // extensionContext経由でURLを開く
+        extensionContext?.open(url) { success in
+            DispatchQueue.main.async {
+                if success {
+                    print("✅ Opened main app via extensionContext")
+                } else {
+                    print("❌ Failed to open main app, trying UIApplication...")
+                    // フォールバック: UIApplication経由
+                    self.openURLViaUIApplication(url)
+                }
+                // 遷移後に閉じる
+                self.closeExtension()
+            }
+        }
+    }
+    
+    private func openURLViaUIApplication(_ url: URL) {
+        var responder: UIResponder? = nil
+        
+        // UIApplicationを探す（Share Extensionでは直接アクセスできない）
+        let selector = NSSelectorFromString("openURL:")
+        
+        // UIApplication.shared.open を間接的に呼び出す
+        if let sharedApplication = UIApplication.value(forKeyPath: "sharedApplication") as? UIApplication {
+            sharedApplication.open(url, options: [:], completionHandler: nil)
         }
     }
     

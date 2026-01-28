@@ -22,6 +22,12 @@ struct ReplyResultView: View {
     @State private var isShortMode = true  // 短文モード（デフォルト）
     @State private var copiedReplyId: UUID?
     
+    // BOXインターフェース用ステート
+    @State private var allReplies: [Reply] = []     // 3案すべて保持
+    @State private var currentReplyIndex = 0       // 表示中のインデックス
+    @State private var isTypingComplete = false    // タイピング完了フラグ
+    @State private var showSkeleton = false        // スケルトン表示フラグ
+    
     private let toneTypes: [ReplyType] = [.safe, .chill, .witty]
     
     var body: some View {
@@ -60,8 +66,21 @@ struct ReplyResultView: View {
                         // AI回答セクション
                         aiAnswerSection
                         
-                        // 返信スタック
-                        replyStackView
+                        // 🆕 BOXインターフェース
+                        replyBoxView
+                        
+                        // トーン切り替えボタン
+                        toneButtonsView
+                        
+                        // 返信スタック（過去の回答）
+                        if replyStack.count > 0 {
+                            Text("過去の回答")
+                                .font(.caption)
+                                .foregroundColor(.white.opacity(0.5))
+                                .padding(.top, 20)
+                            
+                            replyStackView
+                        }
                     }
                     
                     Spacer(minLength: 150)
@@ -143,6 +162,88 @@ struct ReplyResultView: View {
             Text("👇")
         }
         .padding(.top, 10)
+    }
+    
+    // MARK: - Reply BOX View (🆕 BOXインターフェース)
+    
+    private var replyBoxView: some View {
+        VStack(spacing: 12) {
+            if showSkeleton {
+                // スケルトンローダー
+                SkeletonLoaderView()
+            } else if let currentReply = allReplies[safe: currentReplyIndex] {
+                // 現在の回答BOX
+                VStack(alignment: .leading, spacing: 10) {
+                    // タイプバッジ
+                    HStack {
+                        replyTypeBadge(for: currentReply.type)
+                        Spacer()
+                        if copiedReplyId == currentReply.id {
+                            Label("コピー済み", systemImage: "checkmark.circle.fill")
+                                .font(.caption)
+                                .foregroundColor(.green)
+                        }
+                    }
+                    
+                    // タイピングアニメーション付きテキスト
+                    TypingTextView(
+                        fullText: currentReply.text,
+                        typingSpeed: 0.025,
+                        onComplete: { isTypingComplete = true }
+                    )
+                    .font(.body)
+                    .foregroundColor(.white)
+                    .padding()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(Color.glassBackground)
+                    )
+                }
+                .padding()
+                .background(
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(Color.glassBackground)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 20)
+                                .stroke(replyTypeColor(for: currentReply.type).opacity(0.5), lineWidth: 2)
+                        )
+                )
+                .onTapGesture {
+                    copyReply(currentReply)
+                }
+            }
+        }
+    }
+    
+    // MARK: - Tone Buttons View
+    
+    private var toneButtonsView: some View {
+        HStack(spacing: 12) {
+            ForEach(Array(toneTypes.enumerated()), id: \.offset) { index, tone in
+                Button(action: { selectTone(at: index) }) {
+                    VStack(spacing: 4) {
+                        Text(toneEmoji(for: tone))
+                            .font(.title2)
+                        Text(tone.displayName)
+                            .font(.caption)
+                            .fontWeight(.medium)
+                    }
+                    .foregroundColor(currentReplyIndex == index ? .black : .white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(currentReplyIndex == index ? replyTypeColor(for: tone) : Color.glassBackground)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(replyTypeColor(for: tone), lineWidth: currentReplyIndex == index ? 0 : 1)
+                    )
+                }
+            }
+        }
+        .padding(.top, 8)
     }
     
     // MARK: - Reply Stack
@@ -245,10 +346,40 @@ struct ReplyResultView: View {
     // MARK: - Computed Properties
     
     private var currentToneEmoji: String {
-        switch toneTypes[currentToneIndex] {
+        toneEmoji(for: toneTypes[currentToneIndex])
+    }
+    
+    private func toneEmoji(for type: ReplyType) -> String {
+        switch type {
         case .safe: return "🛡️"
         case .chill: return "🔥"
         case .witty: return "⚡"
+        }
+    }
+    
+    private func replyTypeColor(for type: ReplyType) -> Color {
+        switch type {
+        case .safe: return .neonCyan
+        case .chill: return .orange
+        case .witty: return .neonPurple
+        }
+    }
+    
+    private func replyTypeBadge(for type: ReplyType) -> some View {
+        HStack(spacing: 4) {
+            Image(systemName: replyTypeIcon(for: type))
+            Text(type.displayName)
+                .font(.caption)
+                .fontWeight(.semibold)
+        }
+        .foregroundColor(replyTypeColor(for: type))
+    }
+    
+    private func replyTypeIcon(for type: ReplyType) -> String {
+        switch type {
+        case .safe: return "shield.fill"
+        case .chill: return "flame.fill"
+        case .witty: return "sparkles"
         }
     }
     
@@ -256,9 +387,17 @@ struct ReplyResultView: View {
     
     private func generateReply() {
         isAnalyzing = true
+        showSkeleton = true
+        isTypingComplete = false
         
         // 画像からOCRでテキストを抽出
         performOCRAndGenerate()
+    }
+    
+    private func selectTone(at index: Int) {
+        guard index != currentReplyIndex else { return }
+        currentReplyIndex = index
+        isTypingComplete = false
     }
     
     private func performOCRAndGenerate() {
@@ -322,12 +461,18 @@ struct ReplyResultView: View {
                     withAnimation {
                         isAnalyzing = false
                         hasGenerated = true
+                        showSkeleton = false
                     }
                     
-                    // 返信をスタックに追加
-                    withAnimation {
-                        replyStack.insert(contentsOf: result.replies, at: 0)
-                    }
+                    // BOXインターフェース用に保持
+                    allReplies = result.replies
+                    currentReplyIndex = 0
+                    isTypingComplete = false
+                    
+                    // 過去の回答としてスタックに追加
+                    // withAnimation {
+                    //     replyStack.insert(contentsOf: result.replies, at: 0)
+                    // }
                     
                     print("✅ Generated \(result.replies.count) replies, remaining: \(result.remainingToday)")
                 }
@@ -366,6 +511,7 @@ struct ReplyResultView: View {
         withAnimation {
             isAnalyzing = false
             hasGenerated = true
+            showSkeleton = false
         }
         
         let currentTone = toneTypes[currentToneIndex]
@@ -375,9 +521,10 @@ struct ReplyResultView: View {
             type: currentTone
         )
         
-        withAnimation {
-            replyStack.insert(contentsOf: replies, at: 0)
-        }
+        // BOXインターフェース用に保持
+        allReplies = replies
+        currentReplyIndex = 0
+        isTypingComplete = false
         
         print("⚠️ Using mock replies as fallback")
     }
@@ -538,5 +685,13 @@ struct ReplyBubbleCard: View {
             extractedText: "今日楽しかったね！また遊ぼう",
             context: .matchStart
         )
+    }
+}
+
+// MARK: - Array Safe Access Extension
+
+extension Collection {
+    subscript(safe index: Index) -> Element? {
+        return indices.contains(index) ? self[index] : nil
     }
 }

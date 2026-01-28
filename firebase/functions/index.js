@@ -286,8 +286,8 @@ function createSystemPrompt(personalType, gender, ageGroup, replyLength = "short
   };
 
   const lengthInstruction = replyLength === "long"
-    ? "長めの返信（3～5文程度）"
-    : "短めの返信（1～3文程度）";
+    ? "長文モード：各返信は3行程度（50〜80文字）で作成すること"
+    : "短文モード：各返信は1行（30文字以内）で作成すること。絶対に30文字を超えないこと";
 
   return `あなたは恋愛戦略のプロフェッショナルであり、優秀なゴーストライターです。
 以下の「ユーザー属性」と「性格設定」を持つ人物になりきって、相手の心を動かす返信を考えてください。
@@ -336,7 +336,12 @@ ${personalDescriptions[personalType] || "自然体でありのまま"}
  */
 function createUserPrompt(message, relationship, userMessage, partnerName) {
   const nameContext = partnerName
-    ? `相手の名前: ${partnerName}\n`
+    ? `相手の名前: ${partnerName}
+【名前の使用ルール】
+- 名前（${partnerName}）は文末の同意や誘い出しの呼びかけにのみ使用
+- 頻度は3回に1回程度に抑えること
+- 名前を起点にした展開や検索的な思考は禁止
+`
     : "";
 
   const intentContext = userMessage
