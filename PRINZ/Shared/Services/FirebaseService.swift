@@ -34,7 +34,7 @@ class FirebaseService {
         personalType: PersonalType,
         gender: UserGender,
         ageGroup: UserAgeGroup,
-        relationship: String,
+        relationship: String? = nil,  // オプショナルに変更
         partnerName: String? = nil,
         userMessage: String? = nil,
         isShortMode: Bool = true
@@ -45,7 +45,7 @@ class FirebaseService {
             "personalType": personalType.rawValue,
             "gender": gender.rawValue,
             "ageGroup": ageGroup.rawValue,
-            "relationship": relationship,
+            "relationship": relationship ?? "マッチング中",  // デフォルト値
             "replyLength": isShortMode ? "short" : "long"
         ]
         
@@ -80,7 +80,7 @@ class FirebaseService {
                 return Reply(
                     text: text,
                     type: replyType,
-                    context: Context.from(relationship: relationship),
+                    context: Context.from(relationship: relationship ?? "マッチング中"),
                     reasoning: reasoning
                 )
             }
