@@ -10,6 +10,47 @@ import SwiftUI
 import UniformTypeIdentifiers
 import Firebase
 
+// MARK: - Share Extension Log Manager
+
+/// Share Extension用の永続化ログ（デバッグ用）
+class ShareExtensionLogger {
+    static let shared = ShareExtensionLogger()
+    private let logKey = "com.prinz.shareExtension.logs"
+    
+    private init() {}
+    
+    func log(_ message: String, file: String = #file, function: String = #function, line: Int = #line) {
+        let timestamp = ISO8601DateFormatter().string(from: Date())
+        let fileName = (file as NSString).lastPathComponent
+        let logEntry = "[\(timestamp)] [\(fileName):\(line)] \(function): \(message)"
+        
+        // コンソール出力
+        print("📱 ShareExt: \(logEntry)")
+        
+        // UserDefaults（AppGroup）に永続化
+        if let defaults = UserDefaults(suiteName: "group.com.prinz.shared") {
+            var logs = defaults.stringArray(forKey: logKey) ?? []
+            logs.append(logEntry)
+            // 最新100件のみ保持
+            if logs.count > 100 {
+                logs = Array(logs.suffix(100))
+            }
+            defaults.set(logs, forKey: logKey)
+            defaults.synchronize()
+        }
+    }
+    
+    func getLogs() -> [String] {
+        return UserDefaults(suiteName: "group.com.prinz.shared")?.stringArray(forKey: logKey) ?? []
+    }
+    
+    func clearLogs() {
+        UserDefaults(suiteName: "group.com.prinz.shared")?.removeObject(forKey: logKey)
+    }
+}
+
+// MARK: - ShareViewController
+
 class ShareViewController: UIViewController {
     
     private var hostingController: UIHostingController<ShareExtensionView>?
@@ -17,10 +58,12 @@ class ShareViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        ShareExtensionLogger.shared.log("viewDidLoad started")
+        
         // Firebase初期化（Share Extensionは別プロセスなので必要）
         if FirebaseApp.app() == nil {
             FirebaseApp.configure()
-            print("✅ ShareExtension: Firebase initialized")
+            ShareExtensionLogger.shared.log("Firebase initialized")
         }
         
         // SwiftUIビューをホスト
@@ -37,6 +80,8 @@ class ShareViewController: UIViewController {
         
         // 背景を透明に
         view.backgroundColor = .clear
+        
+        ShareExtensionLogger.shared.log("viewDidLoad completed")
     }
 }
 
@@ -47,15 +92,14 @@ struct ShareExtensionView: View {
     
     @State private var currentStep: ShareStep = .loading
     @State private var loadedImage: UIImage?
-    @State private var selectedContext: Context?
+    @State private var selectedTone: ReplyType?  // 安牌・攻め・変化球
     @State private var generatedReplies: [Reply] = []
     @State private var errorMessage: String?
     @State private var isGenerating = false
-    @State private var userMessage: String = ""  // ユーザー入力メッセージ
     
     enum ShareStep {
         case loading
-        case inputAndContext  // 入力+状況選択画面
+        case toneSelection   // 気分選択画面（安牌・攻め・変化球）
         case generating
         case results
         case error
@@ -76,8 +120,8 @@ struct ShareExtensionView: View {
                         switch currentStep {
                         case .loading:
                             loadingView
-                        case .inputAndContext:
-                            inputAndContextView
+                        case .toneSelection:
+                            toneSelectionView
                         case .generating:
                             generatingView
                         case .results:
@@ -91,6 +135,7 @@ struct ShareExtensionView: View {
         }
         .preferredColorScheme(.dark)
         .onAppear {
+            ShareExtensionLogger.shared.log("ShareExtensionView appeared")
             loadSharedImage()
         }
     }
@@ -146,128 +191,100 @@ struct ShareExtensionView: View {
         .padding(.vertical, 40)
     }
     
-    // MARK: - Input and Context View
+    // MARK: - Tone Selection View (新UI：安牌・攻め・変化球)
     
-    private var inputAndContextView: some View {
-        VStack(spacing: 20) {
-            // 上部スペース（画面を上に伸ばす）
-            Spacer()
-                .frame(height: 40)
-            
-            // 画像プレビュー（大きめに）
+    private var toneSelectionView: some View {
+        VStack(spacing: 24) {
+            // 画像プレビュー
             if let image = loadedImage {
                 Image(uiImage: image)
                     .resizable()
                     .scaledToFit()
-                    .frame(maxHeight: 180)  // 120 → 180 (+50%)
-                    .cornerRadius(12)
+                    .frame(maxHeight: 200)
+                    .cornerRadius(16)
                     .overlay(
-                        RoundedRectangle(cornerRadius: 12)
+                        RoundedRectangle(cornerRadius: 16)
                             .stroke(Color.glassBorder, lineWidth: 1)
                     )
+                    .shadow(color: .black.opacity(0.3), radius: 10)
             }
             
-            // メッセージ入力
-            VStack(alignment: .leading, spacing: 8) {
-                Text("PRINZに任せたい内容")
-                    .font(.subheadline)
-                    .foregroundColor(.white.opacity(0.7))
-                
-                TextField("例: 次のデートに誘いたい", text: $userMessage)
-                    .textFieldStyle(.plain)
+            // タイトル
+            VStack(spacing: 8) {
+                Text("どんな返信にする？")
+                    .font(.title3)
+                    .fontWeight(.bold)
                     .foregroundColor(.white)
-                    .padding()
-                    .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(Color.glassBackground)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .stroke(Color.glassBorder, lineWidth: 1)
-                            )
-                    )
-            }
-            
-            // 状況選択
-            VStack(alignment: .leading, spacing: 10) {
-                Text("状況を選択")
-                    .font(.subheadline)
-                    .foregroundColor(.white.opacity(0.7))
                 
-                // 2列グリッド
-                LazyVGrid(columns: [
-                    GridItem(.flexible()),
-                    GridItem(.flexible())
-                ], spacing: 10) {
-                    ForEach(Context.allCases, id: \.self) { context in
-                        Button(action: {
-                            selectedContext = context
-                        }) {
-                            HStack(spacing: 6) {
-                                Text(context.emoji)
-                                    .font(.subheadline)
-                                Text(context.displayName)
-                                    .font(.subheadline)
-                                    .fontWeight(.medium)
-                            }
-                            .foregroundColor(selectedContext == context ? .black : .white)
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 10)
-                            .frame(maxWidth: .infinity)
-                            .background(
-                                Capsule()
-                                    .fill(selectedContext == context ? Color.neonCyan : Color.glassBackground)
-                            )
-                            .overlay(
-                                Capsule()
-                                    .stroke(selectedContext == context ? Color.neonCyan : Color.glassBorder, lineWidth: 1)
-                            )
-                        }
-                    }
-                }
+                Text("タップで選択 → AI生成開始")
+                    .font(.caption)
+                    .foregroundColor(.white.opacity(0.6))
             }
             
-            // 生成ボタン
-            Button(action: startGeneration) {
-                HStack {
-                    Image(systemName: "sparkles")
-                    Text("回答を生成")
-                        .fontWeight(.bold)
+            // 3ボタン選択（安牌・攻め・変化球）
+            VStack(spacing: 14) {
+                // 安牌
+                ToneButton(
+                    tone: .safe,
+                    title: "安牌",
+                    subtitle: "無難で失敗しない返信",
+                    icon: "shield.fill",
+                    color: .neonCyan,
+                    isSelected: selectedTone == .safe
+                ) {
+                    selectToneAndGenerate(.safe)
                 }
-                .foregroundColor(.black)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
-                .background(
-                    LinearGradient(
-                        colors: [.neonCyan, .neonPurple],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                )
-                .cornerRadius(25)
-                .opacity(selectedContext == nil ? 0.5 : 1)
+                
+                // 攻め
+                ToneButton(
+                    tone: .chill,
+                    title: "攻め",
+                    subtitle: "距離を縮める積極的な返信",
+                    icon: "flame.fill",
+                    color: .orange,
+                    isSelected: selectedTone == .chill
+                ) {
+                    selectToneAndGenerate(.chill)
+                }
+                
+                // 変化球
+                ToneButton(
+                    tone: .witty,
+                    title: "変化球",
+                    subtitle: "予想を裏切るユニークな返信",
+                    icon: "sparkles",
+                    color: .neonPurple,
+                    isSelected: selectedTone == .witty
+                ) {
+                    selectToneAndGenerate(.witty)
+                }
             }
-            .disabled(selectedContext == nil)
+            .padding(.horizontal)
             
-            Spacer()
-                .frame(height: 20)
+            Spacer().frame(height: 20)
         }
         .padding(.horizontal, 20)
+        .padding(.top, 20)
     }
     
     // MARK: - Generating View
     
     private var generatingView: some View {
         VStack(spacing: 24) {
-            ScanningAnimationView()
+            // スケルトンローダー
+            SkeletonLoaderView()
             
             Text("AI回答を生成中...")
                 .font(.headline)
                 .foregroundColor(.white)
             
-            Text("少々お待ちください")
-                .font(.subheadline)
-                .foregroundColor(.white.opacity(0.6))
+            if let tone = selectedTone {
+                Text("「\(tone.displayName)」の返信を作成しています")
+                    .font(.subheadline)
+                    .foregroundColor(.white.opacity(0.6))
+            }
         }
+        .padding(.vertical, 40)
     }
     
     // MARK: - Results View
@@ -291,16 +308,35 @@ struct ShareExtensionView: View {
             }
             
             // 返信リスト
-            ScrollView {
-                VStack(spacing: 12) {
-                    ForEach(generatedReplies) { reply in
-                        ShareReplyCard(reply: reply) {
-                            copyReply(reply)
-                        }
+            VStack(spacing: 12) {
+                ForEach(generatedReplies) { reply in
+                    ShareReplyCard(reply: reply) {
+                        copyReply(reply)
                     }
                 }
-                .padding(.horizontal)
             }
+            .padding(.horizontal)
+            
+            // 別のトーンで生成ボタン
+            Button(action: { currentStep = .toneSelection }) {
+                HStack {
+                    Image(systemName: "arrow.triangle.2.circlepath")
+                    Text("別のトーンで生成")
+                        .fontWeight(.medium)
+                }
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+                .background(
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(Color.glassBackground)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 20)
+                                .stroke(Color.neonPurple, lineWidth: 1)
+                        )
+                )
+            }
+            .padding(.horizontal)
             
             // メインアプリで続けるボタン
             Button(action: openMainApp) {
@@ -371,19 +407,27 @@ struct ShareExtensionView: View {
     // MARK: - Actions
     
     private func loadSharedImage() {
+        ShareExtensionLogger.shared.log("loadSharedImage started")
+        
         guard let extensionContext = extensionContext,
               let item = extensionContext.inputItems.first as? NSExtensionItem,
               let attachments = item.attachments else {
+            ShareExtensionLogger.shared.log("No attachments found")
             showError("画像が見つかりませんでした")
             return
         }
         
+        ShareExtensionLogger.shared.log("Found \(attachments.count) attachments")
+        
         // 画像を探す
         for provider in attachments {
             if provider.hasItemConformingToTypeIdentifier(UTType.image.identifier) {
+                ShareExtensionLogger.shared.log("Loading image from provider")
+                
                 provider.loadItem(forTypeIdentifier: UTType.image.identifier, options: nil) { (item, error) in
                     DispatchQueue.main.async {
                         if let error = error {
+                            ShareExtensionLogger.shared.log("Image load error: \(error.localizedDescription)")
                             showError("画像の読み込みに失敗しました: \(error.localizedDescription)")
                             return
                         }
@@ -400,8 +444,10 @@ struct ShareExtensionView: View {
                         
                         if let image = image {
                             loadedImage = image
-                            currentStep = .inputAndContext
+                            currentStep = .toneSelection
+                            ShareExtensionLogger.shared.log("Image loaded successfully, transitioning to toneSelection")
                         } else {
+                            ShareExtensionLogger.shared.log("Image format invalid")
                             showError("画像の形式が不正です")
                         }
                     }
@@ -410,10 +456,14 @@ struct ShareExtensionView: View {
             }
         }
         
+        ShareExtensionLogger.shared.log("No image found in attachments")
         showError("画像が見つかりませんでした")
     }
     
-    private func startGeneration() {
+    private func selectToneAndGenerate(_ tone: ReplyType) {
+        ShareExtensionLogger.shared.log("selectToneAndGenerate: \(tone.displayName)")
+        
+        selectedTone = tone
         currentStep = .generating
         
         // OCR実行 → AI生成
@@ -422,40 +472,63 @@ struct ShareExtensionView: View {
     
     private func performOCRAndGenerate() {
         guard let image = loadedImage else {
+            ShareExtensionLogger.shared.log("performOCRAndGenerate: No image")
             showError("画像が見つかりませんでした")
             return
         }
         
-        // OCR実行
+        ShareExtensionLogger.shared.log("Starting OCR with coordinates")
+        
+        // 座標付きOCR実行
+        OCRService.shared.recognizeTextWithCoordinates(from: image) { result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let items):
+                    ShareExtensionLogger.shared.log("OCR success: \(items.count) items")
+                    
+                    // 座標ベースで解析
+                    let parsedChat = ChatParser.shared.parseWithCoordinates(items)
+                    ShareExtensionLogger.shared.log("Parsed: partner=\(parsedChat.partnerName ?? "nil"), messages=\(parsedChat.messages.count)")
+                    
+                    generateAIReplies(with: parsedChat)
+                    
+                case .failure(let error):
+                    ShareExtensionLogger.shared.log("OCR error: \(error.localizedDescription)")
+                    // フォールバック: 通常のOCR
+                    fallbackToTextOCR()
+                }
+            }
+        }
+    }
+    
+    private func fallbackToTextOCR() {
+        guard let image = loadedImage else {
+            fallbackToMockReplies()
+            return
+        }
+        
         OCRService.shared.recognizeText(from: image) { result in
             DispatchQueue.main.async {
                 switch result {
                 case .success(let text):
-                    print("📝 ShareExtension OCR: \(text.prefix(100))...")
-                    generateAIReplies(with: text)
-                case .failure(let error):
-                    print("❌ ShareExtension OCR Error: \(error)")
-                    // OCR失敗時はモック返信を使用
+                    let parsedChat = ChatParser.shared.parse(text)
+                    generateAIReplies(with: parsedChat)
+                case .failure:
                     fallbackToMockReplies()
                 }
             }
         }
     }
     
-    private func generateAIReplies(with message: String) {
-        guard let context = selectedContext else {
-            fallbackToMockReplies()
-            return
-        }
+    private func generateAIReplies(with parsedChat: ParsedChat) {
+        let partnerMessage = parsedChat.partnerMessagesText.isEmpty 
+            ? parsedChat.rawText 
+            : parsedChat.partnerMessagesText
         
-        // OCRテキストを解析
-        let parsedChat = ChatParser.shared.parse(message)
-        let partnerMessage = parsedChat.partnerMessagesText.isEmpty ? message : parsedChat.partnerMessagesText
+        // userMessageの決定: OCRから抽出した自分の直近発言を使用
+        let userMessageToSend = parsedChat.lastUserMessage.map { "自分の最後の発言: \($0)" }
         
-        print("📝 ShareExtension Parsed Chat:")
-        print("  Partner Name: \(parsedChat.partnerName ?? "不明")")
-        print("  Partner Messages: \(partnerMessage.prefix(100))...")
-        print("  User Message: \(userMessage.isEmpty ? "なし" : userMessage)")
+        ShareExtensionLogger.shared.log("Generating AI replies: partner=\(partnerMessage.prefix(50))...")
         
         Task {
             do {
@@ -465,25 +538,36 @@ struct ShareExtensionView: View {
                     personalType: .funny,
                     gender: .male,
                     ageGroup: .early20s,
-                    relationship: context.displayName,
+                    relationship: nil,  // シチュエーション削除
                     partnerName: parsedChat.partnerName,
-                    userMessage: userMessage.isEmpty ? nil : userMessage,
+                    userMessage: userMessageToSend,
                     isShortMode: true
                 )
                 
                 await MainActor.run {
-                    generatedReplies = result.replies
+                    // 選択されたトーンの返信のみ表示
+                    if let tone = selectedTone {
+                        generatedReplies = result.replies.filter { $0.type == tone }
+                        // 他のトーンも含める（参考用）
+                        if generatedReplies.isEmpty {
+                            generatedReplies = result.replies
+                        }
+                    } else {
+                        generatedReplies = result.replies
+                    }
                     
                     // 履歴に保存
-                    DataManager.shared.saveReplies(result.replies)
+                    ShareExtensionLogger.shared.log("Saving replies to DataManager")
+                    DataManager.shared.saveReplies(generatedReplies)
+                    ShareExtensionLogger.shared.log("Replies saved successfully")
                     
                     currentStep = .results
-                    print("✅ ShareExtension: Generated \(result.replies.count) replies")
+                    ShareExtensionLogger.shared.log("Transitioned to results: \(generatedReplies.count) replies")
                 }
                 
             } catch {
                 await MainActor.run {
-                    print("❌ ShareExtension AI Error: \(error)")
+                    ShareExtensionLogger.shared.log("AI generation error: \(error)")
                     fallbackToMockReplies()
                 }
             }
@@ -491,68 +575,136 @@ struct ShareExtensionView: View {
     }
     
     private func fallbackToMockReplies() {
-        guard let context = selectedContext else {
-            showError("状況が選択されていません")
-            return
-        }
+        ShareExtensionLogger.shared.log("Using mock replies")
         
         let replies = ReplyGenerator.shared.generateReplies(
             for: "メッセージ",
-            context: context
+            context: .matchStart,
+            type: selectedTone ?? .safe
         )
         
         generatedReplies = replies
         DataManager.shared.saveReplies(replies)
         currentStep = .results
-        print("⚠️ ShareExtension: Using mock replies")
     }
     
     private func copyReply(_ reply: Reply) {
         UIPasteboard.general.string = reply.text
-        print("📋 Copied: \(reply.text.prefix(50))...")
+        ShareExtensionLogger.shared.log("Copied reply: \(reply.text.prefix(30))...")
     }
     
     private func closeExtension() {
+        ShareExtensionLogger.shared.log("closeExtension called")
         extensionContext?.completeRequest(returningItems: nil, completionHandler: nil)
     }
     
     private func openMainApp() {
-        guard let url = URL(string: "prinz://") else {
+        let urlScheme = "prinz://"
+        ShareExtensionLogger.shared.log("openMainApp: Attempting to open URL scheme '\(urlScheme)'")
+        
+        guard let url = URL(string: urlScheme) else {
+            ShareExtensionLogger.shared.log("openMainApp: Failed to create URL from scheme")
             closeExtension()
             return
         }
         
+        ShareExtensionLogger.shared.log("openMainApp: URL created successfully: \(url.absoluteString)")
+        ShareExtensionLogger.shared.log("openMainApp: Calling extensionContext?.open()")
+        
         // extensionContext経由でURLを開く
         extensionContext?.open(url) { success in
+            ShareExtensionLogger.shared.log("openMainApp: completionHandler called with success=\(success)")
+            
             DispatchQueue.main.async {
                 if success {
-                    print("✅ Opened main app via extensionContext")
+                    ShareExtensionLogger.shared.log("openMainApp: Successfully opened main app")
                 } else {
-                    print("❌ Failed to open main app, trying UIApplication...")
-                    // フォールバック: UIApplication経由
+                    ShareExtensionLogger.shared.log("openMainApp: Failed to open via extensionContext, trying UIApplication fallback")
                     self.openURLViaUIApplication(url)
                 }
+                
                 // 遷移後に閉じる
+                ShareExtensionLogger.shared.log("openMainApp: Calling closeExtension")
                 self.closeExtension()
             }
         }
     }
     
     private func openURLViaUIApplication(_ url: URL) {
-        var responder: UIResponder? = nil
-        
-        // UIApplicationを探す（Share Extensionでは直接アクセスできない）
-        let selector = NSSelectorFromString("openURL:")
+        ShareExtensionLogger.shared.log("openURLViaUIApplication: Attempting UIApplication fallback for \(url.absoluteString)")
         
         // UIApplication.shared.open を間接的に呼び出す
         if let sharedApplication = UIApplication.value(forKeyPath: "sharedApplication") as? UIApplication {
-            sharedApplication.open(url, options: [:], completionHandler: nil)
+            ShareExtensionLogger.shared.log("openURLViaUIApplication: Got sharedApplication, calling open()")
+            sharedApplication.open(url, options: [:]) { success in
+                ShareExtensionLogger.shared.log("openURLViaUIApplication: UIApplication.open completed with success=\(success)")
+            }
+        } else {
+            ShareExtensionLogger.shared.log("openURLViaUIApplication: Failed to get sharedApplication")
         }
     }
     
     private func showError(_ message: String) {
+        ShareExtensionLogger.shared.log("showError: \(message)")
         errorMessage = message
         currentStep = .error
+    }
+}
+
+// MARK: - Tone Button Component
+
+struct ToneButton: View {
+    let tone: ReplyType
+    let title: String
+    let subtitle: String
+    let icon: String
+    let color: Color
+    let isSelected: Bool
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 16) {
+                // アイコン
+                Image(systemName: icon)
+                    .font(.title2)
+                    .foregroundColor(color)
+                    .frame(width: 44, height: 44)
+                    .background(
+                        Circle()
+                            .fill(color.opacity(0.15))
+                    )
+                
+                // テキスト
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title)
+                        .font(.headline)
+                        .fontWeight(.bold)
+                        .foregroundColor(.white)
+                    
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundColor(.white.opacity(0.6))
+                }
+                
+                Spacer()
+                
+                // 矢印
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundColor(.white.opacity(0.4))
+            }
+            .padding()
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color.glassBackground)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(isSelected ? color : Color.glassBorder, lineWidth: isSelected ? 2 : 1)
+                    )
+            )
+        }
+        .buttonStyle(PlainButtonStyle())
     }
 }
 

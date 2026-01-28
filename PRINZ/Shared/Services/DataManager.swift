@@ -102,20 +102,37 @@ class DataManager {
     // MARK: - Private Save
     
     private func saveHistory(_ history: [Reply]) {
+        let timestamp = ISO8601DateFormatter().string(from: Date())
+        print("📝 [\(timestamp)] DataManager.saveHistory: Starting save of \(history.count) replies")
+        
         guard let fileURL = historyFileURL else {
-            print("❌ App Group container not found")
+            print("❌ [\(timestamp)] DataManager.saveHistory: App Group container not found")
             return
         }
+        
+        print("📁 [\(timestamp)] DataManager.saveHistory: Target file: \(fileURL.path)")
         
         do {
             let encoder = JSONEncoder()
             encoder.dateEncodingStrategy = .iso8601
             encoder.outputFormatting = .prettyPrinted
+            
+            print("🔄 [\(timestamp)] DataManager.saveHistory: Encoding data...")
             let data = try encoder.encode(history)
+            
+            print("💾 [\(timestamp)] DataManager.saveHistory: Writing \(data.count) bytes to file...")
             try data.write(to: fileURL)
-            print("✅ Saved \(history.count) replies to history (max: \(maxHistoryCount))")
+            
+            print("✅ [\(timestamp)] DataManager.saveHistory: SUCCESS - Saved \(history.count) replies")
+            
+            // 書き込み確認
+            if FileManager.default.fileExists(atPath: fileURL.path) {
+                let attrs = try? FileManager.default.attributesOfItem(atPath: fileURL.path)
+                let size = attrs?[.size] as? Int ?? 0
+                print("✅ [\(timestamp)] DataManager.saveHistory: File verified - Size: \(size) bytes")
+            }
         } catch {
-            print("❌ Failed to save history: \(error)")
+            print("❌ [\(timestamp)] DataManager.saveHistory: FAILED - \(error.localizedDescription)")
         }
     }
     
