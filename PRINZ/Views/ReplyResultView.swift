@@ -467,8 +467,19 @@ struct ReplyResultView: View {
         print("📝 Parsed Chat:")
         print("  Partner Name: \(parsedChat?.partnerName ?? "不明")")
         print("  Partner Messages: \(partnerMessage.prefix(100))...")
-        print("  User Message: \(mainMessage.isEmpty ? "なし" : mainMessage)")
+        print("  User Message (input): \(mainMessage.isEmpty ? "なし" : mainMessage)")
+        print("  Last User Message (OCR): \(parsedChat?.lastUserMessage ?? "なし")")
         print("  Short Mode: \(isShortMode)")
+        
+        // userMessageの決定: 入力欄 > OCRから抽出した自分の直近発言
+        let userMessageToSend: String?
+        if !mainMessage.isEmpty {
+            userMessageToSend = mainMessage
+        } else if let lastUserMsg = parsedChat?.lastUserMessage {
+            userMessageToSend = "自分の最後の発言: \(lastUserMsg)"
+        } else {
+            userMessageToSend = nil
+        }
         
         Task {
             do {
@@ -480,7 +491,7 @@ struct ReplyResultView: View {
                     ageGroup: ageGroup,
                     relationship: context.displayName,
                     partnerName: parsedChat?.partnerName,
-                    userMessage: mainMessage.isEmpty ? nil : mainMessage,
+                    userMessage: userMessageToSend,
                     isShortMode: isShortMode
                 )
                 
