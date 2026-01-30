@@ -359,7 +359,7 @@ struct ReplyResultView: View {
             do {
                 let result = try await FirebaseService.shared.generateReplies(
                     message: partnerMessage,
-                    personalType: selectedTone.toPersonalType,  // 選択されたトーンに対応
+                    personalType: .funny,  // 固定（サーバー側で3カテゴリ生成）
                     gender: .male,
                     ageGroup: .early20s,
                     relationship: context.displayName,
