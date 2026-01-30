@@ -152,95 +152,97 @@ struct ReplyResultView: View {
             Text("PRINZのAI回答")
                 .font(.headline)
                 .fontWeight(.bold)
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: [.neonPurple, .neonCyan],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                )
+                .foregroundColor(.white)
             Text("👇")
         }
         .padding(.top, 10)
     }
     
-    // MARK: - Reply BOX View (🆕 BOXインターフェース)
+    // MARK: - Reply BOX View (RIZZスタイル: 1件表示)
     
     private var replyBoxView: some View {
         VStack(spacing: 12) {
             if showSkeleton {
-                // スケルトンローダー
                 SkeletonLoaderView()
             } else if let currentReply = allReplies[safe: currentReplyIndex] {
-                // 現在の回答BOX
-                VStack(alignment: .leading, spacing: 10) {
-                    // タイプバッジ
+                VStack(spacing: 12) {
+                    // 上部: 削除/コピーボタン
                     HStack {
-                        replyTypeBadge(for: currentReply.type)
+                        Button(action: { deleteCurrentReply() }) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "trash")
+                                Text("削除")
+                            }
+                            .font(.caption)
+                            .foregroundColor(.white.opacity(0.6))
+                        }
+                        
                         Spacer()
-                        if copiedReplyId == currentReply.id {
-                            Label("コピー済み", systemImage: "checkmark.circle.fill")
-                                .font(.caption)
-                                .foregroundColor(.green)
+                        
+                        Button(action: { copyReply(currentReply) }) {
+                            HStack(spacing: 4) {
+                                Text("コピー")
+                                Image(systemName: "doc.on.doc")
+                            }
+                            .font(.caption)
+                            .foregroundColor(copiedReplyId == currentReply.id ? .green : .white.opacity(0.6))
                         }
                     }
                     
-                    // タイピングアニメーション付きテキスト
-                    TypingTextView(
-                        fullText: currentReply.text,
-                        typingSpeed: 0.025,
-                        onComplete: { isTypingComplete = true }
-                    )
-                    .font(.body)
-                    .foregroundColor(.white)
-                    .padding()
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(
-                        RoundedRectangle(cornerRadius: 16)
-                            .fill(Color.glassBackground)
-                    )
-                }
-                .padding()
-                .background(
-                    RoundedRectangle(cornerRadius: 20)
-                        .fill(Color.glassBackground)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 20)
-                                .stroke(replyTypeColor(for: currentReply.type).opacity(0.5), lineWidth: 2)
+                    // 返信テキスト（シンプルな白い吹き出し）
+                    Text(currentReply.text)
+                        .font(.body)
+                        .foregroundColor(.primary)
+                        .padding()
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(Color(.systemGray6))
                         )
-                )
-                .onTapGesture {
-                    copyReply(currentReply)
                 }
             }
         }
     }
     
-    // MARK: - Tone Buttons View
+    // MARK: - Customization Section (RIZZスタイル: 2グループタグ)
     
     private var toneButtonsView: some View {
-        HStack(spacing: 12) {
-            ForEach(Array(toneTypes.enumerated()), id: \.offset) { index, tone in
-                Button(action: { selectTone(at: index) }) {
-                    VStack(spacing: 4) {
-                        Text(toneEmoji(for: tone))
-                            .font(.title2)
-                        Text(tone.displayName)
-                            .font(.caption)
-                            .fontWeight(.medium)
+        VStack(alignment: .leading, spacing: 12) {
+            Text("似たPRINZを、でももっと...")
+                .font(.subheadline)
+                .foregroundColor(.white.opacity(0.8))
+            
+            // グループ1: トーン選択
+            HStack(spacing: 8) {
+                ForEach(toneTypes, id: \.self) { tone in
+                    MainTagButton(
+                        title: tone.displayName,
+                        isSelected: toneTypes[currentToneIndex] == tone
+                    ) {
+                        if let index = toneTypes.firstIndex(of: tone) {
+                            currentToneIndex = index
+                        }
                     }
-                    .foregroundColor(currentReplyIndex == index ? .black : .white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(currentReplyIndex == index ? replyTypeColor(for: tone) : Color.glassBackground)
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(replyTypeColor(for: tone), lineWidth: currentReplyIndex == index ? 0 : 1)
-                    )
                 }
+            }
+            
+            // グループ2: 長さ選択
+            HStack(spacing: 8) {
+                MainTagButton(
+                    title: "短い",
+                    isSelected: isShortMode
+                ) {
+                    isShortMode = true
+                }
+                
+                MainTagButton(
+                    title: "長い",
+                    isSelected: !isShortMode
+                ) {
+                    isShortMode = false
+                }
+                
+                Spacer()
             }
         }
         .padding(.top, 8)
@@ -567,6 +569,17 @@ struct ReplyResultView: View {
         print("⚠️ Using mock replies as fallback")
     }
     
+    private func deleteCurrentReply() {
+        guard allReplies.indices.contains(currentReplyIndex) else { return }
+        allReplies.remove(at: currentReplyIndex)
+        if currentReplyIndex >= allReplies.count && currentReplyIndex > 0 {
+            currentReplyIndex -= 1
+        }
+        if allReplies.isEmpty {
+            hasGenerated = false
+        }
+    }
+    
     private func cycleNextTone() {
         currentToneIndex = (currentToneIndex + 1) % toneTypes.count
     }
@@ -723,6 +736,34 @@ struct ReplyBubbleCard: View {
             extractedText: "今日楽しかったね！また遊ぼう",
             context: .matchStart
         )
+    }
+}
+
+// MARK: - Main Tag Button Component (RIZZスタイル)
+
+struct MainTagButton: View {
+    let title: String
+    let isSelected: Bool
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            Text(title)
+                .font(.subheadline)
+                .fontWeight(.medium)
+                .foregroundColor(isSelected ? .white : .primary)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .background(
+                    Capsule()
+                        .fill(isSelected ? Color.black : Color(.systemGray6))
+                )
+                .overlay(
+                    Capsule()
+                        .stroke(isSelected ? Color.clear : Color(.systemGray4), lineWidth: 1)
+                )
+        }
+        .buttonStyle(PlainButtonStyle())
     }
 }
 
