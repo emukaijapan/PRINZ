@@ -23,6 +23,9 @@ struct ReplyResultView: View {
     @State private var displayedTexts: [UUID: String] = [:]
     @State private var animationTimers: [UUID: Timer] = [:]
     
+    // BOX順次出現用
+    @State private var visibleBoxCount = 0
+    
     // カスタマイズ用
     @State private var selectedTone: ReplyType = .safe
     @State private var isShortMode = true
@@ -112,15 +115,37 @@ struct ReplyResultView: View {
         )
     }
     
-    // MARK: - Replies List (RIZZスタイル: 3件縦リスト)
+    // MARK: - Replies List (BOX順次出現 + タイピング)
     
     private var repliesListView: some View {
         VStack(spacing: 12) {
-            ForEach(allReplies) { reply in
-                replyRow(reply)
-                    .onAppear {
-                        startTypingAnimation(for: reply)
-                    }
+            ForEach(Array(allReplies.enumerated()), id: \.element.id) { index, reply in
+                if index < visibleBoxCount {
+                    replyRow(reply)
+                        .transition(.asymmetric(
+                            insertion: .opacity.combined(with: .move(edge: .top)),
+                            removal: .opacity
+                        ))
+                        .onAppear {
+                            startTypingAnimation(for: reply)
+                        }
+                }
+            }
+        }
+        .onAppear {
+            startSequentialBoxAppearance()
+        }
+    }
+    
+    /// BOXを上から順番に出現させる
+    private func startSequentialBoxAppearance() {
+        visibleBoxCount = 0
+        
+        for i in 0..<allReplies.count {
+            DispatchQueue.main.asyncAfter(deadline: .now() + Double(i) * 0.5) {
+                withAnimation(.easeOut(duration: 0.3)) {
+                    visibleBoxCount = i + 1
+                }
             }
         }
     }

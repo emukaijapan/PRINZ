@@ -104,6 +104,9 @@ struct ShareExtensionView: View {
     @State private var displayedTexts: [UUID: String] = [:]
     @State private var animationTimers: [UUID: Timer] = [:]
     
+    // BOX順次出現用
+    @State private var visibleBoxCount = 0
+    
     enum ShareStep {
         case loading
         case toneSelection   // 気分選択画面（安牌・攻め・変化球）
@@ -310,9 +313,15 @@ struct ShareExtensionView: View {
                 .padding(.horizontal)
                 .padding(.top, 8)
                 
-                // 3件リスト表示
-                ForEach(generatedReplies) { reply in
-                    replyRowView(reply: reply)
+                // BOX順次出現リスト
+                ForEach(Array(generatedReplies.enumerated()), id: \.element.id) { index, reply in
+                    if index < visibleBoxCount {
+                        replyRowView(reply: reply)
+                            .transition(.asymmetric(
+                                insertion: .opacity.combined(with: .move(edge: .top)),
+                                removal: .opacity
+                            ))
+                    }
                 }
                 
                 // カスタマイズセクション
@@ -383,6 +392,22 @@ struct ShareExtensionView: View {
                 .padding(.top, 8)
             }
             .padding(.vertical)
+        }
+        .onAppear {
+            startSequentialBoxAppearance()
+        }
+    }
+    
+    /// BOXを上から順番に出現させる
+    private func startSequentialBoxAppearance() {
+        visibleBoxCount = 0
+        
+        for i in 0..<generatedReplies.count {
+            DispatchQueue.main.asyncAfter(deadline: .now() + Double(i) * 0.5) {
+                withAnimation(.easeOut(duration: 0.3)) {
+                    visibleBoxCount = i + 1
+                }
+            }
         }
     }
     
