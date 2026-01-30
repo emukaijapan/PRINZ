@@ -100,6 +100,10 @@ struct ShareExtensionView: View {
     @State private var isGenerating = false
     @State private var isCopied = false
     
+    // タイピングアニメーション用
+    @State private var displayedTexts: [UUID: String] = [:]
+    @State private var animationTimers: [UUID: Timer] = [:]
+    
     enum ShareStep {
         case loading
         case toneSelection   // 気分選択画面（安牌・攻め・変化球）
@@ -313,7 +317,7 @@ struct ShareExtensionView: View {
                 
                 // カスタマイズセクション
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("別の返信候補をカスタマイズ")
+                    Text("さらにカスタマイズする")
                         .font(.subheadline)
                         .foregroundColor(.white.opacity(0.8))
                         .padding(.horizontal)
@@ -356,7 +360,7 @@ struct ShareExtensionView: View {
                 // 再生成ボタン
                 Button(action: regenerateWithTone) {
                     HStack {
-                        Text("別の返信をゲット")
+                        Text("回答を再生成")
                             .fontWeight(.medium)
                         Text("✨")
                     }
@@ -382,15 +386,17 @@ struct ShareExtensionView: View {
         }
     }
     
-    /// 個別の返信行ビュー
+    /// 個別の返信行ビュー（タイピングアニメーション付き）
     private func replyRowView(reply: Reply) -> some View {
-        HStack(alignment: .top, spacing: 12) {
+        let displayText = displayedTexts[reply.id] ?? ""
+        
+        return HStack(alignment: .top, spacing: 12) {
             // トーンアイコン
             Text(reply.type.iconEmoji)
                 .font(.title2)
             
-            // 返信テキスト
-            Text(reply.text)
+            // 返信テキスト（タイピングアニメーション）
+            Text(displayText)
                 .font(.body)
                 .foregroundColor(.primary)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -408,19 +414,47 @@ struct ShareExtensionView: View {
             }
         }
         .padding(.horizontal)
+        .onAppear {
+            startTypingAnimation(for: reply)
+        }
     }
     
-    /// コピー（フィードバック付き）
+    /// コピー（フィードバック付き）+ 履歴保存
     private func copyReplyWithFeedback(_ reply: Reply) {
         UIPasteboard.general.string = reply.text
         copiedReplyId = reply.id
-        ShareExtensionLogger.shared.log("Copied reply: \(reply.text.prefix(30))...")
+        
+        // コピー時のみ履歴に保存
+        DataManager.shared.saveReply(reply)
+        ShareExtensionLogger.shared.log("Copied and saved reply: \(reply.text.prefix(30))...")
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
             if copiedReplyId == reply.id {
                 copiedReplyId = nil
             }
         }
+    }
+    
+    // MARK: - Typing Animation
+    
+    private func startTypingAnimation(for reply: Reply) {
+        if animationTimers[reply.id] != nil { return }
+        
+        let fullText = reply.text
+        var currentIndex = 0
+        displayedTexts[reply.id] = ""
+        
+        let timer = Timer.scheduledTimer(withTimeInterval: 0.025, repeats: true) { timer in
+            if currentIndex < fullText.count {
+                let index = fullText.index(fullText.startIndex, offsetBy: currentIndex)
+                displayedTexts[reply.id] = String(fullText[...index])
+                currentIndex += 1
+            } else {
+                timer.invalidate()
+                animationTimers.removeValue(forKey: reply.id)
+            }
+        }
+        animationTimers[reply.id] = timer
     }
     
     // MARK: - Error View
@@ -598,10 +632,7 @@ struct ShareExtensionView: View {
                         generatedReplies = result.replies
                     }
                     
-                    // 履歴に保存
-                    ShareExtensionLogger.shared.log("Saving replies to DataManager")
-                    DataManager.shared.saveReplies(generatedReplies)
-                    ShareExtensionLogger.shared.log("Replies saved successfully")
+                    // ※履歴保存はコピー時のみ実行（copyReplyWithFeedback内）
                     
                     currentStep = .results
                     ShareExtensionLogger.shared.log("Transitioned to results: \(generatedReplies.count) replies")
@@ -626,7 +657,7 @@ struct ShareExtensionView: View {
         )
         
         generatedReplies = replies
-        DataManager.shared.saveReplies(replies)
+        // ※履歴保存はコピー時のみ実行
         currentStep = .results
     }
     
@@ -769,11 +800,11 @@ struct TagButton: View {
                 .padding(.vertical, 10)
                 .background(
                     Capsule()
-                        .fill(isSelected ? Color.black : Color(.systemGray6))
+                        .fill(isSelected ? Color.purple : Color(.systemGray6))
                 )
                 .overlay(
                     Capsule()
-                        .stroke(isSelected ? Color.clear : Color(.systemGray4), lineWidth: 1)
+                        .stroke(isSelected ? Color.purple : Color(.systemGray4), lineWidth: isSelected ? 2 : 1)
                 )
         }
         .buttonStyle(PlainButtonStyle())

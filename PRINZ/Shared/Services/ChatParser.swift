@@ -69,6 +69,21 @@ class ChatParser {
         "ホーム",
         "ニュース",
         "ウォレット",
+        // キーボード由来のノイズ
+        "ABC",
+        "abc",
+        "あいう",
+        "Aへ",
+        "Aに",
+        "絵文字",
+        "マイク",
+        "カメラ",
+        "返信",
+        "edit",
+        "コピー",
+        "転送",
+        "削除",
+        "もっと見る",
     ]
     
     /// 1文字記号のブラックリスト
@@ -76,8 +91,8 @@ class ChatParser {
     
     // MARK: - Y座標フィルタ閾値
     
-    /// 有効なY座標範囲（UI要素除外用）
-    private let validYRange: ClosedRange<CGFloat> = 0.15...0.85
+    /// 有効なY座標範囲（UI要素除外用、下部20%をカット）
+    private let validYRange: ClosedRange<CGFloat> = 0.15...0.80
     
     /// 自分のメッセージ判定用X座標閾値
     private let selfMessageXThreshold: CGFloat = 0.7

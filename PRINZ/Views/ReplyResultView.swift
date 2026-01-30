@@ -19,6 +19,10 @@ struct ReplyResultView: View {
     @State private var copiedReplyId: UUID?
     @State private var mainMessage = ""
     
+    // タイピングアニメーション用
+    @State private var displayedTexts: [UUID: String] = [:]
+    @State private var animationTimers: [UUID: Timer] = [:]
+    
     // カスタマイズ用
     @State private var selectedTone: ReplyType = .safe
     @State private var isShortMode = true
@@ -114,18 +118,26 @@ struct ReplyResultView: View {
         VStack(spacing: 12) {
             ForEach(allReplies) { reply in
                 replyRow(reply)
+                    .onAppear {
+                        startTypingAnimation(for: reply)
+                    }
             }
         }
     }
     
     private func replyRow(_ reply: Reply) -> some View {
-        HStack(alignment: .top, spacing: 12) {
-            // 返信テキスト
-            Text(reply.text)
+        let displayText = displayedTexts[reply.id] ?? ""
+        
+        return HStack(alignment: .top, spacing: 12) {
+            // トーンアイコン
+            Text(reply.type.iconEmoji)
+                .font(.title2)
+            
+            // 返信テキスト（タイピングアニメーション）
+            Text(displayText)
                 .font(.body)
                 .foregroundColor(.primary)
-            
-            Spacer()
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding()
         .background(
@@ -148,11 +160,35 @@ struct ReplyResultView: View {
         )
     }
     
+    // MARK: - Typing Animation
+    
+    private func startTypingAnimation(for reply: Reply) {
+        // 既にアニメーション中なら何もしない
+        if animationTimers[reply.id] != nil { return }
+        
+        let fullText = reply.text
+        var currentIndex = 0
+        displayedTexts[reply.id] = ""
+        
+        // 25ms間隔で1文字ずつ表示
+        let timer = Timer.scheduledTimer(withTimeInterval: 0.025, repeats: true) { timer in
+            if currentIndex < fullText.count {
+                let index = fullText.index(fullText.startIndex, offsetBy: currentIndex)
+                displayedTexts[reply.id] = String(fullText[...index])
+                currentIndex += 1
+            } else {
+                timer.invalidate()
+                animationTimers.removeValue(forKey: reply.id)
+            }
+        }
+        animationTimers[reply.id] = timer
+    }
+    
     // MARK: - Customization Section
     
     private var customizationSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("似たPRINZを、でももっと...")
+            Text("さらにカスタマイズする")
                 .font(.subheadline)
                 .foregroundColor(.white.opacity(0.8))
             
@@ -189,7 +225,11 @@ struct ReplyResultView: View {
                 .padding(.vertical, 10)
                 .background(
                     Capsule()
-                        .fill(isSelected ? Color.black : Color(.systemGray6))
+                        .fill(isSelected ? Color.purple : Color(.systemGray6))
+                )
+                .overlay(
+                    Capsule()
+                        .stroke(isSelected ? Color.purple : Color.clear, lineWidth: 2)
                 )
         }
     }
@@ -199,7 +239,7 @@ struct ReplyResultView: View {
     private var regenerateButton: some View {
         Button(action: generateReply) {
             HStack {
-                Text("似た返信をゲット")
+                Text("回答を再生成")
                     .fontWeight(.medium)
                 Text("✨")
             }
