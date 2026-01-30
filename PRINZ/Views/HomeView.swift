@@ -57,15 +57,14 @@ struct HomeView: View {
                     context: selectedContext
                 )
             }
-            .sheet(isPresented: $showToneSelection) {
+            .fullScreenCover(isPresented: $showToneSelection) {
                 ToneSelectionSheet(
                     selectedTone: $selectedTone,
-                    onConfirm: {
+                    onSelect: { _ in
                         showToneSelection = false
                         showReplyResult = true
                     }
                 )
-                .presentationDetents([.medium])
             }
             .onChange(of: selectedItem) { _, newItem in
                 handleImageSelection(newItem)
@@ -335,11 +334,11 @@ struct HomeView: View {
     }
 }
 
-// MARK: - Tone Selection Sheet (トーン選択シート)
+// MARK: - Tone Selection Sheet (選択=即座に生成開始)
 
 struct ToneSelectionSheet: View {
     @Binding var selectedTone: ReplyType
-    let onConfirm: () -> Void
+    let onSelect: (ReplyType) -> Void  // 選択時のコールバック
     
     private let toneOptions: [(type: ReplyType, emoji: String, description: String)] = [
         (.safe, "💛", "無難で安心な返信"),
@@ -354,54 +353,53 @@ struct ToneSelectionSheet: View {
             VStack(spacing: 20) {
                 // タイトル
                 VStack(spacing: 8) {
-                    Text("トーンを選択")
+                    Text("どんな雰囲気で返信する？")
                         .font(.title2)
                         .fontWeight(.bold)
                         .foregroundColor(.white)
                     
-                    Text("どんな雰囲気で返信する？")
+                    Text("タップで回答生成を開始")
                         .font(.subheadline)
                         .foregroundColor(.white.opacity(0.6))
                 }
-                .padding(.top, 20)
+                .padding(.top, 30)
                 
-                // トーン選択ボタン
-                VStack(spacing: 12) {
+                // トーン選択ボタン（タップで即座に遷移）
+                VStack(spacing: 16) {
                     ForEach(toneOptions, id: \.type) { option in
                         Button(action: {
                             selectedTone = option.type
+                            onSelect(option.type)
                         }) {
-                            HStack(spacing: 12) {
+                            HStack(spacing: 16) {
                                 Text(option.emoji)
-                                    .font(.title2)
+                                    .font(.largeTitle)
                                 
-                                VStack(alignment: .leading, spacing: 2) {
+                                VStack(alignment: .leading, spacing: 4) {
                                     Text(option.type.displayName)
-                                        .font(.headline)
+                                        .font(.title3)
                                         .fontWeight(.bold)
                                     Text(option.description)
-                                        .font(.caption)
-                                        .foregroundColor(.white.opacity(0.6))
+                                        .font(.subheadline)
+                                        .foregroundColor(.white.opacity(0.7))
                                 }
                                 
                                 Spacer()
                                 
-                                if selectedTone == option.type {
-                                    Image(systemName: "checkmark.circle.fill")
-                                        .foregroundColor(.purple)
-                                        .font(.title3)
-                                }
+                                Image(systemName: "chevron.right")
+                                    .font(.title3)
+                                    .foregroundColor(.white.opacity(0.5))
                             }
-                            .foregroundColor(selectedTone == option.type ? .white : .white.opacity(0.8))
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 14)
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 18)
                             .background(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .fill(selectedTone == option.type ? Color.purple.opacity(0.3) : Color.glassBackground)
+                                RoundedRectangle(cornerRadius: 16)
+                                    .fill(Color.glassBackground)
                             )
                             .overlay(
-                                RoundedRectangle(cornerRadius: 12)
-                                    .stroke(selectedTone == option.type ? Color.purple : Color.glassBorder, lineWidth: selectedTone == option.type ? 2 : 1)
+                                RoundedRectangle(cornerRadius: 16)
+                                    .stroke(Color.glassBorder, lineWidth: 1)
                             )
                         }
                     }
@@ -409,28 +407,6 @@ struct ToneSelectionSheet: View {
                 .padding(.horizontal)
                 
                 Spacer()
-                
-                // 確定ボタン
-                Button(action: onConfirm) {
-                    HStack {
-                        Image(systemName: "sparkles")
-                        Text("回答を生成")
-                            .fontWeight(.bold)
-                    }
-                    .font(.headline)
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .background(
-                        LinearGradient(
-                            colors: [.purple, .pink],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                    )
-                    .cornerRadius(30)
-                }
-                .padding()
             }
         }
     }

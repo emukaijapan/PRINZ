@@ -45,6 +45,12 @@ struct ReplyResultView: View {
         }
         .navigationTitle("AI回答")
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            // 画面表示時に即座に生成開始
+            if !hasGenerated {
+                generateReply()
+            }
+        }
     }
     
     // MARK: - Main Content
@@ -67,13 +73,14 @@ struct ReplyResultView: View {
                 // 生成済みの場合
                 if hasGenerated {
                     // ヘッダー
-                    HStack {
-                        Text("👇")
+                    HStack(spacing: 6) {
+                        Image(systemName: "sparkles")
+                            .foregroundColor(.yellow)
                         Text("PRINZのAI回答")
                             .font(.headline)
                             .fontWeight(.bold)
                             .foregroundColor(.white)
-                        Text("👇")
+                        Spacer()
                     }
                     .padding(.top, 8)
                     
@@ -85,11 +92,6 @@ struct ReplyResultView: View {
                     
                     // 再生成ボタン
                     regenerateButton
-                }
-                
-                // 初回生成ボタン（未生成時）
-                if !hasGenerated {
-                    generateButton
                 }
                 
                 Spacer(minLength: 50)
@@ -161,13 +163,13 @@ struct ReplyResultView: View {
             // 返信テキスト（タイピングアニメーション）
             Text(displayText)
                 .font(.body)
-                .foregroundColor(.primary)
+                .foregroundColor(.black)  // 黒文字
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding()
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(Color(.systemGray6))
+                .fill(Color(.systemBackground))  // 白背景
         )
         .onTapGesture {
             copyReply(reply)
@@ -275,27 +277,6 @@ struct ReplyResultView: View {
                 RoundedRectangle(cornerRadius: 25)
                     .fill(Color.black)
             )
-        }
-    }
-    
-    private var generateButton: some View {
-        Button(action: generateReply) {
-            HStack {
-                Image(systemName: "sparkles")
-                Text("回答を生成")
-                    .fontWeight(.bold)
-            }
-            .foregroundColor(.white)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 16)
-            .background(
-                LinearGradient(
-                    colors: [.purple, .pink],
-                    startPoint: .leading,
-                    endPoint: .trailing
-                )
-            )
-            .cornerRadius(30)
         }
     }
     
