@@ -48,4 +48,13 @@ enum ReplyType: String, Codable, CaseIterable {
         case .witty: return "neonPurple"
         }
     }
+    
+    /// RIZZスタイルのアイコン絵文字
+    var iconEmoji: String {
+        switch self {
+        case .safe: return "💛"    // 安牌: 黄色
+        case .chill: return "💜"   // ちょい攻め: 紫
+        case .witty: return "💙"   // 変化球: 水色
+        }
+    }
 }

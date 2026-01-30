@@ -92,10 +92,10 @@ struct ShareExtensionView: View {
     
     @State private var currentStep: ShareStep = .loading
     @State private var loadedImage: UIImage?
-    @State private var selectedTone: ReplyType = .safe  // 安牌・攻め・変化球
-    @State private var isShortMode = true  // 短文/長文
+    @State private var selectedTone: ReplyType = .safe
+    @State private var isShortMode = true
     @State private var generatedReplies: [Reply] = []
-    @State private var currentReplyIndex = 0  // 1件ずつ表示用
+    @State private var copiedReplyId: UUID?
     @State private var errorMessage: String?
     @State private var isGenerating = false
     @State private var isCopied = false
@@ -288,130 +288,139 @@ struct ShareExtensionView: View {
         .padding(.vertical, 40)
     }
     
-    // MARK: - Results View (RIZZスタイル: 1件表示 + 2グループタグ)
+    // MARK: - Results View (RIZZスタイル: 3件リスト表示)
     
     private var resultsView: some View {
-        VStack(spacing: 16) {
-            // ヘッダー
-            HStack {
-                Text("👇")
-                Text("PRINZのAI回答")
-                    .font(.headline)
-                    .fontWeight(.bold)
-                    .foregroundColor(.white)
-                Text("👇")
-            }
-            .padding(.top, 8)
-            
-            // 現在の返信カード（1件表示）
-            if let currentReply = generatedReplies[safe: currentReplyIndex] {
-                VStack(spacing: 12) {
-                    // 上部: 削除/コピーボタン
-                    HStack {
-                        Button(action: { deleteCurrentReply() }) {
-                            HStack(spacing: 4) {
-                                Image(systemName: "trash")
-                                Text("削除")
-                            }
-                            .font(.caption)
-                            .foregroundColor(.white.opacity(0.6))
-                        }
-                        
-                        Spacer()
-                        
-                        Button(action: { copyReply(currentReply) }) {
-                            HStack(spacing: 4) {
-                                Text("コピー")
-                                Image(systemName: "doc.on.doc")
-                            }
-                            .font(.caption)
-                            .foregroundColor(isCopied ? .green : .white.opacity(0.6))
-                        }
-                    }
-                    .padding(.horizontal)
-                    
-                    // 返信テキスト（シンプルな白い吹き出し）
-                    Text(currentReply.text)
-                        .font(.body)
-                        .foregroundColor(.primary)
-                        .padding()
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(
-                            RoundedRectangle(cornerRadius: 16)
-                                .fill(Color(.systemGray6))
-                        )
-                        .padding(.horizontal)
-                }
-            }
-            
-            // カスタマイズセクション
-            VStack(alignment: .leading, spacing: 12) {
-                Text("似たPRINZを、でももっと...")
-                    .font(.subheadline)
-                    .foregroundColor(.white.opacity(0.8))
-                    .padding(.horizontal)
-                
-                // グループ1: トーン選択（安牌/ちょい攻め/変化球）
-                HStack(spacing: 8) {
-                    ForEach([ReplyType.safe, .chill, .witty], id: \.self) { tone in
-                        TagButton(
-                            title: tone.displayName,
-                            isSelected: selectedTone == tone
-                        ) {
-                            selectedTone = tone
-                        }
-                    }
-                }
-                .padding(.horizontal)
-                
-                // グループ2: 長さ選択（短い/長い）
-                HStack(spacing: 8) {
-                    TagButton(
-                        title: "短文",
-                        isSelected: isShortMode
-                    ) {
-                        isShortMode = true
-                    }
-                    
-                    TagButton(
-                        title: "長文",
-                        isSelected: !isShortMode
-                    ) {
-                        isShortMode = false
-                    }
-                    
+        ScrollView {
+            VStack(spacing: 16) {
+                // ヘッダー
+                HStack(spacing: 6) {
+                    Image(systemName: "sparkles")
+                        .foregroundColor(.yellow)
+                    Text("PRINZのAI回答")
+                        .font(.headline)
+                        .fontWeight(.bold)
+                        .foregroundColor(.white)
                     Spacer()
                 }
                 .padding(.horizontal)
-            }
-            .padding(.top, 8)
-            
-            // 再生成ボタン
-            Button(action: regenerateWithTone) {
-                HStack {
-                    Text("似た返信をゲット")
-                        .fontWeight(.medium)
-                    Text("✨")
+                .padding(.top, 8)
+                
+                // 3件リスト表示
+                ForEach(generatedReplies) { reply in
+                    replyRowView(reply: reply)
                 }
-                .foregroundColor(.white)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
-                .background(
-                    RoundedRectangle(cornerRadius: 25)
-                        .fill(Color.black)
-                )
+                
+                // カスタマイズセクション
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("別の返信候補をカスタマイズ")
+                        .font(.subheadline)
+                        .foregroundColor(.white.opacity(0.8))
+                        .padding(.horizontal)
+                    
+                    // トーン選択（安牌/ちょい攻め/変化球）
+                    HStack(spacing: 8) {
+                        ForEach([ReplyType.safe, .chill, .witty], id: \.self) { tone in
+                            TagButton(
+                                title: tone.displayName,
+                                isSelected: selectedTone == tone
+                            ) {
+                                selectedTone = tone
+                            }
+                        }
+                    }
+                    .padding(.horizontal)
+                    
+                    // 長さ選択（短文/長文）
+                    HStack(spacing: 8) {
+                        TagButton(
+                            title: "短文",
+                            isSelected: isShortMode
+                        ) {
+                            isShortMode = true
+                        }
+                        
+                        TagButton(
+                            title: "長文",
+                            isSelected: !isShortMode
+                        ) {
+                            isShortMode = false
+                        }
+                        
+                        Spacer()
+                    }
+                    .padding(.horizontal)
+                }
+                .padding(.top, 8)
+                
+                // 再生成ボタン
+                Button(action: regenerateWithTone) {
+                    HStack {
+                        Text("別の返信をゲット")
+                            .fontWeight(.medium)
+                        Text("✨")
+                    }
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(
+                        RoundedRectangle(cornerRadius: 25)
+                            .fill(Color.black)
+                    )
+                }
+                .padding(.horizontal)
+                
+                // 完了ボタン
+                Button(action: closeExtension) {
+                    Text("完了")
+                        .font(.subheadline)
+                        .foregroundColor(.white.opacity(0.6))
+                }
+                .padding(.top, 8)
             }
-            .padding(.horizontal)
-            
-            // 完了ボタン
-            Button(action: closeExtension) {
-                Text("完了")
-                    .font(.subheadline)
-                    .foregroundColor(.white.opacity(0.6))
-            }
-            .padding(.top, 8)
+            .padding(.vertical)
         }
-        .padding(.vertical)
+    }
+    
+    /// 個別の返信行ビュー
+    private func replyRowView(reply: Reply) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            // トーンアイコン
+            Text(reply.type.iconEmoji)
+                .font(.title2)
+            
+            // 返信テキスト
+            Text(reply.text)
+                .font(.body)
+                .foregroundColor(.primary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding()
+                .background(
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(Color(.systemBackground))
+                )
+            
+            // コピーボタン
+            Button(action: { copyReplyWithFeedback(reply) }) {
+                Image(systemName: copiedReplyId == reply.id ? "checkmark.circle.fill" : "doc.on.doc")
+                    .font(.title3)
+                    .foregroundColor(copiedReplyId == reply.id ? .green : .white.opacity(0.6))
+            }
+        }
+        .padding(.horizontal)
+    }
+    
+    /// コピー（フィードバック付き）
+    private func copyReplyWithFeedback(_ reply: Reply) {
+        UIPasteboard.general.string = reply.text
+        copiedReplyId = reply.id
+        ShareExtensionLogger.shared.log("Copied reply: \(reply.text.prefix(30))...")
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+            if copiedReplyId == reply.id {
+                copiedReplyId = nil
+            }
+        }
     }
     
     // MARK: - Error View
@@ -617,20 +626,8 @@ struct ShareExtensionView: View {
         )
         
         generatedReplies = replies
-        currentReplyIndex = 0
         DataManager.shared.saveReplies(replies)
         currentStep = .results
-    }
-    
-    private func deleteCurrentReply() {
-        guard generatedReplies.indices.contains(currentReplyIndex) else { return }
-        generatedReplies.remove(at: currentReplyIndex)
-        if currentReplyIndex >= generatedReplies.count && currentReplyIndex > 0 {
-            currentReplyIndex -= 1
-        }
-        if generatedReplies.isEmpty {
-            currentStep = .toneSelection
-        }
     }
     
     private func regenerateWithTone() {
@@ -639,15 +636,6 @@ struct ShareExtensionView: View {
         performOCRAndGenerate()
     }
     
-    private func copyReply(_ reply: Reply) {
-        UIPasteboard.general.string = reply.text
-        isCopied = true
-        ShareExtensionLogger.shared.log("Copied reply: \(reply.text.prefix(30))...")
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-            isCopied = false
-        }
-    }
     
     private func closeExtension() {
         ShareExtensionLogger.shared.log("closeExtension called")

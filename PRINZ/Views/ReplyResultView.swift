@@ -2,7 +2,7 @@
 //  ReplyResultView.swift
 //  PRINZ
 //
-//  Created on 2026-01-12.
+//  RIZZスタイル完全再現版
 //
 
 import SwiftUI
@@ -12,34 +12,27 @@ struct ReplyResultView: View {
     let extractedText: String
     let context: Context
     
-    // 状態管理
-    @State private var isAnalyzing = false  // 最初はfalse、生成ボタンで開始
-    @State private var hasGenerated = false  // 生成済みフラグ
-    @State private var currentToneIndex = 0  // 安牌→ちょい攻め→変化球のサイクル
-    @State private var replyStack: [Reply] = []  // スタック形式で積み上げ
-    @State private var cachedReplies: [ReplyType: [Reply]] = [:]  // キャッシュ
-    @State private var mainMessage = ""
-    @State private var isShortMode = true  // 短文モード（デフォルト）
+    // 状態管理（シンプル化）
+    @State private var isAnalyzing = false
+    @State private var hasGenerated = false
+    @State private var allReplies: [Reply] = []
     @State private var copiedReplyId: UUID?
+    @State private var mainMessage = ""
     
-    // BOXインターフェース用ステート
-    @State private var allReplies: [Reply] = []     // 3案すべて保持
-    @State private var currentReplyIndex = 0       // 表示中のインデックス
-    @State private var isTypingComplete = false    // タイピング完了フラグ
-    @State private var showSkeleton = false        // スケルトン表示フラグ
+    // カスタマイズ用
+    @State private var selectedTone: ReplyType = .safe
+    @State private var isShortMode = true
     
     private let toneTypes: [ReplyType] = [.safe, .chill, .witty]
     
     var body: some View {
         ZStack {
-            // 魔法のグラデーション背景
+            // 背景
             MagicBackground()
             
             if isAnalyzing {
-                // 解析演出
                 AnalyzingView()
             } else {
-                // メインコンテンツ
                 mainContentView
             }
         }
@@ -50,163 +43,114 @@ struct ReplyResultView: View {
     // MARK: - Main Content
     
     private var mainContentView: some View {
-        VStack(spacing: 0) {
-            ScrollView {
-                VStack(spacing: 16) {
-                    // スクリーンショットプレビュー
-                    if image != nil {
-                        imagePreviewView
-                    }
-                    
-                    // メインメッセージ入力
-                    mainMessageInput
-                    
-                    // 生成済みの場合のみ表示
-                    if hasGenerated {
-                        // AI回答セクション
-                        aiAnswerSection
-                        
-                        // 🆕 BOXインターフェース
-                        replyBoxView
-                        
-                        // トーン切り替えボタン
-                        toneButtonsView
-                        
-                        // 返信スタック（過去の回答）
-                        if replyStack.count > 0 {
-                            Text("過去の回答")
-                                .font(.caption)
-                                .foregroundColor(.white.opacity(0.5))
-                                .padding(.top, 20)
-                            
-                            replyStackView
-                        }
-                    }
-                    
-                    Spacer(minLength: 150)
+        ScrollView {
+            VStack(spacing: 16) {
+                // スクリーンショット
+                if let image = image {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(maxHeight: 200)
+                        .cornerRadius(12)
                 }
-                .padding()
+                
+                // 入力欄
+                inputFieldView
+                
+                // 生成済みの場合
+                if hasGenerated {
+                    // ヘッダー
+                    HStack {
+                        Text("👇")
+                        Text("PRINZのAI回答")
+                            .font(.headline)
+                            .fontWeight(.bold)
+                            .foregroundColor(.white)
+                        Text("👇")
+                    }
+                    .padding(.top, 8)
+                    
+                    // 3件の返信リスト
+                    repliesListView
+                    
+                    // カスタマイズセクション
+                    customizationSection
+                    
+                    // 再生成ボタン
+                    regenerateButton
+                }
+                
+                // 初回生成ボタン（未生成時）
+                if !hasGenerated {
+                    generateButton
+                }
+                
+                Spacer(minLength: 50)
             }
-            
-            // 下部固定ボタン
-            bottomButtonsView
+            .padding()
         }
     }
     
-    // MARK: - Image Preview
+    // MARK: - Input Field
     
-    private var imagePreviewView: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("スクリーンショット")
-                .font(.caption)
-                .foregroundColor(.white.opacity(0.5))
-            
-            if let image = image {
-                Image(uiImage: image)
-                    .resizable()
-                    .scaledToFit()
-                    .cornerRadius(12)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(Color.glassBorder, lineWidth: 1)
-                    )
-                    .frame(maxHeight: 200)
-            }
-        }
-    }
-    
-    // MARK: - Main Message Input
-    
-    private var mainMessageInput: some View {
+    private var inputFieldView: some View {
         HStack {
             Image(systemName: "sparkles")
-                .foregroundColor(.neonCyan)
+                .foregroundColor(.cyan)
             
-            TextField("何をメインで伝える？", text: $mainMessage)
+            TextField("フォーカスする言葉を教えて", text: $mainMessage)
                 .foregroundColor(.white)
-                .font(.body)
-            
-            if !mainMessage.isEmpty && hasGenerated {
-                Button(action: regenerateWithMainMessage) {
-                    Image(systemName: "arrow.clockwise")
-                        .foregroundColor(.neonPurple)
-                }
-            }
         }
         .padding()
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(Color.glassBackground)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color.glassBorder, lineWidth: 1)
-                )
+                .fill(Color(.systemGray6).opacity(0.3))
         )
     }
     
-    // MARK: - AI Answer Section
+    // MARK: - Replies List (RIZZスタイル: 3件縦リスト)
     
-    private var aiAnswerSection: some View {
-        HStack {
-            Text("👇")
-            Text("PRINZのAI回答")
-                .font(.headline)
-                .fontWeight(.bold)
-                .foregroundColor(.white)
-            Text("👇")
-        }
-        .padding(.top, 10)
-    }
-    
-    // MARK: - Reply BOX View (RIZZスタイル: 1件表示)
-    
-    private var replyBoxView: some View {
+    private var repliesListView: some View {
         VStack(spacing: 12) {
-            if showSkeleton {
-                SkeletonLoaderView()
-            } else if let currentReply = allReplies[safe: currentReplyIndex] {
-                VStack(spacing: 12) {
-                    // 上部: 削除/コピーボタン
-                    HStack {
-                        Button(action: { deleteCurrentReply() }) {
-                            HStack(spacing: 4) {
-                                Image(systemName: "trash")
-                                Text("削除")
-                            }
-                            .font(.caption)
-                            .foregroundColor(.white.opacity(0.6))
-                        }
-                        
-                        Spacer()
-                        
-                        Button(action: { copyReply(currentReply) }) {
-                            HStack(spacing: 4) {
-                                Text("コピー")
-                                Image(systemName: "doc.on.doc")
-                            }
-                            .font(.caption)
-                            .foregroundColor(copiedReplyId == currentReply.id ? .green : .white.opacity(0.6))
-                        }
-                    }
-                    
-                    // 返信テキスト（シンプルな白い吹き出し）
-                    Text(currentReply.text)
-                        .font(.body)
-                        .foregroundColor(.primary)
-                        .padding()
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(
-                            RoundedRectangle(cornerRadius: 16)
-                                .fill(Color(.systemGray6))
-                        )
-                }
+            ForEach(allReplies) { reply in
+                replyRow(reply)
             }
         }
     }
     
-    // MARK: - Customization Section (RIZZスタイル: 2グループタグ)
+    private func replyRow(_ reply: Reply) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            // 返信テキスト
+            Text(reply.text)
+                .font(.body)
+                .foregroundColor(.primary)
+            
+            Spacer()
+        }
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color(.systemGray6))
+        )
+        .onTapGesture {
+            copyReply(reply)
+        }
+        .overlay(
+            // コピー済み表示
+            copiedReplyId == reply.id ?
+            HStack {
+                Spacer()
+                Text("✓ コピー")
+                    .font(.caption)
+                    .foregroundColor(.green)
+                    .padding(8)
+            } : nil
+        )
+    }
     
-    private var toneButtonsView: some View {
+    // MARK: - Customization Section
+    
+    private var customizationSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("似たPRINZを、でももっと...")
                 .font(.subheadline)
@@ -215,173 +159,78 @@ struct ReplyResultView: View {
             // グループ1: トーン選択
             HStack(spacing: 8) {
                 ForEach(toneTypes, id: \.self) { tone in
-                    MainTagButton(
-                        title: tone.displayName,
-                        isSelected: toneTypes[currentToneIndex] == tone
-                    ) {
-                        if let index = toneTypes.firstIndex(of: tone) {
-                            currentToneIndex = index
-                        }
+                    tagButton(tone.displayName, isSelected: selectedTone == tone) {
+                        selectedTone = tone
                     }
                 }
             }
             
             // グループ2: 長さ選択
             HStack(spacing: 8) {
-                MainTagButton(
-                    title: "短文",
-                    isSelected: isShortMode
-                ) {
+                tagButton("短文", isSelected: isShortMode) {
                     isShortMode = true
                 }
-                
-                MainTagButton(
-                    title: "長文",
-                    isSelected: !isShortMode
-                ) {
+                tagButton("長文", isSelected: !isShortMode) {
                     isShortMode = false
                 }
-                
                 Spacer()
             }
         }
         .padding(.top, 8)
     }
     
-    // MARK: - Reply Stack
-    
-    private var replyStackView: some View {
-        VStack(spacing: 12) {
-            ForEach(replyStack) { reply in
-                ReplyBubbleCard(
-                    reply: reply,
-                    isCopied: copiedReplyId == reply.id,
-                    onTap: {
-                        copyReply(reply)
-                    }
-                )
-            }
-        }
-    }
-    
-    // MARK: - Bottom Buttons
-    
-    private var bottomButtonsView: some View {
-        VStack(spacing: 12) {
-            // オプション行: トーン選択 + 長文/短文
-            HStack(spacing: 8) {
-                // トーン選択ボタン（安牌/ちょい攻め/変化球）
-                Button(action: cycleNextTone) {
-                    HStack(spacing: 4) {
-                        Text(currentToneEmoji)
-                            .font(.caption)
-                        Text(toneTypes[currentToneIndex].displayName)
-                            .font(.caption)
-                            .fontWeight(.medium)
-                    }
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(
-                        Capsule()
-                            .fill(Color.glassBackground)
-                            .overlay(
-                                Capsule()
-                                    .stroke(Color.neonPurple, lineWidth: 1)
-                            )
-                    )
-                }
-                
-                // 長文/短文切り替え
-                Button(action: { isShortMode.toggle() }) {
-                    HStack(spacing: 4) {
-                        Image(systemName: isShortMode ? "text.alignleft" : "doc.text")
-                            .font(.caption)
-                        Text(isShortMode ? "短文" : "長文")
-                            .font(.caption)
-                            .fontWeight(.medium)
-                    }
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(
-                        Capsule()
-                            .fill(Color.glassBackground)
-                            .overlay(
-                                Capsule()
-                                    .stroke(Color.neonCyan, lineWidth: 1)
-                            )
-                    )
-                }
-                
-                Spacer()
-            }
-            
-            // メインボタン: 回答を生成
-            Button(action: generateReply) {
-                HStack {
-                    Image(systemName: "sparkles")
-                    Text(hasGenerated ? "別の回答を生成" : "回答を生成")
-                        .fontWeight(.bold)
-                }
-                .foregroundColor(.white)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
+    private func tagButton(_ title: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.subheadline)
+                .fontWeight(.medium)
+                .foregroundColor(isSelected ? .white : .primary)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
                 .background(
-                    LinearGradient(
-                        colors: [.magicPurple, .magicPink],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
+                    Capsule()
+                        .fill(isSelected ? Color.black : Color(.systemGray6))
                 )
-                .cornerRadius(30)
-                .shadow(color: .magicPink.opacity(0.5), radius: 10)
+        }
+    }
+    
+    // MARK: - Buttons
+    
+    private var regenerateButton: some View {
+        Button(action: generateReply) {
+            HStack {
+                Text("似た返信をゲット")
+                    .fontWeight(.medium)
+                Text("✨")
             }
-        }
-        .padding()
-        .background(
-            Color.magicPurple.opacity(0.8)
-                .ignoresSafeArea(edges: .bottom)
-        )
-    }
-    
-    // MARK: - Computed Properties
-    
-    private var currentToneEmoji: String {
-        toneEmoji(for: toneTypes[currentToneIndex])
-    }
-    
-    private func toneEmoji(for type: ReplyType) -> String {
-        switch type {
-        case .safe: return "🛡️"
-        case .chill: return "🔥"
-        case .witty: return "⚡"
+            .foregroundColor(.white)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 14)
+            .background(
+                RoundedRectangle(cornerRadius: 25)
+                    .fill(Color.black)
+            )
         }
     }
     
-    private func replyTypeColor(for type: ReplyType) -> Color {
-        switch type {
-        case .safe: return .neonCyan
-        case .chill: return .orange
-        case .witty: return .neonPurple
-        }
-    }
-    
-    private func replyTypeBadge(for type: ReplyType) -> some View {
-        HStack(spacing: 4) {
-            Image(systemName: replyTypeIcon(for: type))
-            Text(type.displayName)
-                .font(.caption)
-                .fontWeight(.semibold)
-        }
-        .foregroundColor(replyTypeColor(for: type))
-    }
-    
-    private func replyTypeIcon(for type: ReplyType) -> String {
-        switch type {
-        case .safe: return "shield.fill"
-        case .chill: return "flame.fill"
-        case .witty: return "sparkles"
+    private var generateButton: some View {
+        Button(action: generateReply) {
+            HStack {
+                Image(systemName: "sparkles")
+                Text("回答を生成")
+                    .fontWeight(.bold)
+            }
+            .foregroundColor(.white)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 16)
+            .background(
+                LinearGradient(
+                    colors: [.purple, .pink],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            )
+            .cornerRadius(30)
         }
     }
     
@@ -389,47 +238,23 @@ struct ReplyResultView: View {
     
     private func generateReply() {
         isAnalyzing = true
-        showSkeleton = true
-        isTypingComplete = false
         
-        // 画像からOCRでテキストを抽出
-        performOCRAndGenerate()
-    }
-    
-    private func selectTone(at index: Int) {
-        guard index != currentReplyIndex else { return }
-        currentReplyIndex = index
-        isTypingComplete = false
-    }
-    
-    private func performOCRAndGenerate() {
         guard let image = image else {
-            // 画像がない場合は直接AI生成
-            generateAIReply(with: extractedText.isEmpty ? "メッセージ" : extractedText, parsedChat: nil)
+            generateAIReply(with: extractedText.isEmpty ? "メッセージ" : extractedText)
             return
         }
         
-        // 座標付きOCR実行（話者分離用）
+        // OCR実行
         OCRService.shared.recognizeTextWithCoordinates(from: image) { result in
             DispatchQueue.main.async {
                 switch result {
                 case .success(let items):
-                    print("📝 OCR Result (with coordinates): \(items.count) items")
-                    for item in items.prefix(5) {
-                        print("  [\(item.isFromPartner ? "相手" : "自分")] x=\(String(format: "%.2f", item.normalizedX)): \(item.text.prefix(30))")
-                    }
-                    
-                    // 座標ベースで解析
                     let parsedChat = ChatParser.shared.parseWithCoordinates(items)
                     let partnerMessage = parsedChat.partnerMessagesText.isEmpty
                         ? parsedChat.rawText
                         : parsedChat.partnerMessagesText
-                    
                     generateAIReply(with: partnerMessage, parsedChat: parsedChat)
-                    
-                case .failure(let error):
-                    print("❌ OCR Error: \(error)")
-                    // フォールバック: 通常のOCR
+                case .failure:
                     fallbackToTextOCR()
                 }
             }
@@ -438,7 +263,7 @@ struct ReplyResultView: View {
     
     private func fallbackToTextOCR() {
         guard let image = image else {
-            generateAIReply(with: extractedText.isEmpty ? "メッセージ" : extractedText, parsedChat: nil)
+            generateAIReply(with: extractedText.isEmpty ? "メッセージ" : extractedText)
             return
         }
         
@@ -449,31 +274,17 @@ struct ReplyResultView: View {
                     let parsedChat = ChatParser.shared.parse(text)
                     generateAIReply(with: text, parsedChat: parsedChat)
                 case .failure:
-                    generateAIReply(with: extractedText.isEmpty ? "メッセージ" : extractedText, parsedChat: nil)
+                    generateAIReply(with: extractedText.isEmpty ? "メッセージ" : extractedText)
                 }
             }
         }
     }
     
-    private func generateAIReply(with message: String, parsedChat: ParsedChat?) {
-        // TODO: 設定画面からユーザー情報を取得
-        let personalType: PersonalType = .funny  // デフォルト
-        let gender: UserGender = .male  // デフォルト
-        let ageGroup: UserAgeGroup = .early20s  // デフォルト
-        
-        // 相手からのメッセージのみを抽出
+    private func generateAIReply(with message: String, parsedChat: ParsedChat? = nil) {
         let partnerMessage = parsedChat?.partnerMessagesText.isEmpty == false
             ? parsedChat!.partnerMessagesText
             : message
         
-        print("📝 Parsed Chat:")
-        print("  Partner Name: \(parsedChat?.partnerName ?? "不明")")
-        print("  Partner Messages: \(partnerMessage.prefix(100))...")
-        print("  User Message (input): \(mainMessage.isEmpty ? "なし" : mainMessage)")
-        print("  Last User Message (OCR): \(parsedChat?.lastUserMessage ?? "なし")")
-        print("  Short Mode: \(isShortMode)")
-        
-        // userMessageの決定: 入力欄 > OCRから抽出した自分の直近発言
         let userMessageToSend: String?
         if !mainMessage.isEmpty {
             userMessageToSend = mainMessage
@@ -485,12 +296,11 @@ struct ReplyResultView: View {
         
         Task {
             do {
-                // Firebase経由でAI返信を生成
                 let result = try await FirebaseService.shared.generateReplies(
                     message: partnerMessage,
-                    personalType: personalType,
-                    gender: gender,
-                    ageGroup: ageGroup,
+                    personalType: .funny,
+                    gender: .male,
+                    ageGroup: .early20s,
                     relationship: context.displayName,
                     partnerName: parsedChat?.partnerName,
                     userMessage: userMessageToSend,
@@ -501,49 +311,14 @@ struct ReplyResultView: View {
                     withAnimation {
                         isAnalyzing = false
                         hasGenerated = true
-                        showSkeleton = false
                     }
-                    
-                    // BOXインターフェース用に保持
                     allReplies = result.replies
-                    currentReplyIndex = 0
-                    isTypingComplete = false
-                    
-                    // 過去の回答としてスタックに追加
-                    // withAnimation {
-                    //     replyStack.insert(contentsOf: result.replies, at: 0)
-                    // }
-                    
-                    print("✅ Generated \(result.replies.count) replies, remaining: \(result.remainingToday)")
-                }
-                
-            } catch let error as FirebaseError {
-                await MainActor.run {
-                    handleGenerationError(error)
                 }
             } catch {
                 await MainActor.run {
-                    print("❌ AI Generation Error: \(error)")
-                    // フォールバック: モック返信を使用
                     fallbackToMockReplies()
                 }
             }
-        }
-    }
-    
-    private func handleGenerationError(_ error: FirebaseError) {
-        print("❌ Firebase Error: \(error.localizedDescription)")
-        
-        switch error {
-        case .rateLimitExceeded:
-            // レート制限エラー時はモックを使用してUIは表示
-            fallbackToMockReplies()
-        case .unauthenticated:
-            // 認証エラー時もモックを使用
-            fallbackToMockReplies()
-        default:
-            // その他のエラーもモックでフォールバック
-            fallbackToMockReplies()
         }
     }
     
@@ -551,52 +326,19 @@ struct ReplyResultView: View {
         withAnimation {
             isAnalyzing = false
             hasGenerated = true
-            showSkeleton = false
         }
         
-        let currentTone = toneTypes[currentToneIndex]
         let replies = ReplyGenerator.shared.generateReplies(
             for: extractedText.isEmpty ? "メッセージ" : extractedText,
             context: context,
-            type: currentTone
+            type: selectedTone
         )
-        
-        // BOXインターフェース用に保持
         allReplies = replies
-        currentReplyIndex = 0
-        isTypingComplete = false
-        
-        print("⚠️ Using mock replies as fallback")
-    }
-    
-    private func deleteCurrentReply() {
-        guard allReplies.indices.contains(currentReplyIndex) else { return }
-        allReplies.remove(at: currentReplyIndex)
-        if currentReplyIndex >= allReplies.count && currentReplyIndex > 0 {
-            currentReplyIndex -= 1
-        }
-        if allReplies.isEmpty {
-            hasGenerated = false
-        }
-    }
-    
-    private func cycleNextTone() {
-        currentToneIndex = (currentToneIndex + 1) % toneTypes.count
-    }
-    
-    private func regenerateWithMainMessage() {
-        // キャッシュクリア＆初回から再生成
-        cachedReplies.removeAll()
-        replyStack.removeAll()
-        hasGenerated = false
-        generateReply()
     }
     
     private func copyReply(_ reply: Reply) {
         UIPasteboard.general.string = reply.text
         copiedReplyId = reply.id
-        
-        // 履歴に保存
         DataManager.shared.saveReply(reply)
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
@@ -611,120 +353,31 @@ struct ReplyResultView: View {
 
 struct AnalyzingView: View {
     @State private var rotation: Double = 0
-    @State private var scale: CGFloat = 1.0
     
     var body: some View {
         VStack(spacing: 24) {
             ZStack {
-                // レーダー演出
                 ForEach(0..<3) { index in
                     Circle()
-                        .stroke(Color.neonPurple.opacity(0.3 - Double(index) * 0.1), lineWidth: 2)
+                        .stroke(Color.purple.opacity(0.3 - Double(index) * 0.1), lineWidth: 2)
                         .frame(width: CGFloat(100 + index * 40), height: CGFloat(100 + index * 40))
                         .rotationEffect(.degrees(rotation))
                 }
                 
-                // 中央のクラウン
                 Image(systemName: "crown.fill")
                     .font(.system(size: 50))
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [.magicPurple, .magicPink],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .scaleEffect(scale)
+                    .foregroundColor(.purple)
             }
             
             Text("AI回答作成中...")
                 .font(.title3)
                 .fontWeight(.bold)
                 .foregroundColor(.white)
-            
-            Text("最適な返信を分析しています")
-                .font(.subheadline)
-                .foregroundColor(.white.opacity(0.6))
         }
         .onAppear {
             withAnimation(.linear(duration: 3).repeatForever(autoreverses: false)) {
                 rotation = 360
             }
-            withAnimation(.easeInOut(duration: 1).repeatForever(autoreverses: true)) {
-                scale = 1.2
-            }
-        }
-    }
-}
-
-// MARK: - Reply Bubble Card
-
-struct ReplyBubbleCard: View {
-    let reply: Reply
-    let isCopied: Bool
-    let onTap: () -> Void
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            // タイプアイコン
-            HStack {
-                typeIcon
-                Spacer()
-                if isCopied {
-                    Label("コピー済み", systemImage: "checkmark.circle.fill")
-                        .font(.caption)
-                        .foregroundColor(.green)
-                }
-            }
-            
-            // 返信テキスト
-            Text(reply.text)
-                .font(.body)
-                .foregroundColor(.white)
-                .padding()
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(
-                    RoundedRectangle(cornerRadius: 16)
-                        .fill(Color.glassBackground)
-                )
-        }
-        .padding()
-        .background(
-            RoundedRectangle(cornerRadius: 20)
-                .fill(Color.glassBackground)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 20)
-                        .stroke(Color.glassBorder, lineWidth: 1)
-                )
-        )
-        .onTapGesture {
-            onTap()
-        }
-    }
-    
-    private var typeIcon: some View {
-        HStack(spacing: 4) {
-            Image(systemName: typeSystemImage)
-            Text(reply.type.displayName)
-                .font(.caption)
-                .fontWeight(.semibold)
-        }
-        .foregroundColor(typeColor)
-    }
-    
-    private var typeSystemImage: String {
-        switch reply.type {
-        case .safe: return "shield.fill"
-        case .chill: return "flame.fill"
-        case .witty: return "sparkles"
-        }
-    }
-    
-    private var typeColor: Color {
-        switch reply.type {
-        case .safe: return .neonCyan
-        case .chill: return .orange
-        case .witty: return .neonPurple
         }
     }
 }
@@ -736,41 +389,5 @@ struct ReplyBubbleCard: View {
             extractedText: "今日楽しかったね！また遊ぼう",
             context: .matchStart
         )
-    }
-}
-
-// MARK: - Main Tag Button Component (RIZZスタイル)
-
-struct MainTagButton: View {
-    let title: String
-    let isSelected: Bool
-    let action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            Text(title)
-                .font(.subheadline)
-                .fontWeight(.medium)
-                .foregroundColor(isSelected ? .white : .primary)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 10)
-                .background(
-                    Capsule()
-                        .fill(isSelected ? Color.black : Color(.systemGray6))
-                )
-                .overlay(
-                    Capsule()
-                        .stroke(isSelected ? Color.clear : Color(.systemGray4), lineWidth: 1)
-                )
-        }
-        .buttonStyle(PlainButtonStyle())
-    }
-}
-
-// MARK: - Array Safe Access Extension
-
-extension Collection {
-    subscript(safe index: Index) -> Element? {
-        return indices.contains(index) ? self[index] : nil
     }
 }
