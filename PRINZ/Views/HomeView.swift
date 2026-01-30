@@ -12,10 +12,11 @@ struct HomeView: View {
     @State private var selectedItem: PhotosPickerItem?
     @State private var selectedImage: UIImage?
     @State private var showManualInput = false
-    @State private var showContextSelection = false
+    @State private var showToneSelection = false
     @State private var showReplyResult = false
     @State private var isProcessing = false
     @State private var extractedText = ""
+    @State private var selectedTone: ReplyType = .safe
     @State private var selectedContext: Context = .matchStart
     
     var body: some View {
@@ -56,11 +57,11 @@ struct HomeView: View {
                     context: selectedContext
                 )
             }
-            .sheet(isPresented: $showContextSelection) {
-                ContextSelectionSheet(
-                    selectedContext: $selectedContext,
+            .sheet(isPresented: $showToneSelection) {
+                ToneSelectionSheet(
+                    selectedTone: $selectedTone,
                     onConfirm: {
-                        showContextSelection = false
+                        showToneSelection = false
                         showReplyResult = true
                     }
                 )
@@ -313,12 +314,12 @@ struct HomeView: View {
                 switch result {
                 case .success(let text):
                     extractedText = text
-                    // 状況選択モーダルを表示
-                    showContextSelection = true
+                    // トーン選択モーダルを表示
+                    showToneSelection = true
                 case .failure(let error):
                     print("OCR Error: \(error)")
                     extractedText = ""
-                    showContextSelection = true
+                    showToneSelection = true
                 }
             }
         }
@@ -329,15 +330,22 @@ struct HomeView: View {
         selectedItem = nil
         selectedImage = nil
         extractedText = ""
+        selectedTone = .safe
         selectedContext = .matchStart
     }
 }
 
-// MARK: - Context Selection Sheet
+// MARK: - Tone Selection Sheet (トーン選択シート)
 
-struct ContextSelectionSheet: View {
-    @Binding var selectedContext: Context
+struct ToneSelectionSheet: View {
+    @Binding var selectedTone: ReplyType
     let onConfirm: () -> Void
+    
+    private let toneOptions: [(type: ReplyType, emoji: String, description: String)] = [
+        (.safe, "💛", "無難で安心な返信"),
+        (.chill, "💜", "少し踏み込んだ返信"),
+        (.witty, "💙", "意外性のある返信")
+    ]
     
     var body: some View {
         ZStack {
@@ -346,45 +354,54 @@ struct ContextSelectionSheet: View {
             VStack(spacing: 20) {
                 // タイトル
                 VStack(spacing: 8) {
-                    Text("状況を選択")
+                    Text("トーンを選択")
                         .font(.title2)
                         .fontWeight(.bold)
                         .foregroundColor(.white)
                     
-                    Text("どんなシチュエーション？")
+                    Text("どんな雰囲気で返信する？")
                         .font(.subheadline)
                         .foregroundColor(.white.opacity(0.6))
                 }
                 .padding(.top, 20)
                 
-                // コンテキストボタン - コンパクトな縦リスト
-                VStack(spacing: 8) {
-                    ForEach(Context.allCases, id: \.self) { context in
+                // トーン選択ボタン
+                VStack(spacing: 12) {
+                    ForEach(toneOptions, id: \.type) { option in
                         Button(action: {
-                            selectedContext = context
+                            selectedTone = option.type
                         }) {
-                            HStack(spacing: 10) {
-                                Text(context.emoji)
-                                    .font(.body)
-                                Text(context.displayName)
-                                    .font(.subheadline)
-                                    .fontWeight(.medium)
+                            HStack(spacing: 12) {
+                                Text(option.emoji)
+                                    .font(.title2)
+                                
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(option.type.displayName)
+                                        .font(.headline)
+                                        .fontWeight(.bold)
+                                    Text(option.description)
+                                        .font(.caption)
+                                        .foregroundColor(.white.opacity(0.6))
+                                }
+                                
                                 Spacer()
-                                if selectedContext == context {
+                                
+                                if selectedTone == option.type {
                                     Image(systemName: "checkmark.circle.fill")
-                                        .foregroundColor(.neonCyan)
+                                        .foregroundColor(.purple)
+                                        .font(.title3)
                                 }
                             }
-                            .foregroundColor(selectedContext == context ? .neonCyan : .white)
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 10)
+                            .foregroundColor(selectedTone == option.type ? .white : .white.opacity(0.8))
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 14)
                             .background(
-                                RoundedRectangle(cornerRadius: 10)
-                                    .fill(selectedContext == context ? Color.neonCyan.opacity(0.15) : Color.glassBackground)
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(selectedTone == option.type ? Color.purple.opacity(0.3) : Color.glassBackground)
                             )
                             .overlay(
-                                RoundedRectangle(cornerRadius: 10)
-                                    .stroke(selectedContext == context ? Color.neonCyan : Color.glassBorder, lineWidth: 1)
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(selectedTone == option.type ? Color.purple : Color.glassBorder, lineWidth: selectedTone == option.type ? 2 : 1)
                             )
                         }
                     }
@@ -395,20 +412,23 @@ struct ContextSelectionSheet: View {
                 
                 // 確定ボタン
                 Button(action: onConfirm) {
-                    Text("AIに相談する")
-                        .font(.headline)
-                        .fontWeight(.bold)
-                        .foregroundColor(.black)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                        .background(
-                            LinearGradient(
-                                colors: [.neonPurple, .neonCyan],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
+                    HStack {
+                        Image(systemName: "sparkles")
+                        Text("回答を生成")
+                            .fontWeight(.bold)
+                    }
+                    .font(.headline)
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+                    .background(
+                        LinearGradient(
+                            colors: [.purple, .pink],
+                            startPoint: .leading,
+                            endPoint: .trailing
                         )
-                        .cornerRadius(30)
+                    )
+                    .cornerRadius(30)
                 }
                 .padding()
             }
