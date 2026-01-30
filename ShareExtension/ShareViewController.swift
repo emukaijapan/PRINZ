@@ -281,11 +281,9 @@ struct ShareExtensionView: View {
                 .font(.headline)
                 .foregroundColor(.white)
             
-            if let tone = selectedTone {
-                Text("「\(tone.displayName)」の返信を作成しています")
-                    .font(.subheadline)
-                    .foregroundColor(.white.opacity(0.6))
-            }
+            Text("「\(selectedTone.displayName)」の返信を作成しています")
+                .font(.subheadline)
+                .foregroundColor(.white.opacity(0.6))
         }
         .padding(.vertical, 40)
     }
