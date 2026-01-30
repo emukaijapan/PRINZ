@@ -369,14 +369,14 @@ struct ShareExtensionView: View {
                 // グループ2: 長さ選択（短い/長い）
                 HStack(spacing: 8) {
                     TagButton(
-                        title: "短い",
+                        title: "短文",
                         isSelected: isShortMode
                     ) {
                         isShortMode = true
                     }
                     
                     TagButton(
-                        title: "長い",
+                        title: "長文",
                         isSelected: !isShortMode
                     ) {
                         isShortMode = false

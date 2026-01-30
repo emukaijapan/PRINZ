@@ -229,14 +229,14 @@ struct ReplyResultView: View {
             // グループ2: 長さ選択
             HStack(spacing: 8) {
                 MainTagButton(
-                    title: "短い",
+                    title: "短文",
                     isSelected: isShortMode
                 ) {
                     isShortMode = true
                 }
                 
                 MainTagButton(
-                    title: "長い",
+                    title: "長文",
                     isSelected: !isShortMode
                 ) {
                     isShortMode = false
