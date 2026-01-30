@@ -57,4 +57,13 @@ enum ReplyType: String, Codable, CaseIterable {
         case .witty: return "💙"   // 変化球: 水色
         }
     }
+    
+    /// PersonalTypeへのマッピング
+    var toPersonalType: PersonalType {
+        switch self {
+        case .safe: return .gentle    // 安牌 → 優しい系
+        case .chill: return .active   // ちょい攻め → アクティブ系
+        case .witty: return .funny    // 変化球 → おもしろ系
+        }
+    }
 }

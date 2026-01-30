@@ -11,6 +11,7 @@ struct ReplyResultView: View {
     let image: UIImage?
     let extractedText: String
     let context: Context
+    let initialTone: ReplyType  // 初期選択トーン
     
     // 状態管理（シンプル化）
     @State private var isAnalyzing = false
@@ -27,10 +28,18 @@ struct ReplyResultView: View {
     @State private var visibleBoxCount = 0
     
     // カスタマイズ用
-    @State private var selectedTone: ReplyType = .safe
+    @State private var selectedTone: ReplyType
     @State private var isShortMode = true
     
     private let toneTypes: [ReplyType] = [.safe, .chill, .witty]
+    
+    init(image: UIImage?, extractedText: String, context: Context, initialTone: ReplyType = .safe) {
+        self.image = image
+        self.extractedText = extractedText
+        self.context = context
+        self.initialTone = initialTone
+        self._selectedTone = State(initialValue: initialTone)
+    }
     
     var body: some View {
         ZStack {
@@ -169,7 +178,7 @@ struct ReplyResultView: View {
         .padding()
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(Color(.systemBackground))  // 白背景
+                .fill(Color.white)  // 明示的に白背景
         )
         .onTapGesture {
             copyReply(reply)
@@ -247,16 +256,16 @@ struct ReplyResultView: View {
             Text(title)
                 .font(.subheadline)
                 .fontWeight(.medium)
-                .foregroundColor(isSelected ? .white : .primary)
+                .foregroundColor(isSelected ? .white : .white.opacity(0.9))
                 .padding(.horizontal, 16)
                 .padding(.vertical, 10)
                 .background(
                     Capsule()
-                        .fill(isSelected ? Color.purple : Color(.systemGray6))
+                        .fill(isSelected ? Color.purple : Color.white.opacity(0.2))
                 )
                 .overlay(
                     Capsule()
-                        .stroke(isSelected ? Color.purple : Color.clear, lineWidth: 2)
+                        .stroke(isSelected ? Color.purple : Color.white.opacity(0.3), lineWidth: 1)
                 )
         }
     }
@@ -266,16 +275,22 @@ struct ReplyResultView: View {
     private var regenerateButton: some View {
         Button(action: generateReply) {
             HStack {
+                Image(systemName: "arrow.clockwise")
                 Text("回答を再生成")
                     .fontWeight(.medium)
-                Text("✨")
             }
             .foregroundColor(.white)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 14)
             .background(
                 RoundedRectangle(cornerRadius: 25)
-                    .fill(Color.black)
+                    .fill(
+                        LinearGradient(
+                            colors: [.purple, .pink],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
             )
         }
     }
@@ -344,7 +359,7 @@ struct ReplyResultView: View {
             do {
                 let result = try await FirebaseService.shared.generateReplies(
                     message: partnerMessage,
-                    personalType: .funny,
+                    personalType: selectedTone.toPersonalType,  // 選択されたトーンに対応
                     gender: .male,
                     ageGroup: .early20s,
                     relationship: context.displayName,
@@ -397,32 +412,77 @@ struct ReplyResultView: View {
 
 // MARK: - Analyzing View
 
+// MARK: - Analyzing View (ローディングアニメーション強化)
+
 struct AnalyzingView: View {
     @State private var rotation: Double = 0
+    @State private var pulse: Bool = false
     
     var body: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: 30) {
             ZStack {
+                // 外側の回転リング
                 ForEach(0..<3) { index in
                     Circle()
-                        .stroke(Color.purple.opacity(0.3 - Double(index) * 0.1), lineWidth: 2)
-                        .frame(width: CGFloat(100 + index * 40), height: CGFloat(100 + index * 40))
-                        .rotationEffect(.degrees(rotation))
+                        .stroke(
+                            LinearGradient(
+                                colors: [.purple.opacity(0.8), .cyan.opacity(0.3), .clear],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            ),
+                            lineWidth: 3
+                        )
+                        .frame(width: CGFloat(90 + index * 35), height: CGFloat(90 + index * 35))
+                        .rotationEffect(.degrees(rotation + Double(index * 30)))
                 }
                 
+                // 白い回転ライン（追加）
+                Circle()
+                    .trim(from: 0, to: 0.3)
+                    .stroke(
+                        LinearGradient(
+                            colors: [.white, .white.opacity(0)],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        ),
+                        style: StrokeStyle(lineWidth: 4, lineCap: .round)
+                    )
+                    .frame(width: 120, height: 120)
+                    .rotationEffect(.degrees(-rotation * 1.5))
+                
+                // 中心の王冠アイコン
                 Image(systemName: "crown.fill")
-                    .font(.system(size: 50))
-                    .foregroundColor(.purple)
+                    .font(.system(size: 45))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [.purple, .cyan],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .scaleEffect(pulse ? 1.1 : 1.0)
+                    .shadow(color: .purple.opacity(0.5), radius: 15)
             }
             
-            Text("AI回答作成中...")
-                .font(.title3)
-                .fontWeight(.bold)
-                .foregroundColor(.white)
+            VStack(spacing: 8) {
+                Text("AIが回答を作成中...")
+                    .font(.title3)
+                    .fontWeight(.bold)
+                    .foregroundColor(.white)
+                
+                Text("少々お待ちください")
+                    .font(.subheadline)
+                    .foregroundColor(.white.opacity(0.6))
+            }
         }
         .onAppear {
-            withAnimation(.linear(duration: 3).repeatForever(autoreverses: false)) {
+            // 回転アニメーション
+            withAnimation(.linear(duration: 2).repeatForever(autoreverses: false)) {
                 rotation = 360
+            }
+            // パルスアニメーション
+            withAnimation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true)) {
+                pulse = true
             }
         }
     }
@@ -433,7 +493,8 @@ struct AnalyzingView: View {
         ReplyResultView(
             image: nil,
             extractedText: "今日楽しかったね！また遊ぼう",
-            context: .matchStart
+            context: .matchStart,
+            initialTone: .safe
         )
     }
 }

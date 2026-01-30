@@ -54,7 +54,8 @@ struct HomeView: View {
                 ReplyResultView(
                     image: selectedImage,
                     extractedText: extractedText,
-                    context: selectedContext
+                    context: selectedContext,
+                    initialTone: selectedTone  // 選択されたトーンを渡す
                 )
             }
             .fullScreenCover(isPresented: $showToneSelection) {
@@ -350,11 +351,24 @@ struct ToneSelectionSheet: View {
         ZStack {
             Color.magicGradient.ignoresSafeArea()
             
-            VStack(spacing: 20) {
+            VStack(spacing: 24) {
+                Spacer()
+                    .frame(height: 60)  // ノッチ/ダイナミックアイランド回避
+                
                 // タイトル
-                VStack(spacing: 8) {
+                VStack(spacing: 12) {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 40))
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [.purple, .cyan],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                    
                     Text("どんな雰囲気で返信する？")
-                        .font(.title2)
+                        .font(.title)
                         .fontWeight(.bold)
                         .foregroundColor(.white)
                     
@@ -362,7 +376,9 @@ struct ToneSelectionSheet: View {
                         .font(.subheadline)
                         .foregroundColor(.white.opacity(0.6))
                 }
-                .padding(.top, 30)
+                
+                Spacer()
+                    .frame(height: 20)
                 
                 // トーン選択ボタン（タップで即座に遷移）
                 VStack(spacing: 16) {
@@ -373,7 +389,7 @@ struct ToneSelectionSheet: View {
                         }) {
                             HStack(spacing: 16) {
                                 Text(option.emoji)
-                                    .font(.largeTitle)
+                                    .font(.system(size: 40))
                                 
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text(option.type.displayName)
@@ -386,27 +402,30 @@ struct ToneSelectionSheet: View {
                                 
                                 Spacer()
                                 
-                                Image(systemName: "chevron.right")
-                                    .font(.title3)
-                                    .foregroundColor(.white.opacity(0.5))
+                                Image(systemName: "chevron.right.circle.fill")
+                                    .font(.title2)
+                                    .foregroundColor(.white.opacity(0.4))
                             }
                             .foregroundColor(.white)
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 18)
+                            .padding(.horizontal, 24)
+                            .padding(.vertical, 20)
                             .background(
-                                RoundedRectangle(cornerRadius: 16)
-                                    .fill(Color.glassBackground)
+                                RoundedRectangle(cornerRadius: 20)
+                                    .fill(Color.white.opacity(0.1))
                             )
                             .overlay(
-                                RoundedRectangle(cornerRadius: 16)
-                                    .stroke(Color.glassBorder, lineWidth: 1)
+                                RoundedRectangle(cornerRadius: 20)
+                                    .stroke(Color.white.opacity(0.2), lineWidth: 1)
                             )
                         }
                     }
                 }
-                .padding(.horizontal)
+                .padding(.horizontal, 20)
                 
                 Spacer()
+            }
+            .safeAreaInset(edge: .top) {
+                Color.clear.frame(height: 0)
             }
         }
     }
