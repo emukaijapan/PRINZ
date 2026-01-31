@@ -34,27 +34,37 @@ class FirebaseService {
         personalType: PersonalType,
         gender: UserGender,
         ageGroup: UserAgeGroup,
-        relationship: String? = nil,  // オプショナルに変更
+        relationship: String? = nil,
         partnerName: String? = nil,
         userMessage: String? = nil,
-        isShortMode: Bool = true
+        isShortMode: Bool = true,
+        selectedTone: ReplyType? = nil
     ) async throws -> (replies: [Reply], remainingToday: Int) {
-        
+
         var data: [String: Any] = [
             "message": message,
             "personalType": personalType.rawValue,
             "gender": gender.rawValue,
             "ageGroup": ageGroup.rawValue,
-            "relationship": relationship ?? "マッチング中",  // デフォルト値
+            "relationship": relationship ?? "マッチング中",
             "replyLength": isShortMode ? "short" : "long"
         ]
-        
+
         // オプションパラメータを追加
         if let partnerName = partnerName {
             data["partnerName"] = partnerName
         }
         if let userMessage = userMessage {
             data["userMessage"] = userMessage
+        }
+        if let selectedTone = selectedTone {
+            let toneString: String
+            switch selectedTone {
+            case .safe: toneString = "safe"
+            case .chill: toneString = "aggressive"
+            case .witty: toneString = "unique"
+            }
+            data["selectedTone"] = toneString
         }
         
         do {

@@ -300,6 +300,16 @@ struct ShareExtensionView: View {
     private var resultsView: some View {
         ScrollView {
             VStack(spacing: 16) {
+                // スクリーンショット表示
+                if let image = loadedImage {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(maxHeight: 200)
+                        .cornerRadius(12)
+                        .padding(.horizontal)
+                }
+
                 // ヘッダー
                 HStack(spacing: 6) {
                     Image(systemName: "sparkles")
@@ -369,16 +379,22 @@ struct ShareExtensionView: View {
                 // 再生成ボタン
                 Button(action: regenerateWithTone) {
                     HStack {
+                        Image(systemName: "arrow.clockwise")
                         Text("回答を再生成")
                             .fontWeight(.medium)
-                        Text("✨")
                     }
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
                     .background(
                         RoundedRectangle(cornerRadius: 25)
-                            .fill(Color.black)
+                            .fill(
+                                LinearGradient(
+                                    colors: [.purple, .pink],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
                     )
                 }
                 .padding(.horizontal)
@@ -425,10 +441,10 @@ struct ShareExtensionView: View {
         let displayText = displayedTexts[reply.id] ?? ""
 
         return HStack(alignment: .top, spacing: 12) {
-            // トーンアイコン（SF Symbols）
-            Image(systemName: reply.type.iconName)
-                .font(.title2)
-                .foregroundColor(iconColorForType(reply.type))
+            // カテゴリ縦線バー
+            RoundedRectangle(cornerRadius: 2)
+                .fill(iconColorForType(reply.type))
+                .frame(width: 4)
 
             // 返信テキスト（タイピングアニメーション）
             Text(displayText)
@@ -659,10 +675,11 @@ struct ShareExtensionView: View {
                     personalType: .funny,
                     gender: .male,
                     ageGroup: .early20s,
-                    relationship: nil,  // シチュエーション削除
+                    relationship: nil,
                     partnerName: parsedChat.partnerName,
                     userMessage: userMessageToSend,
-                    isShortMode: isShortMode
+                    isShortMode: isShortMode,
+                    selectedTone: selectedTone
                 )
                 
                 await MainActor.run {

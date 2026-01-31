@@ -107,7 +107,8 @@ exports.generateReply = onCall(
       relationship,
       partnerName,
       userMessage,
-      replyLength = "short"
+      replyLength = "short",
+      selectedTone
     } = data;
 
     if (!message || !personalType || !gender || !ageGroup) {
@@ -129,10 +130,10 @@ exports.generateReply = onCall(
       console.log(`[generateReply] PersonalType: ${personalType}, Gender: ${gender}, AgeGroup: ${ageGroup}`);
       console.log(`[generateReply] PartnerName: ${partnerName || 'なし'}, UserMessage: ${userMessage || 'なし'}`);
       console.log(`[generateReply] ReplyLength: ${replyLength}`);
-
+      console.log(`[generateReply] SelectedTone: ${selectedTone || 'なし（従来の3カテゴリ）'}`);
 
       // プロンプト生成
-      const systemPrompt = createSystemPrompt(personalType, gender, ageGroup, replyLength);
+      const systemPrompt = createSystemPrompt(personalType, gender, ageGroup, replyLength, selectedTone);
       const userPrompt = createUserPrompt(message, relationship, userMessage, partnerName);
 
       // OpenAI API呼び出し
@@ -271,7 +272,7 @@ function getTodayString() {
 /**
  * システムプロンプト生成
  */
-function createSystemPrompt(personalType, gender, ageGroup, replyLength = "short") {
+function createSystemPrompt(personalType, gender, ageGroup, replyLength = "short", selectedTone = null) {
   const personalDescriptions = {
     "知的系": "博識で論理的。知的な語彙を使い、スマートな会話を展開する。",
     "熱血系": "情熱的でエネルギーに溢れている。ストレートな表現を好み、相手を引っ張る。",
@@ -288,6 +289,56 @@ function createSystemPrompt(personalType, gender, ageGroup, replyLength = "short
   const lengthInstruction = replyLength === "long"
     ? "長文モード：各返信は3行程度（50〜80文字）で作成すること"
     : "短文モード：各返信は1行（30文字以内）で作成すること。絶対に30文字を超えないこと";
+
+  const toneLabels = {
+    "safe": "安牌",
+    "aggressive": "ちょい攻め",
+    "unique": "変化球"
+  };
+
+  const toneDefinitions = {
+    "safe": "無難で失敗しない。相手に共感し、会話を維持する。",
+    "aggressive": "好意を匂わせる。デートに誘う。距離を一歩縮める。",
+    "unique": "相手の予想を裏切る。笑いを取る。鋭い視点やツッコミ。"
+  };
+
+  // selectedTone指定時: 同一カテゴリ3バリエーション
+  // 未指定時: 従来の3カテゴリ各1案（後方互換性）
+  const outputRule = selectedTone
+    ? `【出力ルール】
+- 指定カテゴリ「${toneLabels[selectedTone] || selectedTone}」の返信を3つのバリエーションで作成すること。
+- カテゴリの定義: ${toneDefinitions[selectedTone] || ""}
+- バリエーションの軸: A=王道アプローチ, B=語調や雰囲気を変えたアプローチ, C=異なる切り口のアプローチ
+- 3案それぞれが明確に異なるアプローチであること。似た表現の使い回しは禁止。
+- 長さは「${lengthInstruction}」とし、LINEやチャットとして自然なテンポにすること。
+- 必ず以下のJSON形式のみを出力すること。前置きや挨拶は一切不要。
+
+【JSONフォーマット】
+{
+  "replies": [
+    {"type": "${selectedTone}", "text": "（バリエーションA）", "reasoning": "（解説）"},
+    {"type": "${selectedTone}", "text": "（バリエーションB）", "reasoning": "（解説）"},
+    {"type": "${selectedTone}", "text": "（バリエーションC）", "reasoning": "（解説）"}
+  ]
+}`
+    : `【出力ルール】
+- 以下の3つのカテゴリ（安牌、ちょい攻め、変化球）の返信案を作成すること。
+- 長さは「${lengthInstruction}」とし、LINEやチャットとして自然なテンポにすること。
+- 必ず以下のJSON形式のみを出力すること。前置きや挨拶は一切不要。
+
+【カテゴリ定義】
+1. safe (安牌): 無難で失敗しない。相手に共感し、会話を維持する。
+2. aggressive (ちょい攻め): 好意を匂わせる。デートに誘う。距離を一歩縮める。
+3. unique (変化球): 相手の予想を裏切る。笑いを取る。鋭い視点やツッコミ。
+
+【JSONフォーマット】
+{
+  "replies": [
+    {"type": "safe", "text": "（安牌な返信）", "reasoning": "（解説）"},
+    {"type": "aggressive", "text": "（攻めた返信）", "reasoning": "（解説）"},
+    {"type": "unique", "text": "（変化球な返信）", "reasoning": "（解説）"}
+  ]
+}`;
 
   return `あなたは恋愛戦略のプロフェッショナルであり、優秀なゴーストライターです。
 以下の「ユーザー属性」と「性格設定」を持つ人物になりきって、相手の心を動かす返信を考えてください。
@@ -311,24 +362,7 @@ ${personalDescriptions[personalType] || "自然体でありのまま"}
 - 違和感のある「おじさん/おばさん構文」や、逆に年齢にそぐわない無理な若作りは避けること。
 - 文脈に合わせて、絵文字や記号を適切に使用すること。
 
-【出力ルール】
-- 以下の3つのカテゴリ（安牌、ちょい攻め、変化球）の返信案を作成すること。
-- 長さは「${lengthInstruction}」とし、LINEやチャットとして自然なテンポにすること。
-- 必ず以下のJSON形式のみを出力すること。前置きや挨拶は一切不要。
-
-【カテゴリ定義】
-1. safe (安牌): 無難で失敗しない。相手に共感し、会話を維持する。
-2. aggressive (ちょい攻め): 好意を匠わせる。デートに誘う。距離を一歩縮める。
-3. unique (変化球): 相手の予想を裏切る。笑いを取る。鋭い視点やツッコミ。
-
-【JSONフォーマット】
-{
-  "replies": [
-    {"type": "safe", "text": "（安牌な返信）", "reasoning": "（解説）"},
-    {"type": "aggressive", "text": "（攻めた返信）", "reasoning": "（解説）"},
-    {"type": "unique", "text": "（変化球な返信）", "reasoning": "（解説）"}
-  ]
-}`;
+${outputRule}`;
 }
 
 /**

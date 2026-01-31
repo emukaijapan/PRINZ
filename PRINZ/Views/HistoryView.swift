@@ -111,50 +111,53 @@ struct HistoryCard: View {
         return formatter.string(from: date)
     }
 
+    private var badgeColor: Color {
+        switch reply.type {
+        case .safe: return .cyan
+        case .chill: return .orange
+        case .witty: return .purple
+        }
+    }
+
     var body: some View {
-        GlassCard(glowColor: .magicPink) {
-            VStack(alignment: .leading, spacing: 12) {
-                // ヘッダー（トーン種別バッジのみ）
-                HStack {
-                    Text(reply.type.displayName)
+        VStack(alignment: .leading, spacing: 12) {
+            // ヘッダー: 縦線バー + トーンバッジ
+            HStack(spacing: 6) {
+                RoundedRectangle(cornerRadius: 2)
+                    .fill(badgeColor)
+                    .frame(width: 4, height: 14)
+                Text(reply.type.displayName)
+                    .font(.caption)
+                    .fontWeight(.bold)
+                    .foregroundColor(badgeColor)
+                Spacer()
+            }
+
+            // 返信テキスト
+            Text(reply.text)
+                .font(.body)
+                .foregroundColor(.black)
+
+            // タイムスタンプ & コピー状態
+            HStack {
+                Text(formatTimestamp(reply.timestamp))
+                    .font(.caption)
+                    .foregroundColor(.gray)
+
+                Spacer()
+
+                if showCopied {
+                    Label("コピー済み", systemImage: "checkmark.circle.fill")
                         .font(.caption)
-                        .fontWeight(.bold)
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(
-                            Capsule()
-                                .fill(Color.glassBackground)
-                                .overlay(
-                                    Capsule()
-                                        .stroke(Color.magicPink, lineWidth: 1)
-                                )
-                        )
-
-                    Spacer()
-                }
-
-                // 返信テキスト
-                Text(reply.text)
-                    .font(.body)
-                    .foregroundColor(.white)
-
-                // タイムスタンプ & コピー状態
-                HStack {
-                    Text(formatTimestamp(reply.timestamp))
-                        .font(.caption)
-                        .foregroundColor(.white.opacity(0.5))
-                    
-                    Spacer()
-                    
-                    if showCopied {
-                        Label("コピー済み", systemImage: "checkmark.circle.fill")
-                            .font(.caption)
-                            .foregroundColor(.green)
-                    }
+                        .foregroundColor(.green)
                 }
             }
         }
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color.white)
+        )
         .onTapGesture {
             UIPasteboard.general.string = reply.text
             showCopied = true

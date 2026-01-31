@@ -173,10 +173,10 @@ struct ReplyResultView: View {
         let displayText = displayedTexts[reply.id] ?? ""
         
         return HStack(alignment: .top, spacing: 12) {
-            // トーンアイコン（SF Symbols）
-            Image(systemName: reply.type.iconName)
-                .font(.title2)
-                .foregroundColor(iconColorForType(reply.type))
+            // カテゴリ縦線バー
+            RoundedRectangle(cornerRadius: 2)
+                .fill(iconColorForType(reply.type))
+                .frame(width: 4)
 
             // 返信テキスト（タイピングアニメーション）
             Text(displayText)
@@ -368,13 +368,14 @@ struct ReplyResultView: View {
             do {
                 let result = try await FirebaseService.shared.generateReplies(
                     message: partnerMessage,
-                    personalType: .funny,  // 固定（サーバー側で3カテゴリ生成）
+                    personalType: .funny,
                     gender: .male,
                     ageGroup: .early20s,
                     relationship: context.displayName,
                     partnerName: parsedChat?.partnerName,
                     userMessage: userMessageToSend,
-                    isShortMode: isShortMode
+                    isShortMode: isShortMode,
+                    selectedTone: selectedTone
                 )
                 
                 await MainActor.run {
