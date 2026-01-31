@@ -341,10 +341,10 @@ struct ToneSelectionSheet: View {
     @Binding var selectedTone: ReplyType
     let onSelect: (ReplyType) -> Void  // 選択時のコールバック
     
-    private let toneOptions: [(type: ReplyType, emoji: String, description: String)] = [
-        (.safe, "💛", "無難で安心な返信"),
-        (.chill, "💜", "少し踏み込んだ返信"),
-        (.witty, "💙", "意外性のある返信")
+    private let toneOptions: [(type: ReplyType, icon: String, color: Color, description: String)] = [
+        (.safe, "shield.fill", .cyan, "無難で安心な返信"),
+        (.chill, "flame.fill", .orange, "少し踏み込んだ返信"),
+        (.witty, "sparkles", .purple, "意外性のある返信")
     ]
     
     var body: some View {
@@ -388,9 +388,15 @@ struct ToneSelectionSheet: View {
                             onSelect(option.type)
                         }) {
                             HStack(spacing: 16) {
-                                Text(option.emoji)
-                                    .font(.system(size: 40))
-                                
+                                Image(systemName: option.icon)
+                                    .font(.system(size: 28))
+                                    .foregroundColor(option.color)
+                                    .frame(width: 44, height: 44)
+                                    .background(
+                                        Circle()
+                                            .fill(option.color.opacity(0.15))
+                                    )
+
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text(option.type.displayName)
                                         .font(.title3)
