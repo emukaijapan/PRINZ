@@ -827,7 +827,7 @@ struct ToneButton: View {
                     .fill(Color.glassBackground)
                     .overlay(
                         RoundedRectangle(cornerRadius: 16)
-                            .stroke(isSelected ? color : Color.glassBorder, lineWidth: isSelected ? 2 : 1)
+                            .stroke(Color.glassBorder, lineWidth: 1)
                     )
             )
         }
