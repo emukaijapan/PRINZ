@@ -182,12 +182,15 @@ class ChatParser {
             if item.normalizedX > selfMessageXThreshold {
                 if item.normalizedY < lowestUserY {
                     lowestUserY = item.normalizedY
-                    lastUserMessage = item.text
+                    lastUserMessage = cleanEmojiArtifacts(item.text)
                 }
             }
             
+            let cleanedText = cleanEmojiArtifacts(item.text)
+            guard !cleanedText.isEmpty else { continue }
+
             messages.append(ChatMessage(
-                text: item.text,
+                text: cleanedText,
                 isFromPartner: isFromPartner,
                 timestamp: nil,
                 normalizedX: item.normalizedX,
@@ -276,6 +279,36 @@ class ChatParser {
         return patterns.contains { line.range(of: $0, options: .regularExpression) != nil }
     }
     
+    /// OCR誤認識の絵文字ゴミ文字を除去
+    /// Vision frameworkはスクショ内の絵文字を「ぎ」「き」等の1文字として誤認識する
+    private func cleanEmojiArtifacts(_ text: String) -> String {
+        // Unicode絵文字を除去（Visionが稀にそのまま出力する場合）
+        var cleaned = text.unicodeScalars.filter { scalar in
+            // 基本的な絵文字ブロックを除外
+            !(0x1F600...0x1F64F).contains(scalar.value) && // Emoticons
+            !(0x1F300...0x1F5FF).contains(scalar.value) && // Misc Symbols
+            !(0x1F680...0x1F6FF).contains(scalar.value) && // Transport
+            !(0x1F900...0x1F9FF).contains(scalar.value) && // Supplemental
+            !(0x2600...0x26FF).contains(scalar.value) &&   // Misc Symbols
+            !(0x2700...0x27BF).contains(scalar.value) &&   // Dingbats
+            !(0xFE00...0xFE0F).contains(scalar.value)      // Variation Selectors
+        }.map { String($0) }.joined()
+
+        // 末尾の孤立1文字ひらがなを除去（絵文字の誤認識パターン）
+        // 例: 「よろしくですぎ」→「よろしくです」
+        let emojiMisreads: Set<Character> = ["ぎ", "き", "ざ", "ず", "ぴ", "ぷ", "ゔ"]
+        if cleaned.count > 2, let last = cleaned.last, emojiMisreads.contains(last) {
+            // 前の文字が助詞や文末として自然でない場合のみ除去
+            let beforeLast = cleaned[cleaned.index(cleaned.endIndex, offsetBy: -2)]
+            let naturalEndings: Set<Character> = ["す", "た", "る", "い", "な", "ね", "よ", "か", "ん", "ー", "！", "!"]
+            if naturalEndings.contains(beforeLast) {
+                cleaned = String(cleaned.dropLast())
+            }
+        }
+
+        return cleaned.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
     /// 重複メッセージを除去
     private func removeDuplicates(from messages: [ChatMessage]) -> [ChatMessage] {
         var seen = Set<String>()

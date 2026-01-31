@@ -424,6 +424,7 @@ struct ToneSelectionSheet: View {
                                     .stroke(Color.white.opacity(0.2), lineWidth: 1)
                             )
                         }
+                        .buttonStyle(PlainButtonStyle())
                     }
                 }
                 .padding(.horizontal, 20)
