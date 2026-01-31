@@ -245,10 +245,10 @@ struct ShareExtensionView: View {
                     selectToneAndGenerate(.safe)
                 }
                 
-                // 攻め
+                // ちょい攻め
                 ToneButton(
                     tone: .chill,
-                    title: "攻め",
+                    title: "ちょい攻め",
                     subtitle: "距離を縮める積極的な返信",
                     icon: "flame.fill",
                     color: .orange,
@@ -411,34 +411,50 @@ struct ShareExtensionView: View {
         }
     }
     
+    /// トーンタイプに応じたアイコン色
+    private func iconColorForType(_ type: ReplyType) -> Color {
+        switch type {
+        case .safe: return .cyan
+        case .chill: return .orange
+        case .witty: return .purple
+        }
+    }
+
     /// 個別の返信行ビュー（タイピングアニメーション付き）
     private func replyRowView(reply: Reply) -> some View {
         let displayText = displayedTexts[reply.id] ?? ""
-        
+
         return HStack(alignment: .top, spacing: 12) {
-            // トーンアイコン
-            Text(reply.type.iconEmoji)
+            // トーンアイコン（SF Symbols）
+            Image(systemName: reply.type.iconName)
                 .font(.title2)
-            
+                .foregroundColor(iconColorForType(reply.type))
+
             // 返信テキスト（タイピングアニメーション）
             Text(displayText)
                 .font(.body)
-                .foregroundColor(.primary)
+                .foregroundColor(.black)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding()
-                .background(
-                    RoundedRectangle(cornerRadius: 16)
-                        .fill(Color(.systemBackground))
-                )
-            
-            // コピーボタン
-            Button(action: { copyReplyWithFeedback(reply) }) {
-                Image(systemName: copiedReplyId == reply.id ? "checkmark.circle.fill" : "doc.on.doc")
-                    .font(.title3)
-                    .foregroundColor(copiedReplyId == reply.id ? .green : .white.opacity(0.6))
-            }
         }
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color.white)
+        )
+        .overlay(
+            copiedReplyId == reply.id ?
+            HStack {
+                Spacer()
+                Text("✓ コピー")
+                    .font(.caption)
+                    .foregroundColor(.green)
+                    .padding(8)
+            } : nil
+        )
         .padding(.horizontal)
+        .onTapGesture {
+            copyReplyWithFeedback(reply)
+        }
         .onAppear {
             startTypingAnimation(for: reply)
         }
@@ -650,15 +666,9 @@ struct ShareExtensionView: View {
                 )
                 
                 await MainActor.run {
-                    // 選択されたトーンの返信のみ表示
-                    generatedReplies = result.replies.filter { $0.type == selectedTone }
-                    // 他のトーンも含める（参考用）
-                    if generatedReplies.isEmpty {
-                        generatedReplies = result.replies
-                    }
-                    
-                    // ※履歴保存はコピー時のみ実行（copyReplyWithFeedback内）
-                    
+                    // 3案全て表示（安牌・ちょい攻め・変化球 各1案）
+                    generatedReplies = result.replies
+
                     currentStep = .results
                     ShareExtensionLogger.shared.log("Transitioned to results: \(generatedReplies.count) replies")
                 }
@@ -814,22 +824,22 @@ struct TagButton: View {
     let title: String
     let isSelected: Bool
     let action: () -> Void
-    
+
     var body: some View {
         Button(action: action) {
             Text(title)
                 .font(.subheadline)
                 .fontWeight(.medium)
-                .foregroundColor(isSelected ? .white : .primary)
+                .foregroundColor(isSelected ? .white : .white.opacity(0.9))
                 .padding(.horizontal, 16)
                 .padding(.vertical, 10)
                 .background(
                     Capsule()
-                        .fill(isSelected ? Color.purple : Color(.systemGray6))
+                        .fill(isSelected ? Color.purple : Color.white.opacity(0.2))
                 )
                 .overlay(
                     Capsule()
-                        .stroke(isSelected ? Color.purple : Color(.systemGray4), lineWidth: isSelected ? 2 : 1)
+                        .stroke(isSelected ? Color.purple : Color.white.opacity(0.3), lineWidth: isSelected ? 2 : 1)
                 )
         }
         .buttonStyle(PlainButtonStyle())

@@ -32,7 +32,15 @@ struct ReplyResultView: View {
     @State private var isShortMode = true
     
     private let toneTypes: [ReplyType] = [.safe, .chill, .witty]
-    
+
+    private func iconColorForType(_ type: ReplyType) -> Color {
+        switch type {
+        case .safe: return .cyan
+        case .chill: return .orange
+        case .witty: return .purple
+        }
+    }
+
     init(image: UIImage?, extractedText: String, context: Context, initialTone: ReplyType = .safe) {
         self.image = image
         self.extractedText = extractedText
@@ -165,14 +173,15 @@ struct ReplyResultView: View {
         let displayText = displayedTexts[reply.id] ?? ""
         
         return HStack(alignment: .top, spacing: 12) {
-            // トーンアイコン
-            Text(reply.type.iconEmoji)
+            // トーンアイコン（SF Symbols）
+            Image(systemName: reply.type.iconName)
                 .font(.title2)
-            
+                .foregroundColor(iconColorForType(reply.type))
+
             // 返信テキスト（タイピングアニメーション）
             Text(displayText)
                 .font(.body)
-                .foregroundColor(.black)  // 黒文字
+                .foregroundColor(.black)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding()
@@ -265,7 +274,7 @@ struct ReplyResultView: View {
                 )
                 .overlay(
                     Capsule()
-                        .stroke(isSelected ? Color.purple : Color.white.opacity(0.3), lineWidth: 1)
+                        .stroke(isSelected ? Color.purple : Color.white.opacity(0.3), lineWidth: isSelected ? 2 : 1)
                 )
         }
     }

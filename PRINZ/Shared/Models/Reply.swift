@@ -49,12 +49,12 @@ enum ReplyType: String, Codable, CaseIterable {
         }
     }
     
-    /// RIZZスタイルのアイコン絵文字
-    var iconEmoji: String {
+    /// SF Symbolsアイコン名
+    var iconName: String {
         switch self {
-        case .safe: return "💛"    // 安牌: 黄色
-        case .chill: return "💜"   // ちょい攻め: 紫
-        case .witty: return "💙"   // 変化球: 水色
+        case .safe: return "shield.fill"
+        case .chill: return "flame.fill"
+        case .witty: return "sparkles"
         }
     }
     

@@ -103,22 +103,19 @@ struct HistoryView: View {
 struct HistoryCard: View {
     let reply: Reply
     @State private var showCopied = false
-    
+
+    private func formatTimestamp(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy/MM/dd HH:mm"
+        formatter.locale = Locale(identifier: "ja_JP")
+        return formatter.string(from: date)
+    }
+
     var body: some View {
         GlassCard(glowColor: .magicPink) {
             VStack(alignment: .leading, spacing: 12) {
-                // ヘッダー
+                // ヘッダー（トーン種別バッジのみ）
                 HStack {
-                    Text(reply.context.emoji)
-                        .font(.title2)
-                    
-                    Text(reply.context.displayName)
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.magicPink)
-                    
-                    Spacer()
-                    
                     Text(reply.type.displayName)
                         .font(.caption)
                         .fontWeight(.bold)
@@ -133,16 +130,18 @@ struct HistoryCard: View {
                                         .stroke(Color.magicPink, lineWidth: 1)
                                 )
                         )
+
+                    Spacer()
                 }
-                
+
                 // 返信テキスト
                 Text(reply.text)
                     .font(.body)
                     .foregroundColor(.white)
-                
+
                 // タイムスタンプ & コピー状態
                 HStack {
-                    Text(reply.timestamp.formatted(date: .abbreviated, time: .shortened))
+                    Text(formatTimestamp(reply.timestamp))
                         .font(.caption)
                         .foregroundColor(.white.opacity(0.5))
                     
