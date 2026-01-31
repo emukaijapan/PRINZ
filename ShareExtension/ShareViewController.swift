@@ -106,6 +106,9 @@ struct ShareExtensionView: View {
     
     // BOX順次出現用
     @State private var visibleBoxCount = 0
+
+    // フォーカスする言葉
+    @State private var mainMessage = ""
     
     enum ShareStep {
         case loading
@@ -309,6 +312,20 @@ struct ShareExtensionView: View {
                         .cornerRadius(12)
                         .padding(.horizontal)
                 }
+
+                // フォーカス入力欄
+                HStack {
+                    Image(systemName: "sparkles")
+                        .foregroundColor(.cyan)
+                    TextField("フォーカスする言葉を教えて", text: $mainMessage)
+                        .foregroundColor(.white)
+                }
+                .padding()
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color(.systemGray6).opacity(0.3))
+                )
+                .padding(.horizontal)
 
                 // ヘッダー
                 HStack(spacing: 6) {
@@ -658,23 +675,40 @@ struct ShareExtensionView: View {
     }
     
     private func generateAIReplies(with parsedChat: ParsedChat) {
-        let partnerMessage = parsedChat.partnerMessagesText.isEmpty 
-            ? parsedChat.rawText 
+        let partnerMessage = parsedChat.partnerMessagesText.isEmpty
+            ? parsedChat.rawText
             : parsedChat.partnerMessagesText
-        
-        // userMessageの決定: OCRから抽出した自分の直近発言を使用
-        let userMessageToSend = parsedChat.lastUserMessage.map { "自分の最後の発言: \($0)" }
-        
+
+        // userMessageの決定: ユーザー入力を最優先
+        let userMessageToSend: String?
+        if !mainMessage.isEmpty {
+            userMessageToSend = mainMessage
+        } else if let lastUserMsg = parsedChat.lastUserMessage {
+            userMessageToSend = "自分の最後の発言: \(lastUserMsg)"
+        } else {
+            userMessageToSend = nil
+        }
+
+        // App Group UserDefaultsからユーザー設定を取得
+        let defaults = UserDefaults(suiteName: "group.com.prinz.app")
+        let genderRaw = defaults?.string(forKey: "userGender") ?? "男性"
+        let ageValue = defaults?.double(forKey: "userAge") ?? 25
+        let personalTypeRaw = defaults?.string(forKey: "personalType") ?? PersonalType.natural.rawValue
+
+        let gender = UserGender(rawValue: genderRaw) ?? .male
+        let ageGroup = UserAgeGroup.from(age: Int(ageValue))
+        let personalType = PersonalType(rawValue: personalTypeRaw) ?? .natural
+
         ShareExtensionLogger.shared.log("Generating AI replies: partner=\(partnerMessage.prefix(50))...")
-        
+
         Task {
             do {
                 // Firebase経由でAI返信を生成
                 let result = try await FirebaseService.shared.generateReplies(
                     message: partnerMessage,
-                    personalType: .funny,
-                    gender: .male,
-                    ageGroup: .early20s,
+                    personalType: personalType,
+                    gender: gender,
+                    ageGroup: ageGroup,
                     relationship: nil,
                     partnerName: parsedChat.partnerName,
                     userMessage: userMessageToSend,

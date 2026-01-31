@@ -30,7 +30,15 @@ struct ReplyResultView: View {
     // カスタマイズ用
     @State private var selectedTone: ReplyType
     @State private var isShortMode = true
-    
+
+    // ユーザー設定（App Group共有）
+    @AppStorage("userGender", store: UserDefaults(suiteName: "group.com.prinz.app"))
+    private var userGenderRaw: String = "男性"
+    @AppStorage("userAge", store: UserDefaults(suiteName: "group.com.prinz.app"))
+    private var userAge: Double = 25
+    @AppStorage("personalType", store: UserDefaults(suiteName: "group.com.prinz.app"))
+    private var personalTypeRaw: String = PersonalType.natural.rawValue
+
     private let toneTypes: [ReplyType] = [.safe, .chill, .witty]
 
     private func iconColorForType(_ type: ReplyType) -> Color {
@@ -366,11 +374,15 @@ struct ReplyResultView: View {
         
         Task {
             do {
+                let gender = UserGender(rawValue: userGenderRaw) ?? .male
+                let ageGroup = UserAgeGroup.from(age: Int(userAge))
+                let personalType = PersonalType(rawValue: personalTypeRaw) ?? .natural
+
                 let result = try await FirebaseService.shared.generateReplies(
                     message: partnerMessage,
-                    personalType: .funny,
-                    gender: .male,
-                    ageGroup: .early20s,
+                    personalType: personalType,
+                    gender: gender,
+                    ageGroup: ageGroup,
                     relationship: context.displayName,
                     partnerName: parsedChat?.partnerName,
                     userMessage: userMessageToSend,

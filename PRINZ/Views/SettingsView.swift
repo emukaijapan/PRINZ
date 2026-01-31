@@ -8,9 +8,12 @@
 import SwiftUI
 
 struct SettingsView: View {
-    @AppStorage("userAge") private var userAge: Double = 25
-    @AppStorage("userGender") private var userGender: String = "未設定"
-    @AppStorage("personalType") private var personalTypeRaw: String = PersonalType.natural.rawValue
+    @AppStorage("userAge", store: UserDefaults(suiteName: "group.com.prinz.app"))
+    private var userAge: Double = 25
+    @AppStorage("userGender", store: UserDefaults(suiteName: "group.com.prinz.app"))
+    private var userGender: String = "未設定"
+    @AppStorage("personalType", store: UserDefaults(suiteName: "group.com.prinz.app"))
+    private var personalTypeRaw: String = PersonalType.natural.rawValue
     
     private var personalType: PersonalType {
         PersonalType(rawValue: personalTypeRaw) ?? .natural

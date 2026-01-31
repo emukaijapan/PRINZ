@@ -53,28 +53,35 @@ class AppState: ObservableObject {
 @main
 struct PRINZApp: App {
     @StateObject private var appState = AppState.shared
-    
+    @AppStorage("hasCompletedOnboarding", store: UserDefaults(suiteName: "group.com.prinz.app"))
+    private var hasCompletedOnboarding: Bool = false
+
     init() {
         // Firebase初期化
         FirebaseApp.configure()
         print("✅ Firebase initialized")
-        
+
         // App Group初期化（データ共有用）
         setupAppGroup()
     }
-    
+
     var body: some Scene {
         WindowGroup {
-            ContentView()
-                .preferredColorScheme(.dark)
-                .environmentObject(appState)
-                .onOpenURL { url in
-                    handleOpenURL(url)
-                }
-                .onAppear {
-                    // 起動時に共有データがあればロード
-                    checkForSharedData()
-                }
+            if hasCompletedOnboarding {
+                ContentView()
+                    .preferredColorScheme(.dark)
+                    .environmentObject(appState)
+                    .onOpenURL { url in
+                        handleOpenURL(url)
+                    }
+                    .onAppear {
+                        // 起動時に共有データがあればロード
+                        checkForSharedData()
+                    }
+            } else {
+                OnboardingView()
+                    .preferredColorScheme(.dark)
+            }
         }
     }
     
