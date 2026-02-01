@@ -9,6 +9,7 @@ import SwiftUI
 import PhotosUI
 
 struct HomeView: View {
+    // チャット返信用
     @State private var selectedItem: PhotosPickerItem?
     @State private var selectedImage: UIImage?
     @State private var showManualInput = false
@@ -18,6 +19,15 @@ struct HomeView: View {
     @State private var extractedText = ""
     @State private var selectedTone: ReplyType = .safe
     @State private var selectedContext: Context = .matchStart
+
+    // プロフィール挨拶用
+    @State private var profileSelectedItem: PhotosPickerItem?
+    @State private var profileImage: UIImage?
+    @State private var profileText = ""
+    @State private var showProfileToneSelection = false
+    @State private var showProfileResult = false
+    @State private var profileTone: ReplyType = .safe
+    @State private var isProfileProcessing = false
     
     var body: some View {
         NavigationStack {
@@ -55,7 +65,16 @@ struct HomeView: View {
                     image: selectedImage,
                     extractedText: extractedText,
                     context: selectedContext,
-                    initialTone: selectedTone  // 選択されたトーンを渡す
+                    initialTone: selectedTone
+                )
+            }
+            .navigationDestination(isPresented: $showProfileResult) {
+                ReplyResultView(
+                    image: profileImage,
+                    extractedText: profileText,
+                    context: .matchStart,
+                    initialTone: profileTone,
+                    mode: .profileGreeting
                 )
             }
             .fullScreenCover(isPresented: $showToneSelection) {
@@ -67,13 +86,29 @@ struct HomeView: View {
                     }
                 )
             }
+            .fullScreenCover(isPresented: $showProfileToneSelection) {
+                ToneSelectionSheet(
+                    selectedTone: $profileTone,
+                    onSelect: { _ in
+                        showProfileToneSelection = false
+                        showProfileResult = true
+                    }
+                )
+            }
             .onChange(of: selectedItem) { _, newItem in
                 handleImageSelection(newItem)
             }
+            .onChange(of: profileSelectedItem) { _, newItem in
+                handleProfileImageSelection(newItem)
+            }
             .onChange(of: showReplyResult) { _, isShowing in
-                // 結果画面から戻ったら写真をリセット
                 if !isShowing {
                     resetState()
+                }
+            }
+            .onChange(of: showProfileResult) { _, isShowing in
+                if !isShowing {
+                    resetProfileState()
                 }
             }
         }
@@ -226,7 +261,7 @@ struct HomeView: View {
     
     private var bottomButtonsView: some View {
         VStack(spacing: 12) {
-            // メインボタン: スクショをアップ
+            // メインボタン: スクショをアップ（チャット返信）
             PhotosPicker(selection: $selectedItem, matching: .images) {
                 HStack {
                     if isProcessing {
@@ -252,9 +287,37 @@ struct HomeView: View {
                 .cornerRadius(30)
                 .shadow(color: .neonPurple.opacity(0.5), radius: 10)
             }
-            .disabled(isProcessing)
-            
-            // サブボタン: 手動で入力のみ
+            .disabled(isProcessing || isProfileProcessing)
+
+            // 新ボタン: プロフィールから挨拶
+            PhotosPicker(selection: $profileSelectedItem, matching: .images) {
+                HStack {
+                    if isProfileProcessing {
+                        ProgressView()
+                            .tint(.white)
+                    } else {
+                        Image(systemName: "person.crop.circle.badge.plus")
+                        Text("プロフィールから挨拶")
+                            .font(.headline)
+                            .fontWeight(.bold)
+                    }
+                }
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 16)
+                .background(
+                    LinearGradient(
+                        colors: [.orange, .pink],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .cornerRadius(30)
+                .shadow(color: .orange.opacity(0.4), radius: 10)
+            }
+            .disabled(isProcessing || isProfileProcessing)
+
+            // サブボタン: 手動で入力
             Button(action: {
                 showManualInput = true
             }) {
@@ -325,13 +388,61 @@ struct HomeView: View {
         }
     }
     
-    /// 画面リセット
+    /// チャット返信の状態リセット
     func resetState() {
         selectedItem = nil
         selectedImage = nil
         extractedText = ""
         selectedTone = .safe
         selectedContext = .matchStart
+    }
+
+    // MARK: - Profile Image Selection Handler
+
+    private func handleProfileImageSelection(_ item: PhotosPickerItem?) {
+        guard let item = item else { return }
+
+        isProfileProcessing = true
+
+        Task {
+            if let data = try? await item.loadTransferable(type: Data.self),
+               let image = UIImage(data: data) {
+                await MainActor.run {
+                    profileImage = image
+                    performProfileOCR(on: image)
+                }
+            } else {
+                await MainActor.run {
+                    isProfileProcessing = false
+                }
+            }
+        }
+    }
+
+    private func performProfileOCR(on image: UIImage) {
+        OCRService.shared.recognizeText(from: image) { result in
+            DispatchQueue.main.async {
+                isProfileProcessing = false
+
+                switch result {
+                case .success(let text):
+                    profileText = text
+                    showProfileToneSelection = true
+                case .failure(let error):
+                    print("Profile OCR Error: \(error)")
+                    profileText = ""
+                    showProfileToneSelection = true
+                }
+            }
+        }
+    }
+
+    /// プロフィール挨拶の状態リセット
+    func resetProfileState() {
+        profileSelectedItem = nil
+        profileImage = nil
+        profileText = ""
+        profileTone = .safe
     }
 }
 

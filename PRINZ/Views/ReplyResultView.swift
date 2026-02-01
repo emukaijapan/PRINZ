@@ -7,12 +7,19 @@
 
 import SwiftUI
 
+/// 生成モード
+enum GenerationMode {
+    case chatReply        // チャット返信
+    case profileGreeting  // プロフィールから挨拶
+}
+
 struct ReplyResultView: View {
     let image: UIImage?
     let extractedText: String
     let context: Context
     let initialTone: ReplyType  // 初期選択トーン
-    
+    let mode: GenerationMode
+
     // 状態管理（シンプル化）
     @State private var isAnalyzing = false
     @State private var hasGenerated = false
@@ -49,11 +56,12 @@ struct ReplyResultView: View {
         }
     }
 
-    init(image: UIImage?, extractedText: String, context: Context, initialTone: ReplyType = .safe) {
+    init(image: UIImage?, extractedText: String, context: Context, initialTone: ReplyType = .safe, mode: GenerationMode = .chatReply) {
         self.image = image
         self.extractedText = extractedText
         self.context = context
         self.initialTone = initialTone
+        self.mode = mode
         self._selectedTone = State(initialValue: initialTone)
     }
     
@@ -99,9 +107,9 @@ struct ReplyResultView: View {
                 if hasGenerated {
                     // ヘッダー
                     HStack(spacing: 6) {
-                        Image(systemName: "sparkles")
+                        Image(systemName: mode == .profileGreeting ? "hand.wave.fill" : "sparkles")
                             .foregroundColor(.yellow)
-                        Text("PRINZのAI回答")
+                        Text(mode == .profileGreeting ? "PRINZの挨拶提案" : "PRINZのAI回答")
                             .font(.headline)
                             .fontWeight(.bold)
                             .foregroundColor(.white)
@@ -132,7 +140,7 @@ struct ReplyResultView: View {
             Image(systemName: "sparkles")
                 .foregroundColor(.cyan)
             
-            TextField("フォーカスする言葉を教えて", text: $mainMessage)
+            TextField(mode == .profileGreeting ? "触れてほしい話題があれば" : "フォーカスする言葉を教えて", text: $mainMessage)
                 .foregroundColor(.white)
         }
         .padding()
@@ -316,35 +324,54 @@ struct ReplyResultView: View {
     
     private func generateReply() {
         isAnalyzing = true
-        
+
         guard let image = image else {
             generateAIReply(with: extractedText.isEmpty ? "メッセージ" : extractedText)
             return
         }
-        
-        // OCR実行
-        OCRService.shared.recognizeTextWithCoordinates(from: image) { result in
-            DispatchQueue.main.async {
-                switch result {
-                case .success(let items):
-                    let parsedChat = ChatParser.shared.parseWithCoordinates(items)
-                    let partnerMessage = parsedChat.partnerMessagesText.isEmpty
-                        ? parsedChat.rawText
-                        : parsedChat.partnerMessagesText
-                    generateAIReply(with: partnerMessage, parsedChat: parsedChat)
-                case .failure:
-                    fallbackToTextOCR()
+
+        switch mode {
+        case .profileGreeting:
+            // プロフィール挨拶モード: OCR → ProfileParser → API
+            OCRService.shared.recognizeText(from: image) { result in
+                DispatchQueue.main.async {
+                    switch result {
+                    case .success(let text):
+                        let profile = ProfileParser.shared.parse(text)
+                        generateProfileGreeting(profile: profile)
+                    case .failure:
+                        generateProfileGreeting(profile: ParsedProfile(
+                            name: nil, age: nil, location: nil,
+                            hobbies: [], bio: nil, rawText: extractedText
+                        ))
+                    }
+                }
+            }
+        case .chatReply:
+            // 既存のチャット返信モード
+            OCRService.shared.recognizeTextWithCoordinates(from: image) { result in
+                DispatchQueue.main.async {
+                    switch result {
+                    case .success(let items):
+                        let parsedChat = ChatParser.shared.parseWithCoordinates(items)
+                        let partnerMessage = parsedChat.partnerMessagesText.isEmpty
+                            ? parsedChat.rawText
+                            : parsedChat.partnerMessagesText
+                        generateAIReply(with: partnerMessage, parsedChat: parsedChat)
+                    case .failure:
+                        fallbackToTextOCR()
+                    }
                 }
             }
         }
     }
-    
+
     private func fallbackToTextOCR() {
         guard let image = image else {
             generateAIReply(with: extractedText.isEmpty ? "メッセージ" : extractedText)
             return
         }
-        
+
         OCRService.shared.recognizeText(from: image) { result in
             DispatchQueue.main.async {
                 switch result {
@@ -357,12 +384,54 @@ struct ReplyResultView: View {
             }
         }
     }
-    
+
+    // MARK: - Profile Greeting Generation
+
+    private func generateProfileGreeting(profile: ParsedProfile) {
+        let userMessageToSend = mainMessage.isEmpty ? nil : mainMessage
+
+        Task {
+            do {
+                let gender = UserGender(rawValue: userGenderRaw) ?? .male
+                let ageGroup = UserAgeGroup.from(age: Int(userAge))
+                let personalType = PersonalType(rawValue: personalTypeRaw) ?? .natural
+
+                let result = try await FirebaseService.shared.generateReplies(
+                    message: profile.summary,
+                    personalType: personalType,
+                    gender: gender,
+                    ageGroup: ageGroup,
+                    relationship: "マッチ直後",
+                    partnerName: profile.name,
+                    userMessage: userMessageToSend,
+                    isShortMode: isShortMode,
+                    selectedTone: selectedTone,
+                    mode: "profileGreeting",
+                    profileInfo: profile.dictionary
+                )
+
+                await MainActor.run {
+                    withAnimation {
+                        isAnalyzing = false
+                        hasGenerated = true
+                    }
+                    allReplies = result.replies
+                }
+            } catch {
+                await MainActor.run {
+                    fallbackToMockReplies()
+                }
+            }
+        }
+    }
+
+    // MARK: - Chat Reply Generation
+
     private func generateAIReply(with message: String, parsedChat: ParsedChat? = nil) {
         let partnerMessage = parsedChat?.partnerMessagesText.isEmpty == false
             ? parsedChat!.partnerMessagesText
             : message
-        
+
         let userMessageToSend: String?
         if !mainMessage.isEmpty {
             userMessageToSend = mainMessage
@@ -371,7 +440,7 @@ struct ReplyResultView: View {
         } else {
             userMessageToSend = nil
         }
-        
+
         Task {
             do {
                 let gender = UserGender(rawValue: userGenderRaw) ?? .male
@@ -389,7 +458,7 @@ struct ReplyResultView: View {
                     isShortMode: isShortMode,
                     selectedTone: selectedTone
                 )
-                
+
                 await MainActor.run {
                     withAnimation {
                         isAnalyzing = false

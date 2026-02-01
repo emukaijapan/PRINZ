@@ -108,14 +108,33 @@ exports.generateReply = onCall(
       partnerName,
       userMessage,
       replyLength = "short",
-      selectedTone
+      selectedTone,
+      mode = "chatReply",
+      profileInfo
     } = data;
 
-    if (!message || !personalType || !gender || !ageGroup) {
+    if (!personalType || !gender || !ageGroup) {
       throw new HttpsError(
         "invalid-argument",
         "必須パラメータが不足しています"
       );
+    }
+
+    // モード別のバリデーション
+    if (mode === "profileGreeting") {
+      if (!profileInfo && !message) {
+        throw new HttpsError(
+          "invalid-argument",
+          "プロフィール情報またはメッセージが必要です"
+        );
+      }
+    } else {
+      if (!message) {
+        throw new HttpsError(
+          "invalid-argument",
+          "メッセージが必要です"
+        );
+      }
     }
 
     try {
@@ -125,16 +144,19 @@ exports.generateReply = onCall(
         console.error("OPENAI_API_KEY is not set in environment variables");
         throw new Error("OpenAI API key not configured");
       }
+      console.log(`[generateReply] Mode: ${mode}`);
       console.log(`[generateReply] API Key exists: ${apiKey ? 'YES' : 'NO'}, length: ${apiKey?.length || 0}`);
-      console.log(`[generateReply] Message: ${message.substring(0, 50)}...`);
+      console.log(`[generateReply] Message: ${(message || '').substring(0, 50)}...`);
       console.log(`[generateReply] PersonalType: ${personalType}, Gender: ${gender}, AgeGroup: ${ageGroup}`);
       console.log(`[generateReply] PartnerName: ${partnerName || 'なし'}, UserMessage: ${userMessage || 'なし'}`);
       console.log(`[generateReply] ReplyLength: ${replyLength}`);
       console.log(`[generateReply] SelectedTone: ${selectedTone || 'なし（従来の3カテゴリ）'}`);
 
       // プロンプト生成
-      const systemPrompt = createSystemPrompt(personalType, gender, ageGroup, replyLength, selectedTone);
-      const userPrompt = createUserPrompt(message, relationship, userMessage, partnerName);
+      const systemPrompt = createSystemPrompt(personalType, gender, ageGroup, replyLength, selectedTone, mode);
+      const userPrompt = mode === "profileGreeting"
+        ? createProfileUserPrompt(message, profileInfo, userMessage, partnerName)
+        : createUserPrompt(message, relationship, userMessage, partnerName);
 
       // OpenAI API呼び出し
       const completion = await getOpenAIClient().chat.completions.create({
@@ -272,7 +294,7 @@ function getTodayString() {
 /**
  * システムプロンプト生成
  */
-function createSystemPrompt(personalType, gender, ageGroup, replyLength = "short", selectedTone = null) {
+function createSystemPrompt(personalType, gender, ageGroup, replyLength = "short", selectedTone = null, mode = "chatReply") {
   const personalDescriptions = {
     "知的系": "博識で論理的。知的な語彙を使い、スマートな会話を展開する。",
     "熱血系": "情熱的でエネルギーに溢れている。ストレートな表現を好み、相手を引っ張る。",
@@ -340,6 +362,34 @@ function createSystemPrompt(personalType, gender, ageGroup, replyLength = "short
   ]
 }`;
 
+  // プロフィール挨拶モード
+  if (mode === "profileGreeting") {
+    return `あなたは恋愛戦略のプロフェッショナルであり、マッチングアプリのファーストメッセージの達人です。
+以下の「ユーザー属性」と「性格設定」を持つ人物になりきって、相手のプロフィールに基づく魅力的な初回メッセージを作成してください。
+
+【ユーザー属性】
+- 性別: ${gender}
+- 年代: ${ageGroup}
+
+【性格設定: ${personalType}】
+${personalDescriptions[personalType] || "自然体でありのまま"}
+
+【初回メッセージの構成】
+1. 自然な挨拶（「はじめまして！」等）
+2. プロフィールの具体的な内容に触れる（趣味・自己紹介等）
+3. 相手が答えやすい質問で締める
+
+【重要事項】
+- ユーザーの「年代」と「性別」に完全に同調した言葉遣いをすること。
+- テンプレ感のない、相手のプロフィールに特化したメッセージにすること。
+- 「いいね返しありがとう」のような定型句は使わないこと。
+- 相手の名前がわかる場合は自然に使うこと（頻度は控えめに）。
+- 文脈に合わせて、絵文字や記号を適切に使用すること。
+
+${outputRule}`;
+  }
+
+  // チャット返信モード（既存）
   return `あなたは恋愛戦略のプロフェッショナルであり、優秀なゴーストライターです。
 以下の「ユーザー属性」と「性格設定」を持つ人物になりきって、相手の心を動かす返信を考えてください。
 
@@ -363,6 +413,37 @@ ${personalDescriptions[personalType] || "自然体でありのまま"}
 - 文脈に合わせて、絵文字や記号を適切に使用すること。
 
 ${outputRule}`;
+}
+
+/**
+ * プロフィール挨拶用ユーザープロンプト生成
+ */
+function createProfileUserPrompt(message, profileInfo, userMessage, partnerName) {
+  const profileText = profileInfo
+    ? `【相手のプロフィール情報】
+名前: ${profileInfo.name || "不明"}
+年齢: ${profileInfo.age ? `${profileInfo.age}歳` : "不明"}
+居住地: ${profileInfo.location || "不明"}
+趣味・興味: ${profileInfo.hobbies?.join(", ") || "不明"}
+自己紹介: ${profileInfo.bio || "なし"}
+
+【プロフィール全文（OCR）】
+${profileInfo.rawText || message || ""}`
+    : `【プロフィール全文（OCR）】\n${message || ""}`;
+
+  const intentContext = userMessage
+    ? `\n【ユーザーの希望】\n${userMessage}\n`
+    : "";
+
+  return `${profileText}
+${intentContext}
+【あなたのタスク】
+1. プロフィールから「話題にできるポイント」を見つけてください（趣味、自己紹介、共通点など）
+2. ${partnerName ? `${partnerName}さんに向けた` : ""}初回メッセージを作成してください
+3. 「挨拶 + 具体的な話題への言及 + 質問」の3段構成にしてください
+4. テンプレ感がなく、このプロフィールだからこそ書ける内容にしてください
+
+指定されたJSONフォーマットで、3パターンの初回メッセージを作成してください。`;
 }
 
 /**

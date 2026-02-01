@@ -38,7 +38,9 @@ class FirebaseService {
         partnerName: String? = nil,
         userMessage: String? = nil,
         isShortMode: Bool = true,
-        selectedTone: ReplyType? = nil
+        selectedTone: ReplyType? = nil,
+        mode: String = "chatReply",
+        profileInfo: [String: Any]? = nil
     ) async throws -> (replies: [Reply], remainingToday: Int) {
 
         var data: [String: Any] = [
@@ -47,7 +49,8 @@ class FirebaseService {
             "gender": gender.rawValue,
             "ageGroup": ageGroup.rawValue,
             "relationship": relationship ?? "マッチング中",
-            "replyLength": isShortMode ? "short" : "long"
+            "replyLength": isShortMode ? "short" : "long",
+            "mode": mode
         ]
 
         // オプションパラメータを追加
@@ -65,6 +68,9 @@ class FirebaseService {
             case .witty: toneString = "unique"
             }
             data["selectedTone"] = toneString
+        }
+        if let profileInfo = profileInfo {
+            data["profileInfo"] = profileInfo
         }
         
         do {
