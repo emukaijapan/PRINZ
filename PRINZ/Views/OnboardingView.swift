@@ -47,6 +47,7 @@ struct OnboardingView: View {
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
                 .animation(.easeInOut(duration: 0.3), value: currentStep)
+                .simultaneousGesture(DragGesture())
 
                 // ボタン
                 bottomButton
@@ -157,6 +158,7 @@ struct OnboardingView: View {
                                 RoundedRectangle(cornerRadius: 12)
                                     .stroke(selectedPersonalType == type ? Color.magicPink : Color.glassBorder, lineWidth: 1)
                             )
+                            .contentShape(Rectangle())
                         }
                         .buttonStyle(PlainButtonStyle())
                     }
@@ -220,6 +222,7 @@ struct OnboardingView: View {
                     RoundedRectangle(cornerRadius: 14)
                         .stroke(isSelected ? Color.magicPurple : Color.glassBorder, lineWidth: 1)
                 )
+                .contentShape(Rectangle())
         }
         .buttonStyle(PlainButtonStyle())
     }

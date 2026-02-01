@@ -76,5 +76,6 @@ struct MagicBackground: View {
     var body: some View {
         Color.magicGradient
             .ignoresSafeArea()
+            .allowsHitTesting(false)
     }
 }
