@@ -17,9 +17,9 @@ struct ParsedProfile {
   let rawText: String
 
   /// API送信用のサマリー（抽出できた情報 + rawText）
+  /// ※名前はマッチングアプリでは本名でないケースが多いため送信しない
   var summary: String {
     var parts: [String] = []
-    if let name = name { parts.append("名前: \(name)") }
     if let age = age { parts.append("年齢: \(age)歳") }
     if let location = location { parts.append("居住地: \(location)") }
     if !hobbies.isEmpty { parts.append("趣味: \(hobbies.joined(separator: ", "))") }
@@ -29,10 +29,9 @@ struct ParsedProfile {
     return structured + "【プロフィール全文】\n\(rawText)"
   }
 
-  /// API送信用の辞書
+  /// API送信用の辞書（名前は含めない）
   var dictionary: [String: Any] {
     var dict: [String: Any] = ["rawText": rawText]
-    if let name = name { dict["name"] = name }
     if let age = age { dict["age"] = age }
     if let location = location { dict["location"] = location }
     if !hobbies.isEmpty { dict["hobbies"] = hobbies }

@@ -155,8 +155,8 @@ exports.generateReply = onCall(
       // プロンプト生成
       const systemPrompt = createSystemPrompt(personalType, gender, ageGroup, replyLength, selectedTone, mode);
       const userPrompt = mode === "profileGreeting"
-        ? createProfileUserPrompt(message, profileInfo, userMessage, partnerName)
-        : createUserPrompt(message, relationship, userMessage, partnerName);
+        ? createProfileUserPrompt(message, profileInfo, userMessage)
+        : createUserPrompt(message, relationship, userMessage);
 
       // OpenAI API呼び出し
       const completion = await getOpenAIClient().chat.completions.create({
@@ -383,7 +383,7 @@ ${personalDescriptions[personalType] || "自然体でありのまま"}
 - ユーザーの「年代」と「性別」に完全に同調した言葉遣いをすること。
 - テンプレ感のない、相手のプロフィールに特化したメッセージにすること。
 - 「いいね返しありがとう」のような定型句は使わないこと。
-- 相手の名前がわかる場合は自然に使うこと（頻度は控えめに）。
+- 相手の名前は使用しないこと（マッチングアプリでは本名でないケースが多いため）。
 - 文脈に合わせて、絵文字や記号を適切に使用すること。
 
 ${outputRule}`;
@@ -418,10 +418,9 @@ ${outputRule}`;
 /**
  * プロフィール挨拶用ユーザープロンプト生成
  */
-function createProfileUserPrompt(message, profileInfo, userMessage, partnerName) {
+function createProfileUserPrompt(message, profileInfo, userMessage) {
   const profileText = profileInfo
     ? `【相手のプロフィール情報】
-名前: ${profileInfo.name || "不明"}
 年齢: ${profileInfo.age ? `${profileInfo.age}歳` : "不明"}
 居住地: ${profileInfo.location || "不明"}
 趣味・興味: ${profileInfo.hobbies?.join(", ") || "不明"}
@@ -439,9 +438,10 @@ ${profileInfo.rawText || message || ""}`
 ${intentContext}
 【あなたのタスク】
 1. プロフィールから「話題にできるポイント」を見つけてください（趣味、自己紹介、共通点など）
-2. ${partnerName ? `${partnerName}さんに向けた` : ""}初回メッセージを作成してください
+2. 初回メッセージを作成してください
 3. 「挨拶 + 具体的な話題への言及 + 質問」の3段構成にしてください
 4. テンプレ感がなく、このプロフィールだからこそ書ける内容にしてください
+5. 相手の名前は使用しないこと（マッチングアプリでは本名でないケースが多いため）
 
 指定されたJSONフォーマットで、3パターンの初回メッセージを作成してください。`;
 }
@@ -449,33 +449,25 @@ ${intentContext}
 /**
  * ユーザープロンプト生成
  */
-function createUserPrompt(message, relationship, userMessage, partnerName) {
-  const nameContext = partnerName
-    ? `相手の名前: ${partnerName}
-【名前の使用ルール】
-- 名前（${partnerName}）は文末の同意や誘い出しの呼びかけにのみ使用
-- 頻度は3回に1回程度に抑えること
-- 名前を起点にした展開や検索的な思考は禁止
-`
-    : "";
-
+function createUserPrompt(message, relationship, userMessage) {
   const intentContext = userMessage
     ? `ユーザーの意図: ${userMessage}\n`
     : "";
 
-  return `${nameContext}${intentContext}【会話の状況分析】
+  return `${intentContext}【会話の状況分析】
 相手からのメッセージ: "${message}"
 現在の関係性: ${relationship || "マッチング中"}
 
 【あなたのタスク】
 1. まず、相手のメッセージの「感情」と「真意」を分析してください
 2. 相手が求めている反応を推測してください
-3. ${partnerName ? `${partnerName}さんに向けた` : ""}返信を作成してください
+3. 返信を作成してください
 
 【重要】
 - 相手のメッセージに含まれるキーワードや話題を活かすこと
 - 一方的に話を変えず、相手の話の流れに乗ること
 - 相手が質問している場合は、まず質問に答えること
+- 相手の名前は使用しないこと
 
 指定されたJSONフォーマットで、3パターンの返信を作成してください。`;
 }

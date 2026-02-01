@@ -28,6 +28,7 @@ struct OnboardingView: View {
     @State private var selectedPersonalType: PersonalType? = nil
 
     private let genderOptions = ["男性", "女性", "その他"]
+    private let totalSteps = 6  // チュートリアル3 + 設定3
 
     var body: some View {
         ZStack {
@@ -41,9 +42,12 @@ struct OnboardingView: View {
 
                 // ステップコンテンツ
                 TabView(selection: $currentStep) {
-                    genderStep.tag(0)
-                    ageStep.tag(1)
-                    personalTypeStep.tag(2)
+                    welcomeStep.tag(0)
+                    tutorialChatReplyStep.tag(1)
+                    tutorialProfileGreetingStep.tag(2)
+                    genderStep.tag(3)
+                    ageStep.tag(4)
+                    personalTypeStep.tag(5)
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
                 .animation(.easeInOut(duration: 0.3), value: currentStep)
@@ -57,14 +61,333 @@ struct OnboardingView: View {
         }
     }
 
+    // MARK: - Tutorial: Welcome
+
+    private var welcomeStep: some View {
+        ScrollView {
+            VStack(spacing: 24) {
+                Spacer().frame(height: 20)
+
+                // ロゴ
+                HStack(spacing: 6) {
+                    Image(systemName: "crown.fill")
+                        .font(.system(size: 44))
+                    Text("PRINZ")
+                        .font(.system(size: 44, weight: .black))
+                        .italic()
+                }
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [.neonPurple, .neonCyan],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .shadow(color: .neonPurple.opacity(0.5), radius: 20)
+
+                Text("既読のまま、終わらせない。")
+                    .font(.title3)
+                    .fontWeight(.bold)
+                    .foregroundColor(.white)
+
+                Text("マッチングアプリの返信に悩む時間を\nAIが解決します")
+                    .font(.subheadline)
+                    .foregroundColor(.white.opacity(0.6))
+                    .multilineTextAlignment(.center)
+
+                Spacer().frame(height: 10)
+
+                // 機能一覧
+                VStack(spacing: 16) {
+                    featureRow(
+                        icon: "bubble.left.and.text.bubble.right",
+                        color: .neonPurple,
+                        title: "チャット返信",
+                        description: "相手のメッセージから最適な返信を提案"
+                    )
+                    featureRow(
+                        icon: "hand.wave",
+                        color: .orange,
+                        title: "あいさつ作成",
+                        description: "プロフィールから初回メッセージを生成"
+                    )
+                    featureRow(
+                        icon: "keyboard",
+                        color: .neonCyan,
+                        title: "テキスト入力",
+                        description: "テキストを直接貼り付けて返信を作成"
+                    )
+                }
+                .padding(.horizontal, 24)
+            }
+            .padding(.top, 20)
+        }
+    }
+
+    // MARK: - Tutorial: Chat Reply
+
+    private var tutorialChatReplyStep: some View {
+        ScrollView {
+            VStack(spacing: 24) {
+                stepHeader(
+                    icon: "bubble.left.and.text.bubble.right",
+                    title: "チャット返信の使い方",
+                    subtitle: "3ステップで最適な返信を作成"
+                )
+
+                VStack(spacing: 20) {
+                    tutorialStepRow(
+                        number: 1,
+                        icon: "photo.on.rectangle.angled",
+                        color: .neonPurple,
+                        title: "スクショをアップ",
+                        description: "相手とのトーク画面をスクショして\nアプリにアップロード"
+                    )
+                    tutorialStepRow(
+                        number: 2,
+                        icon: "slider.horizontal.3",
+                        color: .magicPink,
+                        title: "トーンを選択",
+                        description: "安牌・ちょい攻め・変化球\nから雰囲気を選ぶ"
+                    )
+                    tutorialStepRow(
+                        number: 3,
+                        icon: "doc.on.doc",
+                        color: .neonCyan,
+                        title: "コピーして送信",
+                        description: "AIが提案した返信をコピーして\nそのまま送信"
+                    )
+                }
+                .padding(.horizontal, 24)
+
+                // サンプル会話
+                sampleChatPreview
+                    .padding(.horizontal, 24)
+            }
+            .padding(.top, 20)
+        }
+    }
+
+    // MARK: - Tutorial: Profile Greeting
+
+    private var tutorialProfileGreetingStep: some View {
+        ScrollView {
+            VStack(spacing: 24) {
+                stepHeader(
+                    icon: "hand.wave",
+                    title: "あいさつ作成の使い方",
+                    subtitle: "プロフィールから初回メッセージを生成"
+                )
+
+                VStack(spacing: 20) {
+                    tutorialStepRow(
+                        number: 1,
+                        icon: "person.text.rectangle",
+                        color: .orange,
+                        title: "プロフィールをスクショ",
+                        description: "気になる相手のプロフィール画面を\nスクリーンショット"
+                    )
+                    tutorialStepRow(
+                        number: 2,
+                        icon: "slider.horizontal.3",
+                        color: .pink,
+                        title: "トーンを選択",
+                        description: "あなたのスタイルに合った\n雰囲気を選ぶ"
+                    )
+                    tutorialStepRow(
+                        number: 3,
+                        icon: "paperplane.fill",
+                        color: .neonCyan,
+                        title: "メッセージを送信",
+                        description: "プロフィールに合った\nオリジナルの挨拶が完成"
+                    )
+                }
+                .padding(.horizontal, 24)
+
+                // サンプル挨拶
+                sampleGreetingPreview
+                    .padding(.horizontal, 24)
+            }
+            .padding(.top, 20)
+        }
+    }
+
+    // MARK: - Tutorial Components
+
+    private func featureRow(icon: String, color: Color, title: String, description: String) -> some View {
+        HStack(spacing: 16) {
+            Image(systemName: icon)
+                .font(.system(size: 22))
+                .foregroundColor(color)
+                .frame(width: 48, height: 48)
+                .background(
+                    Circle().fill(color.opacity(0.15))
+                )
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.subheadline)
+                    .fontWeight(.bold)
+                    .foregroundColor(.white)
+                Text(description)
+                    .font(.caption)
+                    .foregroundColor(.white.opacity(0.6))
+            }
+
+            Spacer()
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color.glassBackground)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.glassBorder, lineWidth: 1)
+        )
+    }
+
+    private func tutorialStepRow(number: Int, icon: String, color: Color, title: String, description: String) -> some View {
+        HStack(spacing: 16) {
+            ZStack {
+                Circle()
+                    .fill(color.opacity(0.2))
+                    .frame(width: 52, height: 52)
+                VStack(spacing: 2) {
+                    Image(systemName: icon)
+                        .font(.system(size: 18))
+                        .foregroundColor(color)
+                    Text("STEP \(number)")
+                        .font(.system(size: 8, weight: .bold))
+                        .foregroundColor(color.opacity(0.8))
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.subheadline)
+                    .fontWeight(.bold)
+                    .foregroundColor(.white)
+                Text(description)
+                    .font(.caption)
+                    .foregroundColor(.white.opacity(0.6))
+                    .lineSpacing(2)
+            }
+
+            Spacer()
+        }
+    }
+
+    private var sampleChatPreview: some View {
+        VStack(spacing: 10) {
+            Text("例: こんな返信を提案")
+                .font(.caption)
+                .foregroundColor(.white.opacity(0.5))
+
+            VStack(spacing: 8) {
+                // 相手のメッセージ
+                HStack {
+                    Text("今日ありがとう！楽しかった")
+                        .font(.caption)
+                        .padding(10)
+                        .background(Color.white.opacity(0.1))
+                        .cornerRadius(12)
+                    Spacer()
+                }
+
+                // AI提案
+                HStack {
+                    Spacer()
+                    VStack(alignment: .trailing, spacing: 2) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "crown.fill")
+                                .font(.system(size: 8))
+                            Text("PRINZ")
+                                .font(.system(size: 9, weight: .bold))
+                        }
+                        .foregroundColor(.neonCyan)
+
+                        Text("こちらこそ！次はどこ行く？")
+                            .font(.caption)
+                            .padding(10)
+                            .background(
+                                LinearGradient(
+                                    colors: [.neonPurple.opacity(0.4), .neonCyan.opacity(0.3)],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                            .cornerRadius(12)
+                    }
+                }
+            }
+            .foregroundColor(.white)
+            .padding(16)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color.glassBackground)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(Color.glassBorder, lineWidth: 1)
+            )
+        }
+    }
+
+    private var sampleGreetingPreview: some View {
+        VStack(spacing: 10) {
+            Text("例: こんな挨拶を提案")
+                .font(.caption)
+                .foregroundColor(.white.opacity(0.5))
+
+            VStack(spacing: 8) {
+                HStack {
+                    Spacer()
+                    VStack(alignment: .trailing, spacing: 2) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "crown.fill")
+                                .font(.system(size: 8))
+                            Text("PRINZ")
+                                .font(.system(size: 9, weight: .bold))
+                        }
+                        .foregroundColor(.neonCyan)
+
+                        Text("はじめまして！カフェ巡りが\n好きなんですね。最近行った\nおすすめのお店ありますか？")
+                            .font(.caption)
+                            .multilineTextAlignment(.trailing)
+                            .padding(10)
+                            .background(
+                                LinearGradient(
+                                    colors: [.orange.opacity(0.4), .pink.opacity(0.3)],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                            .cornerRadius(12)
+                    }
+                }
+            }
+            .foregroundColor(.white)
+            .padding(16)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color.glassBackground)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(Color.glassBorder, lineWidth: 1)
+            )
+        }
+    }
+
     // MARK: - Progress Indicator
 
     private var progressIndicator: some View {
-        HStack(spacing: 8) {
-            ForEach(0..<3) { index in
+        HStack(spacing: 6) {
+            ForEach(0..<totalSteps, id: \.self) { index in
                 Capsule()
                     .fill(index <= currentStep ? Color.magicPink : Color.white.opacity(0.2))
-                    .frame(width: index == currentStep ? 28 : 8, height: 8)
+                    .frame(width: index == currentStep ? 24 : 8, height: 6)
                     .animation(.easeInOut(duration: 0.3), value: currentStep)
             }
         }
@@ -231,22 +554,27 @@ struct OnboardingView: View {
 
     private var canProceed: Bool {
         switch currentStep {
-        case 0: return selectedGender != nil
-        case 1: return selectedAgeGroup != nil
-        case 2: return selectedPersonalType != nil
+        case 0, 1, 2: return true  // チュートリアルは常に進める
+        case 3: return selectedGender != nil
+        case 4: return selectedAgeGroup != nil
+        case 5: return selectedPersonalType != nil
         default: return false
         }
     }
 
+    private var isLastStep: Bool {
+        currentStep == totalSteps - 1
+    }
+
     private var bottomButton: some View {
         Button(action: {
-            if currentStep < 2 {
+            if !isLastStep {
                 currentStep += 1
             } else {
                 completeOnboarding()
             }
         }) {
-            Text(currentStep < 2 ? "次へ" : "はじめる")
+            Text(isLastStep ? "はじめる" : "次へ")
                 .font(.headline)
                 .fontWeight(.bold)
                 .foregroundColor(.white)

@@ -418,7 +418,6 @@ struct ReplyResultView: View {
                     gender: gender,
                     ageGroup: ageGroup,
                     relationship: "マッチ直後",
-                    partnerName: profile.name,
                     userMessage: userMessageToSend,
                     isShortMode: isShortMode,
                     selectedTone: selectedTone,
@@ -475,7 +474,6 @@ struct ReplyResultView: View {
                     gender: gender,
                     ageGroup: ageGroup,
                     relationship: context.displayName,
-                    partnerName: parsedChat?.partnerName,
                     userMessage: userMessageToSend,
                     isShortMode: isShortMode,
                     selectedTone: selectedTone
