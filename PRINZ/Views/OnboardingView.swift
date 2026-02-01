@@ -190,9 +190,9 @@ struct OnboardingView: View {
                     tutorialStepRow(
                         number: 2,
                         icon: "slider.horizontal.3",
-                        color: .pink,
+                        color: .magicPink,
                         title: "トーンを選択",
-                        description: "あなたのスタイルに合った\n雰囲気を選ぶ"
+                        description: "安牌・ちょい攻め・変化球\nから雰囲気を選ぶ"
                     )
                     tutorialStepRow(
                         number: 3,

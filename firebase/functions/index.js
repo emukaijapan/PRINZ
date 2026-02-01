@@ -7,7 +7,7 @@
  * - ユーザー認証（MVP段階では緩和）
  */
 
-const { onCall, HttpsError } = require("firebase-functions/v2/https");
+const { onCall, onRequest, HttpsError } = require("firebase-functions/v2/https");
 const { defineSecret } = require("firebase-functions/params");
 const admin = require("firebase-admin");
 const OpenAI = require("openai");
@@ -471,3 +471,77 @@ function createUserPrompt(message, relationship, userMessage) {
 
 指定されたJSONフォーマットで、3パターンの返信を作成してください。`;
 }
+
+/**
+ * RevenueCat Webhook受信
+ * サブスクリプションイベントをFirestoreに反映
+ */
+exports.handleRevenueCatWebhook = onRequest(
+  { region: "asia-northeast1" },
+  async (req, res) => {
+    if (req.method !== "POST") {
+      res.status(405).send("Method Not Allowed");
+      return;
+    }
+
+    // Webhook認証（RevenueCat側でAuthorization headerを設定）
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      console.warn("⚠️ Webhook: Missing or invalid Authorization header");
+      res.status(401).send("Unauthorized");
+      return;
+    }
+
+    try {
+      const event = req.body;
+      const eventType = event.type;
+      const appUserId = event.app_user_id;
+
+      if (!appUserId) {
+        console.warn("⚠️ Webhook: Missing app_user_id");
+        res.status(400).send("Bad Request");
+        return;
+      }
+
+      console.log(`📩 Webhook: ${eventType} for user ${appUserId}`);
+
+      const activeEvents = [
+        "INITIAL_PURCHASE",
+        "RENEWAL",
+        "PRODUCT_CHANGE",
+        "UNCANCELLATION",
+      ];
+      const inactiveEvents = [
+        "CANCELLATION",
+        "EXPIRATION",
+        "BILLING_ISSUE",
+      ];
+
+      const updateData = {
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      };
+
+      if (activeEvents.includes(eventType)) {
+        updateData.isPremium = true;
+        updateData.subscriptionProductId = event.product_id || null;
+        updateData.expiresAt = event.expiration_at_ms || null;
+      } else if (inactiveEvents.includes(eventType)) {
+        updateData.isPremium = false;
+        updateData.expiresAt = event.expiration_at_ms || null;
+      } else {
+        // その他のイベント（TRANSFER等）はログのみ
+        console.log(`ℹ️ Webhook: Unhandled event type ${eventType}`);
+        res.status(200).send("OK");
+        return;
+      }
+
+      await db.collection("users").doc(appUserId).set(updateData, { merge: true });
+      console.log(`✅ Webhook: Updated user ${appUserId} isPremium=${updateData.isPremium}`);
+
+      res.status(200).send("OK");
+    } catch (error) {
+      console.error("❌ Webhook error:", error);
+      res.status(500).send("Internal Server Error");
+    }
+  }
+);

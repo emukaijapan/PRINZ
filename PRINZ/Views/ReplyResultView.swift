@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import StoreKit
 
 /// 生成モード
 enum GenerationMode {
@@ -37,6 +38,14 @@ struct ReplyResultView: View {
     // カスタマイズ用
     @State private var selectedTone: ReplyType
     @State private var isShortMode = true
+
+    // Paywall表示用
+    @State private var showPaywall = false
+    @State private var showRateLimitAlert = false
+
+    // レビュー誘導用
+    @AppStorage("generationSuccessCount") private var generationSuccessCount: Int = 0
+    @AppStorage("hasRequestedReview") private var hasRequestedReview: Bool = false
 
     // ユーザー設定（App Group共有）
     @AppStorage("userGender", store: UserDefaults(suiteName: "group.com.prinz.app"))
@@ -83,6 +92,15 @@ struct ReplyResultView: View {
             if !hasGenerated {
                 generateReply()
             }
+        }
+        .fullScreenCover(isPresented: $showPaywall) {
+            PaywallView()
+        }
+        .alert("本日の利用上限に達しました", isPresented: $showRateLimitAlert) {
+            Button("プレミアムを見る") { showPaywall = true }
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("無料プランでは1日5回まで利用できます。プレミアムにアップグレードすると100回まで利用できます。")
         }
     }
     
@@ -431,11 +449,22 @@ struct ReplyResultView: View {
                 }
 
                 await MainActor.run {
+                    generationSuccessCount += 1
                     withAnimation {
                         isAnalyzing = false
                         hasGenerated = true
                     }
                     allReplies = result.replies
+                    // 残り回数0でPaywall表示
+                    if result.remainingToday <= 0 {
+                        showRateLimitAlert = true
+                    }
+                }
+            } catch let error as FirebaseError where error == .rateLimitExceeded {
+                print("⚠️ [ProfileGreeting] レート制限到達")
+                await MainActor.run {
+                    isAnalyzing = false
+                    showRateLimitAlert = true
                 }
             } catch {
                 print("❌ [ProfileGreeting] APIエラー: \(error)")
@@ -480,11 +509,22 @@ struct ReplyResultView: View {
                 )
 
                 await MainActor.run {
+                    generationSuccessCount += 1
                     withAnimation {
                         isAnalyzing = false
                         hasGenerated = true
                     }
                     allReplies = result.replies
+                    // 残り回数0でPaywall表示
+                    if result.remainingToday <= 0 {
+                        showRateLimitAlert = true
+                    }
+                }
+            } catch let error as FirebaseError where error == .rateLimitExceeded {
+                print("⚠️ [ChatReply] レート制限到達")
+                await MainActor.run {
+                    isAnalyzing = false
+                    showRateLimitAlert = true
                 }
             } catch {
                 await MainActor.run {
@@ -512,7 +552,18 @@ struct ReplyResultView: View {
         UIPasteboard.general.string = reply.text
         copiedReplyId = reply.id
         DataManager.shared.saveReply(reply)
-        
+
+        // レビュー誘導: 3回以上生成成功 + 未レビュー
+        if generationSuccessCount >= 3 && !hasRequestedReview {
+            hasRequestedReview = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                if let scene = UIApplication.shared.connectedScenes
+                    .first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene {
+                    SKStoreReviewController.requestReview(in: scene)
+                }
+            }
+        }
+
         DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
             if copiedReplyId == reply.id {
                 copiedReplyId = nil

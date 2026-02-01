@@ -15,6 +15,9 @@ struct SettingsView: View {
     @AppStorage("personalType", store: UserDefaults(suiteName: "group.com.prinz.app"))
     private var personalTypeRaw: String = PersonalType.natural.rawValue
 
+    @ObservedObject private var subscriptionManager = SubscriptionManager.shared
+    @State private var showPaywall = false
+
     private var personalType: PersonalType {
         PersonalType(rawValue: personalTypeRaw) ?? .natural
     }
@@ -24,39 +27,107 @@ struct SettingsView: View {
     }
 
     private let genderOptions = ["男性", "女性", "その他"]
-    
+
     var body: some View {
         NavigationView {
             ZStack {
                 // 魔法のグラデーション背景
                 MagicBackground()
-                
+
                 ScrollView {
                     VStack(spacing: 24) {
                         // ヘッダー
                         headerView
-                        
+
+                        // プレミアムプラン
+                        premiumSectionView
+
                         // パーソナルタイプ設定
                         personalTypeSettingView
-                        
+
                         // 年齢設定
                         ageSettingView
-                        
+
                         // 性別設定
                         genderSettingView
-                        
+
                         Spacer(minLength: 40)
                     }
                     .padding()
                 }
             }
-            .navigationTitle("個人設定")
+            .navigationTitle("設定")
             .navigationBarTitleDisplayMode(.large)
+            .fullScreenCover(isPresented: $showPaywall) {
+                PaywallView()
+            }
         }
     }
     
+    // MARK: - Premium Section
+
+    private var premiumSectionView: some View {
+        GlassCard(glowColor: .neonCyan) {
+            if subscriptionManager.isProUser {
+                // プレミアム会員
+                HStack(spacing: 12) {
+                    Image(systemName: "crown.fill")
+                        .font(.title2)
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [.neonPurple, .neonCyan],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Premium")
+                            .font(.headline)
+                            .fontWeight(.bold)
+                            .foregroundColor(.white)
+                        Text("プレミアム会員")
+                            .font(.caption)
+                            .foregroundColor(.neonCyan)
+                    }
+
+                    Spacer()
+
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.title2)
+                        .foregroundColor(.neonCyan)
+                }
+            } else {
+                // 無料会員 → アップグレード誘導
+                Button(action: { showPaywall = true }) {
+                    HStack(spacing: 12) {
+                        Image(systemName: "crown.fill")
+                            .font(.title2)
+                            .foregroundColor(.white.opacity(0.5))
+
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Premium")
+                                .font(.headline)
+                                .fontWeight(.bold)
+                                .foregroundColor(.white)
+                            Text("プレミアムにアップグレード")
+                                .font(.caption)
+                                .foregroundColor(.white.opacity(0.6))
+                        }
+
+                        Spacer()
+
+                        Image(systemName: "chevron.right")
+                            .font(.body)
+                            .foregroundColor(.white.opacity(0.4))
+                    }
+                }
+            }
+        }
+    }
+
     // MARK: - Header
-    
+
     private var headerView: some View {
         VStack(spacing: 12) {
             Image(systemName: "crown.fill")

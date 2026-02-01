@@ -61,6 +61,9 @@ struct PRINZApp: App {
         FirebaseApp.configure()
         print("✅ Firebase initialized")
 
+        // RevenueCat初期化（課金処理）
+        SubscriptionManager.shared.configure()
+
         // App Group初期化（データ共有用）
         setupAppGroup()
     }

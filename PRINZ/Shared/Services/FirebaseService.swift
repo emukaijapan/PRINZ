@@ -25,7 +25,6 @@ class FirebaseService {
     ///   - gender: 性別
     ///   - ageGroup: 年代
     ///   - relationship: 関係性
-    ///   - partnerName: 相手の名前（オプション）
     ///   - userMessage: ユーザーの意図（オプション）
     ///   - isShortMode: 短文モード（デフォルト: true）
     /// - Returns: 生成された返信配列と残り回数
@@ -35,7 +34,6 @@ class FirebaseService {
         gender: UserGender,
         ageGroup: UserAgeGroup,
         relationship: String? = nil,
-        partnerName: String? = nil,
         userMessage: String? = nil,
         isShortMode: Bool = true,
         selectedTone: ReplyType? = nil,
@@ -54,9 +52,6 @@ class FirebaseService {
         ]
 
         // オプションパラメータを追加
-        if let partnerName = partnerName {
-            data["partnerName"] = partnerName
-        }
         if let userMessage = userMessage {
             data["userMessage"] = userMessage
         }
@@ -125,7 +120,7 @@ class FirebaseService {
 
 // MARK: - Firebase Error
 
-enum FirebaseError: Error, LocalizedError {
+enum FirebaseError: Error, LocalizedError, Equatable {
     case unauthenticated
     case rateLimitExceeded
     case invalidArgument(String)
