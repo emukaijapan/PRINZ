@@ -28,7 +28,7 @@ class ShareExtensionLogger {
         print("📱 ShareExt: \(logEntry)")
         
         // UserDefaults（AppGroup）に永続化
-        if let defaults = UserDefaults(suiteName: "group.com.prinz.shared") {
+        if let defaults = UserDefaults(suiteName: "group.com.prinz.app") {
             var logs = defaults.stringArray(forKey: logKey) ?? []
             logs.append(logEntry)
             // 最新100件のみ保持
@@ -41,11 +41,11 @@ class ShareExtensionLogger {
     }
     
     func getLogs() -> [String] {
-        return UserDefaults(suiteName: "group.com.prinz.shared")?.stringArray(forKey: logKey) ?? []
+        return UserDefaults(suiteName: "group.com.prinz.app")?.stringArray(forKey: logKey) ?? []
     }
     
     func clearLogs() {
-        UserDefaults(suiteName: "group.com.prinz.shared")?.removeObject(forKey: logKey)
+        UserDefaults(suiteName: "group.com.prinz.app")?.removeObject(forKey: logKey)
     }
 }
 

@@ -21,19 +21,28 @@ struct ContentView: View {
                 }
                 .tag(0)
             
+            // 手動入力画面
+            NavigationStack {
+                ManualInputView()
+            }
+                .tabItem {
+                    Label("テキスト入力", systemImage: "keyboard")
+                }
+                .tag(1)
+
             // 履歴画面
             HistoryView()
                 .tabItem {
                     Label("履歴", systemImage: "clock.fill")
                 }
-                .tag(1)
-            
+                .tag(2)
+
             // 設定画面
             SettingsView()
                 .tabItem {
                     Label("設定", systemImage: "gearshape.fill")
                 }
-                .tag(2)
+                .tag(3)
         }
         .accentColor(.neonPurple)
         .onChange(of: appState.launchedFromShare) { _, launched in
