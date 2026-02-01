@@ -337,9 +337,18 @@ struct ReplyResultView: View {
                 DispatchQueue.main.async {
                     switch result {
                     case .success(let text):
+                        print("🔍 [ProfileGreeting] OCR結果:\n\(text)")
                         let profile = ProfileParser.shared.parse(text)
+                        print("📋 [ProfileGreeting] パース結果:")
+                        print("  名前: \(profile.name ?? "未検出")")
+                        print("  年齢: \(profile.age.map { "\($0)歳" } ?? "未検出")")
+                        print("  居住地: \(profile.location ?? "未検出")")
+                        print("  趣味: \(profile.hobbies.isEmpty ? "未検出" : profile.hobbies.joined(separator: ", "))")
+                        print("  自己紹介: \(profile.bio ?? "未検出")")
+                        print("📤 [ProfileGreeting] API送信サマリー:\n\(profile.summary)")
                         generateProfileGreeting(profile: profile)
-                    case .failure:
+                    case .failure(let error):
+                        print("❌ [ProfileGreeting] OCR失敗: \(error)")
                         generateProfileGreeting(profile: ParsedProfile(
                             name: nil, age: nil, location: nil,
                             hobbies: [], bio: nil, rawText: extractedText
@@ -396,6 +405,13 @@ struct ReplyResultView: View {
                 let ageGroup = UserAgeGroup.from(age: Int(userAge))
                 let personalType = PersonalType(rawValue: personalTypeRaw) ?? .natural
 
+                print("🚀 [ProfileGreeting] API呼び出し開始")
+                print("  mode: profileGreeting")
+                print("  tone: \(selectedTone)")
+                print("  personalType: \(personalType.rawValue)")
+                print("  gender: \(gender.rawValue), ageGroup: \(ageGroup.rawValue)")
+                print("  profileInfo: \(profile.dictionary)")
+
                 let result = try await FirebaseService.shared.generateReplies(
                     message: profile.summary,
                     personalType: personalType,
@@ -410,6 +426,11 @@ struct ReplyResultView: View {
                     profileInfo: profile.dictionary
                 )
 
+                print("✅ [ProfileGreeting] API応答: \(result.replies.count)件")
+                for (i, reply) in result.replies.enumerated() {
+                    print("  [\(i+1)] (\(reply.type.displayName)) \(reply.text)")
+                }
+
                 await MainActor.run {
                     withAnimation {
                         isAnalyzing = false
@@ -418,6 +439,7 @@ struct ReplyResultView: View {
                     allReplies = result.replies
                 }
             } catch {
+                print("❌ [ProfileGreeting] APIエラー: \(error)")
                 await MainActor.run {
                     fallbackToMockReplies()
                 }

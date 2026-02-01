@@ -12,7 +12,6 @@ struct HomeView: View {
     // チャット返信用
     @State private var selectedItem: PhotosPickerItem?
     @State private var selectedImage: UIImage?
-    @State private var showManualInput = false
     @State private var showToneSelection = false
     @State private var showReplyResult = false
     @State private var isProcessing = false
@@ -56,9 +55,6 @@ struct HomeView: View {
                     // 下部固定ボタン
                     bottomButtonsView
                 }
-            }
-            .navigationDestination(isPresented: $showManualInput) {
-                ManualInputView()
             }
             .navigationDestination(isPresented: $showReplyResult) {
                 ReplyResultView(
@@ -261,15 +257,15 @@ struct HomeView: View {
     
     private var bottomButtonsView: some View {
         VStack(spacing: 12) {
-            // メインボタン: スクショをアップ（チャット返信）
+            // メインボタン: チャット返信を作成
             PhotosPicker(selection: $selectedItem, matching: .images) {
                 HStack {
                     if isProcessing {
                         ProgressView()
                             .tint(.black)
                     } else {
-                        Image(systemName: "photo.on.rectangle.angled")
-                        Text("スクショをアップ")
+                        Image(systemName: "bubble.left.and.text.bubble.right")
+                        Text("チャットの返信を作成")
                             .font(.headline)
                             .fontWeight(.bold)
                     }
@@ -289,15 +285,15 @@ struct HomeView: View {
             }
             .disabled(isProcessing || isProfileProcessing)
 
-            // 新ボタン: プロフィールから挨拶
+            // サブボタン: あいさつメッセージを作成
             PhotosPicker(selection: $profileSelectedItem, matching: .images) {
                 HStack {
                     if isProfileProcessing {
                         ProgressView()
                             .tint(.white)
                     } else {
-                        Image(systemName: "person.crop.circle.badge.plus")
-                        Text("プロフィールから挨拶")
+                        Image(systemName: "hand.wave")
+                        Text("あいさつメッセージを作成")
                             .font(.headline)
                             .fontWeight(.bold)
                     }
@@ -316,29 +312,6 @@ struct HomeView: View {
                 .shadow(color: .orange.opacity(0.4), radius: 10)
             }
             .disabled(isProcessing || isProfileProcessing)
-
-            // サブボタン: 手動で入力
-            Button(action: {
-                showManualInput = true
-            }) {
-                HStack {
-                    Image(systemName: "keyboard")
-                    Text("手動で入力")
-                }
-                .font(.subheadline)
-                .fontWeight(.medium)
-                .foregroundColor(.white)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 12)
-                .background(
-                    RoundedRectangle(cornerRadius: 20)
-                        .fill(Color.glassBackground)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 20)
-                                .stroke(Color.glassBorder, lineWidth: 1)
-                        )
-                )
-            }
         }
         .padding()
         .background(
