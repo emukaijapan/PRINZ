@@ -14,6 +14,8 @@ struct ManualInputView: View {
     @State private var selectedMode: GenerationMode = .chatReply
     @State private var showResults = false
 
+    @FocusState private var isTextEditorFocused: Bool
+
     var body: some View {
         ZStack {
             // 魔法のグラデーション背景
@@ -38,6 +40,7 @@ struct ManualInputView: View {
 
                 // テキスト入力エリア
                 TextEditor(text: $inputText)
+                    .focused($isTextEditorFocused)
                     .frame(minHeight: 150)
                     .padding()
                     .foregroundColor(.white)
@@ -109,8 +112,17 @@ struct ManualInputView: View {
                 .padding()
             }
         }
-        .navigationTitle("手動入力")
+        .navigationTitle("テキスト入力")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("完了") {
+                    isTextEditorFocused = false
+                }
+                .foregroundColor(.neonCyan)
+            }
+        }
         .navigationDestination(isPresented: $showResults) {
             ReplyResultView(
                 image: nil,
@@ -141,7 +153,10 @@ struct ManualInputView: View {
     }
 
     private func modeTab(_ title: String, mode: GenerationMode) -> some View {
-        Button(action: {
+        let isSelected = selectedMode == mode
+        let accentColor: Color = mode == .chatReply ? .neonPurple : .orange
+
+        return Button(action: {
             withAnimation(.easeInOut(duration: 0.2)) {
                 selectedMode = mode
             }
@@ -149,12 +164,16 @@ struct ManualInputView: View {
             Text(title)
                 .font(.subheadline)
                 .fontWeight(.semibold)
-                .foregroundColor(selectedMode == mode ? .white : .white.opacity(0.5))
+                .foregroundColor(isSelected ? .white : .white.opacity(0.5))
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 10)
                 .background(
                     RoundedRectangle(cornerRadius: 10)
-                        .fill(selectedMode == mode ? Color.white.opacity(0.2) : Color.clear)
+                        .fill(isSelected ? accentColor.opacity(0.5) : Color.clear)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(isSelected ? accentColor : Color.clear, lineWidth: 1.5)
                 )
         }
         .contentShape(Rectangle())
