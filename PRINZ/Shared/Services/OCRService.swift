@@ -30,48 +30,43 @@ class OCRService {
     ///   - image: OCR対象の画像
     ///   - completion: 抽出されたテキストまたはエラー
     func recognizeText(from image: UIImage, completion: @escaping (Result<String, Error>) -> Void) {
-        // メモリクラッシュ防止: 画像を2048pxにリサイズ
-        guard let resizedImage = image.resized(to: 2048),
-              let cgImage = resizedImage.cgImage else {
-            completion(.failure(OCRError.invalidImage))
-            return
-        }
-        
-        // Vision Requestの作成
-        let request = VNRecognizeTextRequest { request, error in
-            if let error = error {
-                completion(.failure(error))
-                return
-            }
-            
-            guard let observations = request.results as? [VNRecognizedTextObservation] else {
-                completion(.failure(OCRError.noTextFound))
-                return
-            }
-            
-            // テキストを結合
-            let recognizedStrings = observations.compactMap { observation in
-                observation.topCandidates(1).first?.string
-            }
-            
-            let fullText = recognizedStrings.joined(separator: "\n")
-            
-            if fullText.isEmpty {
-                completion(.failure(OCRError.noTextFound))
-            } else {
-                completion(.success(fullText))
-            }
-        }
-        
-        // 日本語認識の設定（CRITICAL）
-        request.recognitionLanguages = ["ja-JP", "en-US"]
-        request.recognitionLevel = .accurate
-        request.usesLanguageCorrection = true
-        
-        // リクエスト実行
-        let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
-        
+        // リサイズ + Vision処理をバックグラウンドで実行
         DispatchQueue.global(qos: .userInitiated).async {
+            guard let resizedImage = image.resized(to: 2048),
+                  let cgImage = resizedImage.cgImage else {
+                DispatchQueue.main.async { completion(.failure(OCRError.invalidImage)) }
+                return
+            }
+
+            let request = VNRecognizeTextRequest { request, error in
+                if let error = error {
+                    completion(.failure(error))
+                    return
+                }
+
+                guard let observations = request.results as? [VNRecognizedTextObservation] else {
+                    completion(.failure(OCRError.noTextFound))
+                    return
+                }
+
+                let recognizedStrings = observations.compactMap { observation in
+                    observation.topCandidates(1).first?.string
+                }
+
+                let fullText = recognizedStrings.joined(separator: "\n")
+
+                if fullText.isEmpty {
+                    completion(.failure(OCRError.noTextFound))
+                } else {
+                    completion(.success(fullText))
+                }
+            }
+
+            request.recognitionLanguages = ["ja-JP", "en-US"]
+            request.recognitionLevel = .accurate
+            request.usesLanguageCorrection = true
+
+            let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
             do {
                 try handler.perform([request])
             } catch {
@@ -85,58 +80,51 @@ class OCRService {
     ///   - image: OCR対象の画像
     ///   - completion: 座標付きテキストアイテムの配列またはエラー
     func recognizeTextWithCoordinates(from image: UIImage, completion: @escaping (Result<[OCRTextItem], Error>) -> Void) {
-        guard let resizedImage = image.resized(to: 2048),
-              let cgImage = resizedImage.cgImage else {
-            completion(.failure(OCRError.invalidImage))
-            return
-        }
-        
-        let request = VNRecognizeTextRequest { request, error in
-            if let error = error {
-                completion(.failure(error))
-                return
-            }
-            
-            guard let observations = request.results as? [VNRecognizedTextObservation] else {
-                completion(.failure(OCRError.noTextFound))
-                return
-            }
-            
-            // 座標情報付きでテキストを抽出
-            let textItems: [OCRTextItem] = observations.compactMap { observation in
-                guard let text = observation.topCandidates(1).first?.string else {
-                    return nil
-                }
-                
-                // boundingBoxの中心X座標を計算
-                // Vision座標系: 左下が原点、右上が(1,1)
-                let box = observation.boundingBox
-                let centerX = box.midX
-                let centerY = box.midY
-                
-                return OCRTextItem(
-                    text: text,
-                    normalizedX: centerX,
-                    normalizedY: centerY
-                )
-            }
-            
-            if textItems.isEmpty {
-                completion(.failure(OCRError.noTextFound))
-            } else {
-                // Y座標でソート（上から下へ = 1.0→0.0）
-                let sorted = textItems.sorted { $0.normalizedY > $1.normalizedY }
-                completion(.success(sorted))
-            }
-        }
-        
-        request.recognitionLanguages = ["ja-JP", "en-US"]
-        request.recognitionLevel = .accurate
-        request.usesLanguageCorrection = true
-        
-        let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
-        
+        // リサイズ + Vision処理をバックグラウンドで実行
         DispatchQueue.global(qos: .userInitiated).async {
+            guard let resizedImage = image.resized(to: 2048),
+                  let cgImage = resizedImage.cgImage else {
+                DispatchQueue.main.async { completion(.failure(OCRError.invalidImage)) }
+                return
+            }
+
+            let request = VNRecognizeTextRequest { request, error in
+                if let error = error {
+                    completion(.failure(error))
+                    return
+                }
+
+                guard let observations = request.results as? [VNRecognizedTextObservation] else {
+                    completion(.failure(OCRError.noTextFound))
+                    return
+                }
+
+                let textItems: [OCRTextItem] = observations.compactMap { observation in
+                    guard let text = observation.topCandidates(1).first?.string else {
+                        return nil
+                    }
+
+                    let box = observation.boundingBox
+                    return OCRTextItem(
+                        text: text,
+                        normalizedX: box.midX,
+                        normalizedY: box.midY
+                    )
+                }
+
+                if textItems.isEmpty {
+                    completion(.failure(OCRError.noTextFound))
+                } else {
+                    let sorted = textItems.sorted { $0.normalizedY > $1.normalizedY }
+                    completion(.success(sorted))
+                }
+            }
+
+            request.recognitionLanguages = ["ja-JP", "en-US"]
+            request.recognitionLevel = .accurate
+            request.usesLanguageCorrection = true
+
+            let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
             do {
                 try handler.perform([request])
             } catch {

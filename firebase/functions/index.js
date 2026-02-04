@@ -45,8 +45,8 @@ function getOpenAIClient() {
 const DAILY_FREE_LIMIT = 5;  // 無料ユーザーの1日の上限
 const PREMIUM_LIMIT = 100;   // プレミアムユーザーの1日の上限
 
-// MVP開発モード（本番リリース時はfalseに変更）
-const DEV_MODE = true;
+// 本番モード（認証・Rate Limiting有効）
+const DEV_MODE = false;
 
 /**
  * AI返信生成 Cloud Function

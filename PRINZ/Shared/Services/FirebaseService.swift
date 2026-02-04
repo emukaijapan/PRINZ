@@ -34,6 +34,7 @@ class FirebaseService {
         gender: UserGender,
         ageGroup: UserAgeGroup,
         relationship: String? = nil,
+        partnerName: String? = nil,
         userMessage: String? = nil,
         isShortMode: Bool = true,
         selectedTone: ReplyType? = nil,
@@ -63,6 +64,9 @@ class FirebaseService {
             case .witty: toneString = "unique"
             }
             data["selectedTone"] = toneString
+        }
+        if let partnerName = partnerName {
+            data["partnerName"] = partnerName
         }
         if let profileInfo = profileInfo {
             data["profileInfo"] = profileInfo

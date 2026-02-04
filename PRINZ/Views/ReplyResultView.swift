@@ -355,8 +355,11 @@ struct ReplyResultView: View {
                 DispatchQueue.main.async {
                     switch result {
                     case .success(let text):
+                        #if DEBUG
                         print("🔍 [ProfileGreeting] OCR結果:\n\(text)")
+                        #endif
                         let profile = ProfileParser.shared.parse(text)
+                        #if DEBUG
                         print("📋 [ProfileGreeting] パース結果:")
                         print("  名前: \(profile.name ?? "未検出")")
                         print("  年齢: \(profile.age.map { "\($0)歳" } ?? "未検出")")
@@ -364,9 +367,12 @@ struct ReplyResultView: View {
                         print("  趣味: \(profile.hobbies.isEmpty ? "未検出" : profile.hobbies.joined(separator: ", "))")
                         print("  自己紹介: \(profile.bio ?? "未検出")")
                         print("📤 [ProfileGreeting] API送信サマリー:\n\(profile.summary)")
+                        #endif
                         generateProfileGreeting(profile: profile)
                     case .failure(let error):
+                        #if DEBUG
                         print("❌ [ProfileGreeting] OCR失敗: \(error)")
+                        #endif
                         generateProfileGreeting(profile: ParsedProfile(
                             name: nil, age: nil, location: nil,
                             hobbies: [], bio: nil, rawText: extractedText
@@ -423,12 +429,14 @@ struct ReplyResultView: View {
                 let ageGroup = UserAgeGroup.from(age: Int(userAge))
                 let personalType = PersonalType(rawValue: personalTypeRaw) ?? .natural
 
+                #if DEBUG
                 print("🚀 [ProfileGreeting] API呼び出し開始")
                 print("  mode: profileGreeting")
                 print("  tone: \(selectedTone)")
                 print("  personalType: \(personalType.rawValue)")
                 print("  gender: \(gender.rawValue), ageGroup: \(ageGroup.rawValue)")
                 print("  profileInfo: \(profile.dictionary)")
+                #endif
 
                 let result = try await FirebaseService.shared.generateReplies(
                     message: profile.summary,
@@ -443,10 +451,12 @@ struct ReplyResultView: View {
                     profileInfo: profile.dictionary
                 )
 
+                #if DEBUG
                 print("✅ [ProfileGreeting] API応答: \(result.replies.count)件")
                 for (i, reply) in result.replies.enumerated() {
                     print("  [\(i+1)] (\(reply.type.displayName)) \(reply.text)")
                 }
+                #endif
 
                 await MainActor.run {
                     generationSuccessCount += 1
@@ -461,13 +471,17 @@ struct ReplyResultView: View {
                     }
                 }
             } catch let error as FirebaseError where error == .rateLimitExceeded {
+                #if DEBUG
                 print("⚠️ [ProfileGreeting] レート制限到達")
+                #endif
                 await MainActor.run {
                     isAnalyzing = false
                     showRateLimitAlert = true
                 }
             } catch {
+                #if DEBUG
                 print("❌ [ProfileGreeting] APIエラー: \(error)")
+                #endif
                 await MainActor.run {
                     fallbackToMockReplies()
                 }
@@ -521,7 +535,9 @@ struct ReplyResultView: View {
                     }
                 }
             } catch let error as FirebaseError where error == .rateLimitExceeded {
+                #if DEBUG
                 print("⚠️ [ChatReply] レート制限到達")
+                #endif
                 await MainActor.run {
                     isAnalyzing = false
                     showRateLimitAlert = true

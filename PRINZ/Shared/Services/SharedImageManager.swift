@@ -119,6 +119,13 @@ class SharedImageManager {
         print("🗑️ SharedImageManager: Shared data cleared")
     }
     
+    /// App Groupから共有データを非同期で読み込み
+    func loadSharedDataAsync() async -> (image: UIImage, context: Context)? {
+        await Task.detached(priority: .userInitiated) {
+            self.loadSharedData()
+        }.value
+    }
+
     /// 共有データが存在するかチェック
     var hasSharedData: Bool {
         guard let imageURL = sharedImageURL else { return false }

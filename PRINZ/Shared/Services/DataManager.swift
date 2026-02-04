@@ -12,6 +12,7 @@ class DataManager {
 
   private let historyFileName = "reply_history.json"
   private let maxHistoryCount = 30
+  private let saveQueue = DispatchQueue(label: "com.prinz.datamanager.save")
 
   /// 起動時に1回だけ解決してキャッシュ
   private let cachedHistoryFileURL: URL?
@@ -28,10 +29,10 @@ class DataManager {
 
   // MARK: - Save Reply
 
-  /// 返信案を履歴に保存（重複排除）
+  /// 返信案を履歴に保存（重複排除・直列化）
   func saveReply(_ reply: Reply) {
-    Task.detached(priority: .utility) {
-      var history = await self.loadHistoryAsync()
+    saveQueue.async {
+      var history = self.loadHistory()
 
       if !history.contains(where: { $0.id == reply.id }) {
         history.insert(reply, at: 0)
@@ -45,10 +46,10 @@ class DataManager {
     }
   }
 
-  /// 複数の返信案を保存（重複排除）
+  /// 複数の返信案を保存（重複排除・直列化）
   func saveReplies(_ replies: [Reply]) {
-    Task.detached(priority: .utility) {
-      var history = await self.loadHistoryAsync()
+    saveQueue.async {
+      var history = self.loadHistory()
       let existingIds = Set(history.map { $0.id })
       let newReplies = replies.filter { !existingIds.contains($0.id) }
 

@@ -12,8 +12,16 @@ import RevenueCat
 class SubscriptionManager: ObservableObject {
   static let shared = SubscriptionManager()
 
-  // TODO: RevenueCat Public API Keyに差し替え
-  private let apiKey = "appl_XXXXXXX"
+  private let apiKey: String = {
+    guard let key = Bundle.main.infoDictionary?["REVENUECAT_API_KEY"] as? String,
+          !key.isEmpty, key != "appl_XXXXXXX" else {
+      #if DEBUG
+      print("⚠️ SubscriptionManager: RevenueCat API Key not configured in Info.plist")
+      #endif
+      return ""
+    }
+    return key
+  }()
 
   @Published var isProUser = false
   @Published var currentOffering: Offering?
@@ -24,6 +32,12 @@ class SubscriptionManager: ObservableObject {
   // MARK: - Setup
 
   func configure() {
+    guard !apiKey.isEmpty else {
+      #if DEBUG
+      print("⚠️ SubscriptionManager: Skipping RevenueCat configuration (API key not set)")
+      #endif
+      return
+    }
     Purchases.logLevel = .warn
     Purchases.configure(withAPIKey: apiKey)
     Purchases.shared.delegate = self

@@ -154,7 +154,9 @@ class ChatParser {
         // 1. 垂直クロップ：Y座標が0.15〜0.85の範囲外は除外
         let verticallyFiltered = items.filter { validYRange.contains($0.normalizedY) }
         
+        #if DEBUG
         print("📊 ChatParser: \(items.count) items -> \(verticallyFiltered.count) after vertical crop")
+        #endif
         
         // 2. 一番上の左側テキストを名前として採用
         if let firstItem = verticallyFiltered.first(where: { 
@@ -168,7 +170,9 @@ class ChatParser {
         for item in verticallyFiltered {
             // キーワードブラックリストチェック
             if shouldExclude(item.text) {
+                #if DEBUG
                 print("  🚫 Excluded: \(item.text.prefix(20))...")
+                #endif
                 continue
             }
             
@@ -204,10 +208,12 @@ class ChatParser {
         // 元のOCRテキストを再構築
         let rawText = verticallyFiltered.map { $0.text }.joined(separator: "\n")
         
+        #if DEBUG
         print("📊 ChatParser Result:")
         print("  Partner Name: \(partnerName ?? "なし")")
         print("  Messages: \(cleanedMessages.count) (Partner: \(cleanedMessages.filter { $0.isFromPartner }.count))")
         print("  Last User Message: \(lastUserMessage ?? "なし")")
+        #endif
         
         return ParsedChat(
             partnerName: partnerName,

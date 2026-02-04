@@ -13,20 +13,21 @@ import Firebase
 // MARK: - Share Extension Log Manager
 
 /// Share Extension用の永続化ログ（デバッグ用）
+#if DEBUG
 class ShareExtensionLogger {
     static let shared = ShareExtensionLogger()
     private let logKey = "com.prinz.shareExtension.logs"
-    
+
     private init() {}
-    
+
     func log(_ message: String, file: String = #file, function: String = #function, line: Int = #line) {
         let timestamp = ISO8601DateFormatter().string(from: Date())
         let fileName = (file as NSString).lastPathComponent
         let logEntry = "[\(timestamp)] [\(fileName):\(line)] \(function): \(message)"
-        
+
         // コンソール出力
         print("📱 ShareExt: \(logEntry)")
-        
+
         // UserDefaults（AppGroup）に永続化
         if let defaults = UserDefaults(suiteName: "group.com.prinz.app") {
             var logs = defaults.stringArray(forKey: logKey) ?? []
@@ -39,15 +40,24 @@ class ShareExtensionLogger {
             defaults.synchronize()
         }
     }
-    
+
     func getLogs() -> [String] {
         return UserDefaults(suiteName: "group.com.prinz.app")?.stringArray(forKey: logKey) ?? []
     }
-    
+
     func clearLogs() {
         UserDefaults(suiteName: "group.com.prinz.app")?.removeObject(forKey: logKey)
     }
 }
+#else
+class ShareExtensionLogger {
+    static let shared = ShareExtensionLogger()
+    private init() {}
+    func log(_ message: String, file: String = #file, function: String = #function, line: Int = #line) {}
+    func getLogs() -> [String] { [] }
+    func clearLogs() {}
+}
+#endif
 
 // MARK: - ShareViewController
 
@@ -779,28 +789,13 @@ struct ShareExtensionView: View {
                 if success {
                     ShareExtensionLogger.shared.log("openMainApp: Successfully opened main app")
                 } else {
-                    ShareExtensionLogger.shared.log("openMainApp: Failed to open via extensionContext, trying UIApplication fallback")
-                    self.openURLViaUIApplication(url)
+                    ShareExtensionLogger.shared.log("openMainApp: Failed to open via extensionContext")
                 }
                 
                 // 遷移後に閉じる
                 ShareExtensionLogger.shared.log("openMainApp: Calling closeExtension")
                 self.closeExtension()
             }
-        }
-    }
-    
-    private func openURLViaUIApplication(_ url: URL) {
-        ShareExtensionLogger.shared.log("openURLViaUIApplication: Attempting UIApplication fallback for \(url.absoluteString)")
-        
-        // UIApplication.shared.open を間接的に呼び出す
-        if let sharedApplication = UIApplication.value(forKeyPath: "sharedApplication") as? UIApplication {
-            ShareExtensionLogger.shared.log("openURLViaUIApplication: Got sharedApplication, calling open()")
-            sharedApplication.open(url, options: [:]) { success in
-                ShareExtensionLogger.shared.log("openURLViaUIApplication: UIApplication.open completed with success=\(success)")
-            }
-        } else {
-            ShareExtensionLogger.shared.log("openURLViaUIApplication: Failed to get sharedApplication")
         }
     }
     
