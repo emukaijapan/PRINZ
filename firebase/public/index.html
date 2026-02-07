@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PRINZ - 既読のまま、終わらせない。</title>
+<meta name="description" content="LINEやマッチングアプリのスクショからAIが返信案を3パターン即生成。あなたのキャラに合った返信で、会話を前に進めよう。">
+<meta property="og:title" content="PRINZ - 既読のまま、終わらせない。">
+<meta property="og:description" content="LINEやマッチングアプリのスクショからAIが返信案を3パターン即生成。">
+<meta property="og:type" content="website">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Noto Sans JP', -apple-system, sans-serif;
+    color: #1a1a1a;
+    line-height: 1.8;
+    background: #fff;
+  }
+
+  .container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  /* Header */
+  header {
+    padding: 16px 0;
+    border-bottom: 1px solid #eee;
+  }
+
+  .header-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .logo {
+    font-size: 24px;
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    color: #8B00FF;
+  }
+
+  nav a {
+    color: #666;
+    text-decoration: none;
+    font-size: 14px;
+    margin-left: 24px;
+  }
+
+  nav a:hover {
+    color: #8B00FF;
+  }
+
+  /* Hero */
+  .hero {
+    padding: 80px 0;
+    text-align: center;
+  }
+
+  .hero-badge {
+    display: inline-block;
+    background: #f9f5ff;
+    color: #8B00FF;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: 20px;
+    margin-bottom: 24px;
+  }
+
+  .hero h1 {
+    font-size: 48px;
+    font-weight: 900;
+    line-height: 1.3;
+    margin-bottom: 24px;
+  }
+
+  .hero h1 .accent {
+    color: #8B00FF;
+  }
+
+  .hero-subtitle {
+    font-size: 18px;
+    color: #666;
+    margin-bottom: 40px;
+  }
+
+  .app-store-btn {
+    display: inline-block;
+    background: #000;
+    color: #fff;
+    padding: 14px 32px;
+    border-radius: 12px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 16px;
+    transition: transform 0.2s;
+  }
+
+  .app-store-btn:hover {
+    transform: scale(1.05);
+  }
+
+  .app-store-btn img {
+    height: 40px;
+  }
+
+  /* Features */
+  .features {
+    padding: 80px 0;
+    background: #f9f9f9;
+  }
+
+  .section-title {
+    text-align: center;
+    font-size: 32px;
+    font-weight: 900;
+    margin-bottom: 48px;
+  }
+
+  .section-title .accent {
+    color: #8B00FF;
+  }
+
+  .feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 32px;
+  }
+
+  .feature-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 32px;
+    text-align: center;
+  }
+
+  .feature-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+  }
+
+  .feature-card h3 {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 12px;
+  }
+
+  .feature-card p {
+    font-size: 14px;
+    color: #666;
+  }
+
+  /* How it works */
+  .how-it-works {
+    padding: 80px 0;
+  }
+
+  .steps {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  .step {
+    display: flex;
+    gap: 24px;
+    align-items: flex-start;
+  }
+
+  .step-num {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, #D000FF, #8B00FF);
+    color: #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    font-weight: 900;
+    flex-shrink: 0;
+  }
+
+  .step-content h3 {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  .step-content p {
+    font-size: 14px;
+    color: #666;
+  }
+
+  /* Tones */
+  .tones {
+    padding: 80px 0;
+    background: linear-gradient(180deg, #1a0533 0%, #0d0d2b 100%);
+    color: #fff;
+  }
+
+  .tones .section-title {
+    color: #fff;
+  }
+
+  .tone-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 24px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .tone-card {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 16px;
+    padding: 24px;
+  }
+
+  .tone-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 6px 12px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+  }
+
+  .tone-safe { background: rgba(208,0,255,0.15); color: #D580FF; }
+  .tone-chill { background: rgba(0,255,255,0.1); color: #00FFFF; }
+  .tone-witty { background: rgba(255,140,66,0.12); color: #FF8C42; }
+
+  .tone-card h3 {
+    font-size: 18px;
+    margin-bottom: 8px;
+  }
+
+  .tone-card p {
+    font-size: 14px;
+    color: rgba(255,255,255,0.6);
+  }
+
+  /* Pricing */
+  .pricing {
+    padding: 80px 0;
+  }
+
+  .pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 24px;
+    max-width: 700px;
+    margin: 0 auto;
+  }
+
+  .pricing-card {
+    border: 2px solid #eee;
+    border-radius: 16px;
+    padding: 32px;
+    text-align: center;
+  }
+
+  .pricing-card.featured {
+    border-color: #8B00FF;
+    background: linear-gradient(180deg, #f9f5ff 0%, #fff 100%);
+  }
+
+  .pricing-card h3 {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  .pricing-price {
+    font-size: 36px;
+    font-weight: 900;
+    color: #8B00FF;
+    margin-bottom: 8px;
+  }
+
+  .pricing-price span {
+    font-size: 16px;
+    font-weight: 400;
+    color: #666;
+  }
+
+  .pricing-desc {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 16px;
+  }
+
+  .pricing-features {
+    text-align: left;
+    margin: 24px 0;
+  }
+
+  .pricing-features li {
+    list-style: none;
+    padding: 8px 0;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .pricing-features li::before {
+    content: "✓";
+    color: #8B00FF;
+    font-weight: 700;
+  }
+
+  /* Privacy */
+  .privacy-section {
+    padding: 60px 0;
+    background: #f9f5ff;
+  }
+
+  .privacy-inner {
+    display: flex;
+    align-items: center;
+    gap: 48px;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .privacy-icon {
+    font-size: 64px;
+    flex-shrink: 0;
+  }
+
+  .privacy-content h3 {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 12px;
+  }
+
+  .privacy-content p {
+    font-size: 14px;
+    color: #666;
+  }
+
+  /* CTA */
+  .cta {
+    padding: 80px 0;
+    text-align: center;
+    background: linear-gradient(135deg, #8B00FF 0%, #D000FF 100%);
+    color: #fff;
+  }
+
+  .cta h2 {
+    font-size: 32px;
+    font-weight: 900;
+    margin-bottom: 16px;
+  }
+
+  .cta p {
+    font-size: 16px;
+    margin-bottom: 32px;
+    opacity: 0.9;
+  }
+
+  .cta .app-store-btn {
+    background: #fff;
+    color: #8B00FF;
+  }
+
+  /* Footer */
+  footer {
+    padding: 48px 0;
+    background: #1a1a1a;
+    color: #999;
+  }
+
+  .footer-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 24px;
+  }
+
+  .footer-logo {
+    font-size: 20px;
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    color: #fff;
+  }
+
+  .footer-links {
+    display: flex;
+    gap: 24px;
+  }
+
+  .footer-links a {
+    color: #999;
+    text-decoration: none;
+    font-size: 14px;
+  }
+
+  .footer-links a:hover {
+    color: #fff;
+  }
+
+  .footer-copy {
+    width: 100%;
+    text-align: center;
+    padding-top: 24px;
+    border-top: 1px solid #333;
+    margin-top: 24px;
+    font-size: 12px;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .hero { padding: 48px 0; }
+    .hero h1 { font-size: 32px; }
+    .hero-subtitle { font-size: 16px; }
+    .section-title { font-size: 24px; }
+    .features, .how-it-works, .tones, .pricing { padding: 48px 0; }
+    nav { display: none; }
+    .privacy-inner { flex-direction: column; text-align: center; }
+    .footer-inner { flex-direction: column; text-align: center; }
+    .footer-links { flex-wrap: wrap; justify-content: center; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="container">
+    <div class="header-inner">
+      <div class="logo">PRINZ</div>
+      <nav>
+        <a href="#features">機能</a>
+        <a href="#how-it-works">使い方</a>
+        <a href="#pricing">料金</a>
+        <a href="/support.html">サポート</a>
+      </nav>
+    </div>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="container">
+    <div class="hero-badge">AI返信アシスタント</div>
+    <h1>既読のまま、<br><span class="accent">終わらせない。</span></h1>
+    <p class="hero-subtitle">LINEやマッチングアプリのスクショから<br>AIがあなたのキャラに合った返信案を3パターン即生成</p>
+    <a href="#" class="app-store-btn">App Storeでダウンロード</a>
+  </div>
+</section>
+
+<section class="features" id="features">
+  <div class="container">
+    <h2 class="section-title"><span class="accent">PRINZ</span>の特徴</h2>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="feature-icon">📸</div>
+        <h3>スクショから即生成</h3>
+        <p>LINEやマッチングアプリのトーク画面をスクショするだけ。AIが会話を分析して返信案を提案します。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🎭</div>
+        <h3>3つのトーン</h3>
+        <p>安牌・ちょい攻め・変化球の3パターンで、同じ会話でも全く違うアプローチを提案。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">👋</div>
+        <h3>あいさつメッセージ</h3>
+        <p>マッチングアプリのプロフィール画面から、相手の趣味や特徴に合った初回メッセージを生成。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">✏️</div>
+        <h3>テキスト入力にも対応</h3>
+        <p>スクショがなくても大丈夫。会話内容を直接入力して返信案を生成できます。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="how-it-works" id="how-it-works">
+  <div class="container">
+    <h2 class="section-title"><span class="accent">3ステップ</span>で完了</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <h3>スクショを共有</h3>
+          <p>LINEやマッチングアプリのトーク画面をスクショして、PRINZで開くだけ。Share Extensionにも対応しているので、写真アプリから直接共有も可能です。</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <h3>トーンを選ぶ</h3>
+          <p>「安牌」「ちょい攻め」「変化球」の3つのトーンから、今の気分や状況に合ったものを選択。AIがあなたのキャラに合った返信を生成します。</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <h3>タップしてコピー</h3>
+          <p>気に入った返信案をタップするだけでコピー完了。LINEやマッチングアプリに戻って、そのまま貼り付けるだけ。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="tones">
+  <div class="container">
+    <h2 class="section-title"><span class="accent">3つのトーン</span>で多彩な返信</h2>
+    <div class="tone-grid">
+      <div class="tone-card">
+        <div class="tone-label tone-safe">🛡 安牌</div>
+        <h3>無難で誠実な返信</h3>
+        <p>失敗しにくいアプローチ。相手との距離を自然に縮めたいときに。</p>
+      </div>
+      <div class="tone-card">
+        <div class="tone-label tone-chill">⚡ ちょい攻め</div>
+        <h3>積極的な返信</h3>
+        <p>デートの誘いや次のアクションにつなげやすい。関係を前に進めたいときに。</p>
+      </div>
+      <div class="tone-card">
+        <div class="tone-label tone-witty">🎯 変化球</div>
+        <h3>遊び心のある返信</h3>
+        <p>印象に残るユニークなアプローチ。会話を盛り上げたいときに。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="pricing" id="pricing">
+  <div class="container">
+    <h2 class="section-title">料金プラン</h2>
+    <div class="pricing-grid">
+      <div class="pricing-card">
+        <h3>Free</h3>
+        <div class="pricing-price">無料</div>
+        <p class="pricing-desc">まずは試してみたい方に</p>
+        <ul class="pricing-features">
+          <li>1日5回まで返信生成</li>
+          <li>3つのトーン選択</li>
+          <li>履歴保存（最新30件）</li>
+        </ul>
+      </div>
+      <div class="pricing-card featured">
+        <h3>Premium</h3>
+        <div class="pricing-price">480円<span>/週〜</span></div>
+        <p class="pricing-desc">3日間無料トライアル付き</p>
+        <ul class="pricing-features">
+          <li>1日100回まで返信生成</li>
+          <li>3つのトーン選択</li>
+          <li>履歴保存（最新30件）</li>
+          <li>週額480円 / 年額9,800円</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="privacy-section">
+  <div class="container">
+    <div class="privacy-inner">
+      <div class="privacy-icon">🔒</div>
+      <div class="privacy-content">
+        <h3>プライバシーを守る設計</h3>
+        <p>スクリーンショットの文字認識（OCR）処理はすべてお使いのデバイス上で行われます。画像がサーバーに送信されることはありません。テキスト情報のみを安全に処理して返信を生成します。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="cta">
+  <div class="container">
+    <h2>今すぐダウンロード</h2>
+    <p>既読のまま終わらせない。会話を前に進めよう。</p>
+    <a href="#" class="app-store-btn">App Storeでダウンロード</a>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <div class="footer-logo">PRINZ</div>
+      <div class="footer-links">
+        <a href="/privacy-policy.html">プライバシーポリシー</a>
+        <a href="/terms.html">利用規約</a>
+        <a href="/support.html">サポート</a>
+      </div>
+      <div class="footer-copy">
+        &copy; 2026 PRINZ運営. All rights reserved.
+      </div>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

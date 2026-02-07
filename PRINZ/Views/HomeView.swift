@@ -27,6 +27,9 @@ struct HomeView: View {
     @State private var showProfileResult = false
     @State private var profileTone: ReplyType = .safe
     @State private var isProfileProcessing = false
+
+    // アプリ情報
+    @State private var showAppInfo = false
     
     var body: some View {
         NavigationStack {
@@ -107,6 +110,9 @@ struct HomeView: View {
                     resetProfileState()
                 }
             }
+            .sheet(isPresented: $showAppInfo) {
+                AppInfoSheet()
+            }
         }
     }
     
@@ -114,8 +120,8 @@ struct HomeView: View {
     
     private var headerView: some View {
         HStack {
-            Button(action: {}) {
-                Image(systemName: "line.3.horizontal")
+            Button(action: { showAppInfo = true }) {
+                Image(systemName: "info.circle")
                     .font(.title2)
                     .foregroundColor(.white.opacity(0.6))
             }
@@ -519,6 +525,163 @@ struct ToneSelectionSheet: View {
                 Color.clear.frame(height: 0)
             }
         }
+    }
+}
+
+// MARK: - App Info Sheet
+
+struct AppInfoSheet: View {
+    @Environment(\.dismiss) private var dismiss
+
+    private var appVersion: String {
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "不明"
+    }
+
+    private var buildNumber: String {
+        Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "不明"
+    }
+
+    private var osVersion: String {
+        let os = ProcessInfo.processInfo.operatingSystemVersion
+        return "\(os.majorVersion).\(os.minorVersion).\(os.patchVersion)"
+    }
+
+    private var deviceModel: String {
+        var systemInfo = utsname()
+        uname(&systemInfo)
+        let machineMirror = Mirror(reflecting: systemInfo.machine)
+        let identifier = machineMirror.children.reduce("") { identifier, element in
+            guard let value = element.value as? Int8, value != 0 else { return identifier }
+            return identifier + String(UnicodeScalar(UInt8(value)))
+        }
+        return identifier
+    }
+
+    var body: some View {
+        NavigationView {
+            ZStack {
+                MagicBackground()
+
+                ScrollView {
+                    VStack(spacing: 24) {
+                        // ロゴ
+                        VStack(spacing: 8) {
+                            Image(systemName: "crown.fill")
+                                .font(.system(size: 50))
+                                .foregroundStyle(
+                                    LinearGradient(
+                                        colors: [.neonPurple, .neonCyan],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                )
+
+                            Text("PRINZ")
+                                .font(.title)
+                                .fontWeight(.black)
+                                .italic()
+                                .foregroundStyle(
+                                    LinearGradient(
+                                        colors: [.neonPurple, .neonCyan],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                )
+                        }
+                        .padding(.top, 20)
+
+                        // デバイス情報カード
+                        GlassCard(glowColor: .neonPurple) {
+                            VStack(spacing: 0) {
+                                infoRow(label: "アプリバージョン", value: "\(appVersion) (\(buildNumber))")
+                                Divider().background(Color.white.opacity(0.1))
+                                infoRow(label: "iOSバージョン", value: osVersion)
+                                Divider().background(Color.white.opacity(0.1))
+                                infoRow(label: "デバイス", value: deviceModel)
+                            }
+                        }
+
+                        // コピーボタン
+                        Button(action: copyInfoToClipboard) {
+                            HStack {
+                                Image(systemName: "doc.on.doc")
+                                Text("情報をコピー")
+                            }
+                            .font(.headline)
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(Color.neonPurple.opacity(0.3))
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(Color.neonPurple, lineWidth: 1)
+                            )
+                        }
+
+                        // サポートリンク
+                        Link(destination: URL(string: "https://forms.gle/C2yGhNb6o2rTHikM6")!) {
+                            HStack {
+                                Image(systemName: "questionmark.circle")
+                                Text("お問い合わせ")
+                            }
+                            .font(.headline)
+                            .foregroundColor(.neonCyan)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(Color.neonCyan.opacity(0.1))
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(Color.neonCyan.opacity(0.3), lineWidth: 1)
+                            )
+                        }
+
+                        Spacer(minLength: 40)
+                    }
+                    .padding()
+                }
+            }
+            .navigationTitle("アプリ情報")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("閉じる") {
+                        dismiss()
+                    }
+                    .foregroundColor(.neonCyan)
+                }
+            }
+        }
+    }
+
+    private func infoRow(label: String, value: String) -> some View {
+        HStack {
+            Text(label)
+                .font(.subheadline)
+                .foregroundColor(.white.opacity(0.6))
+            Spacer()
+            Text(value)
+                .font(.subheadline)
+                .fontWeight(.medium)
+                .foregroundColor(.white)
+        }
+        .padding(.vertical, 12)
+    }
+
+    private func copyInfoToClipboard() {
+        let info = """
+        PRINZ アプリ情報
+        ─────────────────
+        アプリバージョン: \(appVersion) (\(buildNumber))
+        iOSバージョン: \(osVersion)
+        デバイス: \(deviceModel)
+        """
+        UIPasteboard.general.string = info
     }
 }
 

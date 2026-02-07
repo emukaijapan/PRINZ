@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>サポート - PRINZ</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Noto Sans JP', -apple-system, sans-serif;
+    color: #1a1a1a;
+    line-height: 1.8;
+    background: #fff;
+  }
+
+  .container {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 48px 24px;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 48px;
+    padding-bottom: 32px;
+    border-bottom: 1px solid #eee;
+  }
+
+  .logo {
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: #8B00FF;
+    margin-bottom: 8px;
+  }
+
+  h1 {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  .subtitle {
+    font-size: 14px;
+    color: #666;
+  }
+
+  h2 {
+    font-size: 20px;
+    font-weight: 700;
+    margin: 40px 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #8B00FF;
+  }
+
+  .faq-section {
+    margin-bottom: 32px;
+  }
+
+  .faq-category {
+    font-size: 16px;
+    font-weight: 700;
+    color: #8B00FF;
+    margin: 24px 0 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .faq-item {
+    margin-bottom: 20px;
+    background: #f9f9f9;
+    border-radius: 12px;
+    padding: 20px;
+  }
+
+  .faq-q {
+    font-weight: 700;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .faq-q::before {
+    content: "Q";
+    background: #8B00FF;
+    color: #fff;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+
+  .faq-a {
+    padding-left: 32px;
+    color: #444;
+  }
+
+  .faq-a p {
+    margin-bottom: 8px;
+  }
+
+  .contact-box {
+    background: linear-gradient(135deg, #f9f5ff 0%, #fff 100%);
+    border: 2px solid #8B00FF;
+    border-radius: 16px;
+    padding: 32px;
+    text-align: center;
+    margin: 32px 0;
+  }
+
+  .contact-box h3 {
+    font-size: 18px;
+    margin-bottom: 16px;
+    color: #8B00FF;
+  }
+
+  .form-btn {
+    display: inline-block;
+    background: #8B00FF;
+    color: #fff;
+    padding: 16px 32px;
+    border-radius: 12px;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 16px;
+    margin-bottom: 16px;
+    transition: transform 0.2s;
+  }
+
+  .form-btn:hover {
+    transform: scale(1.05);
+  }
+
+  .contact-note {
+    font-size: 14px;
+    color: #666;
+  }
+
+  .app-info {
+    background: #f5f5f5;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 24px 0;
+  }
+
+  .app-info h3 {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 16px;
+  }
+
+  .info-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #e0e0e0;
+  }
+
+  .info-row:last-child {
+    border-bottom: none;
+  }
+
+  .info-label {
+    color: #666;
+  }
+
+  .info-value {
+    font-weight: 500;
+  }
+
+  .steps {
+    margin: 16px 0;
+    padding-left: 0;
+    list-style: none;
+  }
+
+  .steps li {
+    position: relative;
+    padding-left: 32px;
+    margin-bottom: 12px;
+  }
+
+  .steps li::before {
+    position: absolute;
+    left: 0;
+    width: 24px;
+    height: 24px;
+    background: #8B00FF;
+    color: #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .steps li:nth-child(1)::before { content: "1"; }
+  .steps li:nth-child(2)::before { content: "2"; }
+  .steps li:nth-child(3)::before { content: "3"; }
+  .steps li:nth-child(4)::before { content: "4"; }
+
+  footer {
+    margin-top: 48px;
+    padding-top: 32px;
+    border-top: 1px solid #eee;
+    text-align: center;
+    font-size: 14px;
+    color: #666;
+  }
+
+  footer a {
+    color: #8B00FF;
+    text-decoration: none;
+  }
+
+  a {
+    color: #8B00FF;
+  }
+
+  @media (max-width: 600px) {
+    .container { padding: 32px 16px; }
+    h1 { font-size: 24px; }
+    h2 { font-size: 18px; }
+    .contact-box { padding: 24px 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div class="logo">PRINZ</div>
+    <h1>サポート</h1>
+    <p class="subtitle">お困りのことがあればお気軽にお問い合わせください</p>
+  </header>
+
+  <main>
+    <h2>よくある質問（FAQ）</h2>
+
+    <div class="faq-section">
+      <div class="faq-category">アプリの使い方</div>
+
+      <div class="faq-item">
+        <div class="faq-q">スクリーンショットから返信を作成するには？</div>
+        <div class="faq-a">
+          <ol class="steps">
+            <li>ホーム画面で「チャットの返信を作成」をタップ</li>
+            <li>LINEやマッチングアプリのトーク画面のスクショを選択</li>
+            <li>トーン（安牌・ちょい攻め・変化球）を選択</li>
+            <li>生成された返信案をタップしてコピー</li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">テキスト入力モードとは何ですか？</div>
+        <div class="faq-a">
+          <p>スクリーンショットがなくても、会話の内容を直接入力して返信案を生成できる機能です。</p>
+          <p>画面下部のタブバーから「入力」タブを選択してご利用ください。</p>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Share Extension（共有機能）の設定方法は？</div>
+        <div class="faq-a">
+          <ol class="steps">
+            <li>写真アプリでスクリーンショットを開く</li>
+            <li>共有ボタン（四角に上矢印のアイコン）をタップ</li>
+            <li>アプリ一覧を右にスクロールし「その他」をタップ</li>
+            <li>「PRINZ」をオンにして完了</li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">3つのトーンの違いは？</div>
+        <div class="faq-a">
+          <p><strong>安牌</strong>: 無難で誠実な返信。失敗しにくいアプローチ。</p>
+          <p><strong>ちょい攻め</strong>: 積極的な返信。次のアクションにつなげやすい。</p>
+          <p><strong>変化球</strong>: 遊び心のある返信。印象に残りやすいアプローチ。</p>
+        </div>
+      </div>
+
+      <div class="faq-category">アカウント・課金</div>
+
+      <div class="faq-item">
+        <div class="faq-q">無料で使える回数は？</div>
+        <div class="faq-a">
+          <p>無料プランでは1日5回まで返信を生成できます。利用回数は毎日0時にリセットされます。</p>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">Premium（プレミアム）の特典は？</div>
+        <div class="faq-a">
+          <p>Premiumに登録すると、1日100回まで返信を生成できます。</p>
+          <p><strong>料金</strong>: 週額480円 / 年額9,800円（3日間の無料トライアル付き）</p>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">サブスクリプションの解約方法は？</div>
+        <div class="faq-a">
+          <ol class="steps">
+            <li>iPhoneの「設定」アプリを開く</li>
+            <li>上部の自分の名前（Apple ID）をタップ</li>
+            <li>「サブスクリプション」をタップ</li>
+            <li>「PRINZ」を選択し「サブスクリプションをキャンセル」</li>
+          </ol>
+          <p>解約後も、現在の請求期間の終了までサービスをご利用いただけます。</p>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">購入を復元するには？</div>
+        <div class="faq-a">
+          <p>アプリ内の「設定」タブから「購入を復元」をタップしてください。以前購入したサブスクリプションが復元されます。</p>
+        </div>
+      </div>
+
+      <div class="faq-category">トラブルシューティング</div>
+
+      <div class="faq-item">
+        <div class="faq-q">返信が生成されない場合は？</div>
+        <div class="faq-a">
+          <p>以下をお試しください：</p>
+          <ul>
+            <li>インターネット接続を確認する</li>
+            <li>1日の利用回数上限に達していないか確認する</li>
+            <li>アプリを再起動する</li>
+            <li>Apple IDでサインインし直す</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">文字が正しく認識されない場合は？</div>
+        <div class="faq-a">
+          <p>以下をお試しください：</p>
+          <ul>
+            <li>スクリーンショットの画質を確認する（ぼやけていないか）</li>
+            <li>トーク画面全体が映っているか確認する</li>
+            <li>テキスト入力モードで直接入力する</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="contact-box">
+      <h3>解決しない場合は</h3>
+      <a href="https://forms.gle/C2yGhNb6o2rTHikM6" target="_blank" class="form-btn">お問い合わせフォームを開く</a>
+      <p class="contact-note">通常2営業日以内に返信いたします</p>
+    </div>
+
+    <div class="app-info">
+      <h3>アプリ情報</h3>
+      <div class="info-row">
+        <span class="info-label">アプリ名</span>
+        <span class="info-value">PRINZ</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">対応OS</span>
+        <span class="info-value">iOS 17.0以上</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">必要な権限</span>
+        <span class="info-value">写真ライブラリへのアクセス</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">開発・運営</span>
+        <span class="info-value">PRINZ運営</span>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <p>
+      <a href="/">トップページ</a> |
+      <a href="/privacy-policy.html">プライバシーポリシー</a> |
+      <a href="/terms.html">利用規約</a>
+    </p>
+    <p>&copy; 2026 PRINZ運営</p>
+  </footer>
+</div>
+
+</body>
+</html>
