@@ -7,9 +7,10 @@
 
 import Foundation
 import RevenueCat
+import Combine
 
 @MainActor
-class SubscriptionManager: ObservableObject {
+class SubscriptionManager: NSObject, ObservableObject {
   static let shared = SubscriptionManager()
 
   private let apiKey: String = {
@@ -27,7 +28,9 @@ class SubscriptionManager: ObservableObject {
   @Published var currentOffering: Offering?
   @Published var isPurchasing = false
 
-  private init() {}
+  private override init() {
+    super.init()
+  }
 
   // MARK: - Setup
 

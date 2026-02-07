@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import Combine
 
 /// OpenAI APIレスポンスの構造体
 struct OpenAIResponse: Codable {
