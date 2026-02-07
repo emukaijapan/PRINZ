@@ -19,7 +19,7 @@ class DataManager {
 
   private init() {
     let url = FileManager.default
-      .containerURL(forSecurityApplicationGroupIdentifier: "group.com.prinz.app")
+      .containerURL(forSecurityApplicationGroupIdentifier: "group.com.mgolworks.prinz")
     self.cachedHistoryFileURL = url?.appendingPathComponent(historyFileName)
 
     if url == nil {

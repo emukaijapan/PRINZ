@@ -48,11 +48,11 @@ struct ReplyResultView: View {
     @AppStorage("hasRequestedReview") private var hasRequestedReview: Bool = false
 
     // ユーザー設定（App Group共有）
-    @AppStorage("userGender", store: UserDefaults(suiteName: "group.com.prinz.app"))
+    @AppStorage("userGender", store: UserDefaults(suiteName: "group.com.mgolworks.prinz"))
     private var userGenderRaw: String = "男性"
-    @AppStorage("userAge", store: UserDefaults(suiteName: "group.com.prinz.app"))
+    @AppStorage("userAge", store: UserDefaults(suiteName: "group.com.mgolworks.prinz"))
     private var userAge: Double = 25
-    @AppStorage("personalType", store: UserDefaults(suiteName: "group.com.prinz.app"))
+    @AppStorage("personalType", store: UserDefaults(suiteName: "group.com.mgolworks.prinz"))
     private var personalTypeRaw: String = PersonalType.natural.rawValue
 
     private let toneTypes: [ReplyType] = [.safe, .chill, .witty]

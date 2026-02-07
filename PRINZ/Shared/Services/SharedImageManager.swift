@@ -12,7 +12,7 @@ import UIKit
 class SharedImageManager {
     static let shared = SharedImageManager()
     
-    private let appGroupIdentifier = "group.com.prinz.app"
+    private let appGroupIdentifier = "group.com.mgolworks.prinz"
     private let sharedImageFileName = "shared_image.jpg"
     private let sharedContextFileName = "shared_context.json"
     

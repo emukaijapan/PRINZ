@@ -29,7 +29,7 @@ class ShareExtensionLogger {
         print("📱 ShareExt: \(logEntry)")
 
         // UserDefaults（AppGroup）に永続化
-        if let defaults = UserDefaults(suiteName: "group.com.prinz.app") {
+        if let defaults = UserDefaults(suiteName: "group.com.mgolworks.prinz") {
             var logs = defaults.stringArray(forKey: logKey) ?? []
             logs.append(logEntry)
             // 最新100件のみ保持
@@ -42,11 +42,11 @@ class ShareExtensionLogger {
     }
 
     func getLogs() -> [String] {
-        return UserDefaults(suiteName: "group.com.prinz.app")?.stringArray(forKey: logKey) ?? []
+        return UserDefaults(suiteName: "group.com.mgolworks.prinz")?.stringArray(forKey: logKey) ?? []
     }
 
     func clearLogs() {
-        UserDefaults(suiteName: "group.com.prinz.app")?.removeObject(forKey: logKey)
+        UserDefaults(suiteName: "group.com.mgolworks.prinz")?.removeObject(forKey: logKey)
     }
 }
 #else
@@ -700,7 +700,7 @@ struct ShareExtensionView: View {
         }
 
         // App Group UserDefaultsからユーザー設定を取得
-        let defaults = UserDefaults(suiteName: "group.com.prinz.app")
+        let defaults = UserDefaults(suiteName: "group.com.mgolworks.prinz")
         let genderRaw = defaults?.string(forKey: "userGender") ?? "男性"
         let ageValue = defaults?.double(forKey: "userAge") ?? 25
         let personalTypeRaw = defaults?.string(forKey: "personalType") ?? PersonalType.natural.rawValue

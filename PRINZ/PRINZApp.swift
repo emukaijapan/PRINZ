@@ -53,7 +53,7 @@ class AppState: ObservableObject {
 @main
 struct PRINZApp: App {
     @StateObject private var appState = AppState.shared
-    @AppStorage("hasCompletedOnboarding", store: UserDefaults(suiteName: "group.com.prinz.app"))
+    @AppStorage("hasCompletedOnboarding", store: UserDefaults(suiteName: "group.com.mgolworks.prinz"))
     private var hasCompletedOnboarding: Bool = false
 
     init() {
@@ -90,7 +90,7 @@ struct PRINZApp: App {
     
     private func setupAppGroup() {
         if let containerURL = FileManager.default.containerURL(
-            forSecurityApplicationGroupIdentifier: "group.com.prinz.app"
+            forSecurityApplicationGroupIdentifier: "group.com.mgolworks.prinz"
         ) {
             print("✅ App Group Container: \(containerURL.path)")
         } else {

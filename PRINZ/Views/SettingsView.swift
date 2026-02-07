@@ -8,11 +8,11 @@
 import SwiftUI
 
 struct SettingsView: View {
-    @AppStorage("userAge", store: UserDefaults(suiteName: "group.com.prinz.app"))
+    @AppStorage("userAge", store: UserDefaults(suiteName: "group.com.mgolworks.prinz"))
     private var userAge: Double = 25
-    @AppStorage("userGender", store: UserDefaults(suiteName: "group.com.prinz.app"))
+    @AppStorage("userGender", store: UserDefaults(suiteName: "group.com.mgolworks.prinz"))
     private var userGender: String = "男性"
-    @AppStorage("personalType", store: UserDefaults(suiteName: "group.com.prinz.app"))
+    @AppStorage("personalType", store: UserDefaults(suiteName: "group.com.mgolworks.prinz"))
     private var personalTypeRaw: String = PersonalType.natural.rawValue
 
     @ObservedObject private var subscriptionManager = SubscriptionManager.shared

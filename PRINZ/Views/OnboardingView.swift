@@ -8,18 +8,18 @@
 import SwiftUI
 
 struct OnboardingView: View {
-    private static let store = UserDefaults(suiteName: "group.com.prinz.app")
+    private static let store = UserDefaults(suiteName: "group.com.mgolworks.prinz")
 
-    @AppStorage("userGender", store: UserDefaults(suiteName: "group.com.prinz.app"))
+    @AppStorage("userGender", store: UserDefaults(suiteName: "group.com.mgolworks.prinz"))
     private var userGenderRaw: String = "男性"
 
-    @AppStorage("userAge", store: UserDefaults(suiteName: "group.com.prinz.app"))
+    @AppStorage("userAge", store: UserDefaults(suiteName: "group.com.mgolworks.prinz"))
     private var userAge: Double = 25
 
-    @AppStorage("personalType", store: UserDefaults(suiteName: "group.com.prinz.app"))
+    @AppStorage("personalType", store: UserDefaults(suiteName: "group.com.mgolworks.prinz"))
     private var personalTypeRaw: String = PersonalType.natural.rawValue
 
-    @AppStorage("hasCompletedOnboarding", store: UserDefaults(suiteName: "group.com.prinz.app"))
+    @AppStorage("hasCompletedOnboarding", store: UserDefaults(suiteName: "group.com.mgolworks.prinz"))
     private var hasCompletedOnboarding: Bool = false
 
     @State private var currentStep = 0
