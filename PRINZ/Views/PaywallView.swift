@@ -170,7 +170,20 @@ struct PaywallView: View {
     return Button(action: {
       selectedPackage = package
     }) {
-      HStack {
+      HStack(spacing: 14) {
+        // 選択インジケーター（ラジオボタン風）
+        ZStack {
+          Circle()
+            .stroke(isSelected ? Color.neonCyan : Color.white.opacity(0.3), lineWidth: 2)
+            .frame(width: 24, height: 24)
+
+          if isSelected {
+            Circle()
+              .fill(Color.neonCyan)
+              .frame(width: 14, height: 14)
+          }
+        }
+
         VStack(alignment: .leading, spacing: 4) {
           HStack(spacing: 8) {
             Text(title)
@@ -187,13 +200,27 @@ struct PaywallView: View {
                 .background(Color.neonCyan)
                 .cornerRadius(4)
             }
+
+            if isSelected {
+              Text("選択中")
+                .font(.caption2)
+                .fontWeight(.medium)
+                .foregroundColor(.neonCyan)
+            }
           }
 
           if let intro = package.storeProduct.introductoryDiscount,
              intro.paymentMode == .freeTrial {
-            Text("\(intro.subscriptionPeriod.value)日間無料トライアル")
-              .font(.caption)
-              .foregroundColor(.neonCyan)
+            // トライアル既使用の場合は表示しない
+            if !UsageManager.shared.hasAlreadyUsedTrial() {
+              Text("\(intro.subscriptionPeriod.value)日間無料トライアル")
+                .font(.caption)
+                .foregroundColor(.neonCyan)
+            } else {
+              Text("トライアル済み")
+                .font(.caption)
+                .foregroundColor(.white.opacity(0.4))
+            }
           }
         }
 
@@ -207,12 +234,13 @@ struct PaywallView: View {
       .padding(16)
       .background(
         RoundedRectangle(cornerRadius: 16)
-          .fill(isSelected ? Color.magicPurple.opacity(0.4) : Color.glassBackground)
+          .fill(isSelected ? Color.magicPurple.opacity(0.5) : Color.glassBackground)
       )
       .overlay(
         RoundedRectangle(cornerRadius: 16)
-          .stroke(isSelected ? Color.magicPurple : Color.glassBorder, lineWidth: isSelected ? 2 : 1)
+          .stroke(isSelected ? Color.neonCyan : Color.glassBorder, lineWidth: isSelected ? 2.5 : 1)
       )
+      .shadow(color: isSelected ? Color.neonCyan.opacity(0.3) : Color.clear, radius: 8)
     }
   }
 
@@ -284,6 +312,8 @@ struct PaywallView: View {
     do {
       let success = try await subscriptionManager.purchase(package)
       if success {
+        // トライアルを使用済みとしてマーク
+        UsageManager.shared.markTrialAsUsed()
         dismiss()
       }
     } catch {
