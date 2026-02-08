@@ -1033,18 +1033,18 @@ struct ShareScannerView: View {
                     .resizable()
                     .scaledToFit()
                     .frame(maxWidth: geometry.size.width * 0.85)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .clipShape(RoundedRectangle(cornerRadius: 20))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 16)
-                            .fill(Color.black.opacity(0.2))
+                        RoundedRectangle(cornerRadius: 20)
+                            .fill(Color.black.opacity(0.3))
                     )
                     .overlay(
                         // スキャンライン
-                        scanLineOverlay(height: geometry.size.height * 0.5)
+                        scanLineOverlay(height: geometry.size.height * 0.6)
                     )
                     .overlay(
                         // ネオン枠
-                        RoundedRectangle(cornerRadius: 16)
+                        RoundedRectangle(cornerRadius: 20)
                             .stroke(
                                 LinearGradient(
                                     colors: [.neonPurple, .neonCyan],
@@ -1058,7 +1058,7 @@ struct ShareScannerView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .frame(height: 250)
+        .frame(height: 350)
         .onAppear {
             startScanAnimation()
         }
@@ -1095,7 +1095,7 @@ struct ShareScannerView: View {
             }
             .offset(y: scanPosition * (geo.size.height - 54))
         }
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .clipShape(RoundedRectangle(cornerRadius: 20))
     }
 
     private func startScanAnimation() {

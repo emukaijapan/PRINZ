@@ -182,10 +182,10 @@ struct OnboardingView: View {
                 VStack(spacing: 20) {
                     tutorialStepRow(
                         number: 1,
-                        icon: "person.text.rectangle",
+                        icon: "photo.on.rectangle.angled",
                         color: .orange,
-                        title: "プロフィールをスクショ",
-                        description: "気になる相手のプロフィール画面を\nスクリーンショット"
+                        title: "スクショをアップ",
+                        description: "気になる相手のプロフィール画面を\nスクショしてアップロード"
                     )
                     tutorialStepRow(
                         number: 2,
