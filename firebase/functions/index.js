@@ -146,9 +146,10 @@ exports.generateReply = onCall(
       }
       console.log(`[generateReply] Mode: ${mode}`);
       console.log(`[generateReply] API Key exists: ${apiKey ? 'YES' : 'NO'}, length: ${apiKey?.length || 0}`);
-      console.log(`[generateReply] Message: ${(message || '').substring(0, 50)}...`);
+      // セキュリティ: ユーザー入力内容はログに出力しない（長さのみ）
+      console.log(`[generateReply] Message length: ${(message || '').length} chars`);
       console.log(`[generateReply] PersonalType: ${personalType}, Gender: ${gender}, AgeGroup: ${ageGroup}`);
-      console.log(`[generateReply] PartnerName: ${partnerName || 'なし'}, UserMessage: ${userMessage || 'なし'}`);
+      console.log(`[generateReply] HasPartnerName: ${!!partnerName}, HasUserMessage: ${!!userMessage}`);
       console.log(`[generateReply] ReplyLength: ${replyLength}`);
       console.log(`[generateReply] SelectedTone: ${selectedTone || 'なし（従来の3カテゴリ）'}`);
 
@@ -178,7 +179,8 @@ exports.generateReply = onCall(
 
       // レスポンス解析
       const content = completion.choices[0].message.content;
-      console.log(`[generateReply] OpenAI Response: ${content.substring(0, 100)}...`);
+      // セキュリティ: AI生成内容はログに出力しない（成功のみ記録）
+      console.log(`[generateReply] OpenAI Response received: ${content.length} chars`);
       const replies = JSON.parse(content);
 
       // 利用回数を記録（本番のみ）

@@ -4,6 +4,10 @@
 //
 //  Created on 2026-01-13.
 //
+//  ⚠️ このファイルは開発時のテスト用です。
+//  本番環境では FirebaseService 経由で Cloud Functions を使用してください。
+//  クライアント直接呼び出しはAPIキー漏洩のリスクがあります。
+//
 
 import Foundation
 import Combine
@@ -31,7 +35,9 @@ struct AIGeneratedReplies: Codable {
     let replies: [AIGeneratedReply]
 }
 
-/// OpenAI API連携サービス
+#if DEBUG
+/// OpenAI API連携サービス（開発用）
+/// ⚠️ 本番ビルドでは無効化されています
 class OpenAIService {
     static let shared = OpenAIService()
     
@@ -156,3 +162,4 @@ enum OpenAIError: Error, LocalizedError {
         }
     }
 }
+#endif

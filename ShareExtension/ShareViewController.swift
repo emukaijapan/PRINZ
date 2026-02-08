@@ -74,6 +74,11 @@ class ShareViewController: UIViewController {
         if FirebaseApp.app() == nil {
             FirebaseApp.configure()
             ShareExtensionLogger.shared.log("Firebase initialized")
+
+            // Firebase匿名認証（Functions呼び出しに必須）
+            Task {
+                await AuthManager.shared.signInAnonymouslyIfNeeded()
+            }
         }
         
         // SwiftUIビューをホスト

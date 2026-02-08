@@ -30,7 +30,11 @@ class SubscriptionManager: NSObject, ObservableObject {
   // MARK: - Setup
 
   func configure() {
+    #if DEBUG
     Purchases.logLevel = .debug
+    #else
+    Purchases.logLevel = .warn
+    #endif
     Purchases.configure(withAPIKey: apiKey)
     Purchases.shared.delegate = self
     isConfigured = true

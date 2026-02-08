@@ -7,6 +7,7 @@
 
 import Foundation
 import FirebaseFunctions
+import FirebaseAuth
 
 /// Firebase Functions経由でAI返信を生成するサービス
 class FirebaseService {
@@ -71,8 +72,11 @@ class FirebaseService {
         if let profileInfo = profileInfo {
             data["profileInfo"] = profileInfo
         }
-        
+
         do {
+            // 認証を確実に完了させてからFunctions呼び出し
+            try await AuthManager.shared.ensureAuthenticated()
+
             let result = try await functions.httpsCallable("generateReply").call(data)
             
             guard let response = result.data as? [String: Any],

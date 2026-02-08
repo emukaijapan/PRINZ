@@ -7,6 +7,7 @@
 
 import SwiftUI
 import Firebase
+import FirebaseAuth
 import Combine
 
 /// アプリ全体の状態管理
@@ -60,6 +61,11 @@ struct PRINZApp: App {
         // Firebase初期化
         FirebaseApp.configure()
         print("✅ Firebase initialized")
+
+        // Firebase匿名認証（Functions呼び出しに必須）
+        Task {
+            await AuthManager.shared.signInAnonymouslyIfNeeded()
+        }
 
         // RevenueCat初期化（課金処理）
         SubscriptionManager.shared.configure()

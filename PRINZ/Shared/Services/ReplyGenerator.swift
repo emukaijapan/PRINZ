@@ -12,9 +12,11 @@ class ReplyGenerator {
     
     private init() {}
     
-    // MARK: - OpenAI API連携
-    
+    #if DEBUG
+    // MARK: - OpenAI API連携（開発用）
+
     /// OpenAI APIを使用して返信を生成
+    /// ⚠️ 開発用：本番では FirebaseService 経由を使用
     func generateRepliesWithAI(
         message: String,
         context: Context,
@@ -22,9 +24,9 @@ class ReplyGenerator {
         gender: UserGender,
         ageGroup: UserAgeGroup
     ) async throws -> [Reply] {
-        
+
         let relationship = context.displayName
-        
+
         let aiReplies = try await OpenAIService.shared.generateReplies(
             message: message,
             personalType: personalType,
@@ -32,7 +34,7 @@ class ReplyGenerator {
             ageGroup: ageGroup,
             relationship: relationship
         )
-        
+
         // AIGeneratedReplyをReplyに変換
         return aiReplies.compactMap { aiReply in
             guard let replyType = ReplyType.from(apiType: aiReply.type) else {
@@ -46,7 +48,8 @@ class ReplyGenerator {
             )
         }
     }
-    
+    #endif
+
     // MARK: - モック生成（フォールバック用）
     
     /// モックAI: コンテキストに応じた返信案を生成

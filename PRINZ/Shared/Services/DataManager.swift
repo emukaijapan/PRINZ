@@ -101,7 +101,7 @@ class DataManager {
       let encoder = JSONEncoder()
       encoder.dateEncodingStrategy = .iso8601
       let data = try encoder.encode(history)
-      try data.write(to: fileURL, options: .atomic)
+      try data.write(to: fileURL, options: [.atomic, .completeFileProtection])
     } catch {
       print("❌ DataManager: Save failed - \(error.localizedDescription)")
     }
