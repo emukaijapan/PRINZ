@@ -125,9 +125,9 @@ struct HomeView: View {
                     .font(.title2)
                     .foregroundColor(.white.opacity(0.6))
             }
-            
+
             Spacer()
-            
+
             // ロゴ
             HStack(spacing: 4) {
                 Image(systemName: "crown.fill")
@@ -140,7 +140,7 @@ struct HomeView: View {
                         )
                     )
                     .shadow(color: .neonPurple.opacity(0.5), radius: 10)
-                
+
                 Text("PRINZ")
                     .font(.title)
                     .fontWeight(.black)
@@ -153,14 +153,12 @@ struct HomeView: View {
                         )
                     )
             }
-            
+
             Spacer()
-            
-            Button(action: {}) {
-                Image(systemName: "gearshape.fill")
-                    .font(.title2)
-                    .foregroundColor(.white.opacity(0.6))
-            }
+
+            // 右側のスペーサー（左右対称のため）
+            Color.clear
+                .frame(width: 28, height: 28)
         }
         .padding(.horizontal)
         .padding(.top, 8)

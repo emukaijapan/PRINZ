@@ -55,31 +55,6 @@ struct ManualInputView: View {
                     )
                     .padding(.horizontal)
 
-                // コンテキスト選択（チャット返信モードのみ）
-                if selectedMode == .chatReply {
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("状況を選択")
-                            .font(.subheadline)
-                            .fontWeight(.semibold)
-                            .foregroundColor(.white.opacity(0.7))
-                            .padding(.horizontal)
-
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 10) {
-                                ForEach(Context.allCases, id: \.self) { context in
-                                    ContextTagButton(
-                                        context: context,
-                                        isSelected: selectedContext == context
-                                    ) {
-                                        selectedContext = context
-                                    }
-                                }
-                            }
-                            .padding(.horizontal)
-                        }
-                    }
-                }
-
                 Spacer()
 
                 // 生成ボタン

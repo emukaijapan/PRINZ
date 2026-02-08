@@ -122,27 +122,33 @@ struct ShareExtensionView: View {
     
     enum ShareStep {
         case loading
+        case modeSelection   // モード選択（チャット返信 / プロフ挨拶）
         case toneSelection   // 気分選択画面（安牌・攻め・変化球）
         case generating
         case results
         case error
     }
-    
+
+    // 生成モード
+    @State private var selectedMode: GenerationMode = .chatReply
+
     var body: some View {
         ZStack {
             // 背景 - メインアプリと統一
             MagicBackground()
-            
+
             VStack(spacing: 0) {
                 // ヘッダー
                 headerView
-                
+
                 // メインコンテンツ
                 ScrollView {
                     Group {
                         switch currentStep {
                         case .loading:
                             loadingView
+                        case .modeSelection:
+                            modeSelectionView
                         case .toneSelection:
                             toneSelectionView
                         case .generating:
@@ -201,19 +207,80 @@ struct ShareExtensionView: View {
     }
     
     // MARK: - Loading View
-    
+
     private var loadingView: some View {
         VStack(spacing: 20) {
             ProgressView()
                 .tint(.neonPurple)
                 .scaleEffect(1.5)
-            
+
             Text("画像を読み込み中...")
                 .foregroundColor(.white.opacity(0.7))
         }
         .padding(.vertical, 40)
     }
-    
+
+    // MARK: - Mode Selection View（チャット返信 / あいさつ作成）
+
+    private var modeSelectionView: some View {
+        VStack(spacing: 24) {
+            // 画像プレビュー
+            if let image = loadedImage {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(maxHeight: 180)
+                    .cornerRadius(16)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(Color.glassBorder, lineWidth: 1)
+                    )
+            }
+
+            // タイトル
+            VStack(spacing: 8) {
+                Text("何をしますか？")
+                    .font(.title3)
+                    .fontWeight(.bold)
+                    .foregroundColor(.white)
+
+                Text("スクショの内容を解析してAIが提案します")
+                    .font(.caption)
+                    .foregroundColor(.white.opacity(0.6))
+            }
+
+            // モード選択ボタン
+            VStack(spacing: 14) {
+                // チャット返信
+                ModeButton(
+                    title: "チャット返信",
+                    subtitle: "LINEやマッチングアプリの返信を作成",
+                    icon: "bubble.left.and.bubble.right.fill",
+                    color: .neonPurple
+                ) {
+                    selectedMode = .chatReply
+                    currentStep = .toneSelection
+                }
+
+                // あいさつ作成
+                ModeButton(
+                    title: "あいさつ作成",
+                    subtitle: "プロフィールから初回メッセージを作成",
+                    icon: "hand.wave.fill",
+                    color: .orange
+                ) {
+                    selectedMode = .profileGreeting
+                    currentStep = .toneSelection
+                }
+            }
+            .padding(.horizontal)
+
+            Spacer().frame(height: 20)
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 20)
+    }
+
     // MARK: - Tone Selection View (新UI：安牌・攻め・変化球)
     
     private var toneSelectionView: some View {
@@ -290,22 +357,27 @@ struct ShareExtensionView: View {
         .padding(.top, 20)
     }
     
-    // MARK: - Generating View
-    
+    // MARK: - Generating View（スキャンエフェクト付き）
+
     private var generatingView: some View {
         VStack(spacing: 24) {
-            // スケルトンローダー
-            SkeletonLoaderView()
-            
-            Text("AI回答を生成中...")
+            if let image = loadedImage {
+                // スクショがある場合はスキャンエフェクト
+                ShareScannerView(image: image)
+            } else {
+                // スクショがない場合はスケルトンローダー
+                SkeletonLoaderView()
+            }
+
+            Text(selectedMode == .profileGreeting ? "プロフィールを解析中..." : "AI回答を生成中...")
                 .font(.headline)
                 .foregroundColor(.white)
-            
+
             Text("「\(selectedTone.displayName)」の返信を作成しています")
                 .font(.subheadline)
                 .foregroundColor(.white.opacity(0.6))
         }
-        .padding(.vertical, 40)
+        .padding(.vertical, 20)
     }
     
     // MARK: - Results View (RIZZスタイル: 3件リスト表示)
@@ -608,8 +680,8 @@ struct ShareExtensionView: View {
                         
                         if let image = image {
                             loadedImage = image
-                            currentStep = .toneSelection
-                            ShareExtensionLogger.shared.log("Image loaded successfully, transitioning to toneSelection")
+                            currentStep = .modeSelection
+                            ShareExtensionLogger.shared.log("Image loaded successfully, transitioning to modeSelection")
                         } else {
                             ShareExtensionLogger.shared.log("Image format invalid")
                             showError("画像の形式が不正です")
@@ -719,11 +791,12 @@ struct ShareExtensionView: View {
                     personalType: personalType,
                     gender: gender,
                     ageGroup: ageGroup,
-                    relationship: nil,
+                    relationship: selectedMode == .profileGreeting ? "マッチ直後" : nil,
                     partnerName: parsedChat.partnerName,
                     userMessage: userMessageToSend,
                     isShortMode: isShortMode,
-                    selectedTone: selectedTone
+                    selectedTone: selectedTone,
+                    mode: selectedMode == .profileGreeting ? "profileGreeting" : "chatReply"
                 )
                 
                 await MainActor.run {
@@ -888,6 +961,150 @@ struct TagButton: View {
                 )
         }
         .buttonStyle(PlainButtonStyle())
+    }
+}
+
+// MARK: - Mode Button Component
+
+struct ModeButton: View {
+    let title: String
+    let subtitle: String
+    let icon: String
+    let color: Color
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 16) {
+                // アイコン
+                Image(systemName: icon)
+                    .font(.title2)
+                    .foregroundColor(color)
+                    .frame(width: 44, height: 44)
+                    .background(
+                        Circle()
+                            .fill(color.opacity(0.15))
+                    )
+
+                // テキスト
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title)
+                        .font(.headline)
+                        .fontWeight(.bold)
+                        .foregroundColor(.white)
+
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundColor(.white.opacity(0.6))
+                }
+
+                Spacer()
+
+                // 矢印
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundColor(.white.opacity(0.4))
+            }
+            .padding()
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color.glassBackground)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(Color.glassBorder, lineWidth: 1)
+                    )
+            )
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+}
+
+// MARK: - Share Scanner View（スキャンエフェクト）
+
+struct ShareScannerView: View {
+    let image: UIImage
+    @State private var scanPosition: CGFloat = 0.0
+
+    var body: some View {
+        GeometryReader { geometry in
+            ZStack {
+                // スクリーンショット画像
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(maxWidth: geometry.size.width * 0.85)
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(Color.black.opacity(0.2))
+                    )
+                    .overlay(
+                        // スキャンライン
+                        scanLineOverlay(height: geometry.size.height * 0.5)
+                    )
+                    .overlay(
+                        // ネオン枠
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(
+                                LinearGradient(
+                                    colors: [.neonPurple, .neonCyan],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 2
+                            )
+                            .shadow(color: .neonPurple.opacity(0.5), radius: 8)
+                    )
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .frame(height: 250)
+        .onAppear {
+            startScanAnimation()
+        }
+    }
+
+    private func scanLineOverlay(height: CGFloat) -> some View {
+        GeometryReader { geo in
+            VStack(spacing: 0) {
+                Rectangle()
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color.neonCyan.opacity(0.0),
+                                Color.neonCyan.opacity(0.8),
+                                Color.neonPurple.opacity(0.8),
+                                Color.neonPurple.opacity(0.0)
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .frame(height: 4)
+                    .shadow(color: .neonCyan, radius: 10)
+
+                Rectangle()
+                    .fill(
+                        LinearGradient(
+                            colors: [Color.neonCyan.opacity(0.15), Color.clear],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .frame(height: 50)
+            }
+            .offset(y: scanPosition * (geo.size.height - 54))
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+
+    private func startScanAnimation() {
+        withAnimation(
+            .easeInOut(duration: 2.0)
+            .repeatForever(autoreverses: true)
+        ) {
+            scanPosition = 1.0
+        }
     }
 }
 
