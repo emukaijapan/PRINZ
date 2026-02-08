@@ -80,7 +80,13 @@ struct ReplyResultView: View {
             MagicBackground()
             
             if isAnalyzing {
-                AnalyzingView()
+                if let image = image {
+                    // スクショがある場合はスキャンエフェクト
+                    ScannerOverlayView(image: image)
+                } else {
+                    // スクショがない場合は従来のアニメーション
+                    AnalyzingView()
+                }
             } else {
                 mainContentView
             }

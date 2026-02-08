@@ -554,7 +554,40 @@ struct AppInfoSheet: View {
             guard let value = element.value as? Int8, value != 0 else { return identifier }
             return identifier + String(UnicodeScalar(UInt8(value)))
         }
-        return identifier
+        return mapDeviceIdentifier(identifier)
+    }
+
+    /// デバイス識別子をモデル名に変換
+    private func mapDeviceIdentifier(_ identifier: String) -> String {
+        let mapping: [String: String] = [
+            // iPhone 17 Series (2025)
+            "iPhone18,1": "iPhone 17",
+            "iPhone18,2": "iPhone 17 Plus",
+            "iPhone18,3": "iPhone 17 Pro",
+            "iPhone18,4": "iPhone 17 Pro Max",
+            "iPhone18,5": "iPhone 17 Air",
+            // iPhone 16 Series (2024)
+            "iPhone17,1": "iPhone 16 Pro",
+            "iPhone17,2": "iPhone 16 Pro Max",
+            "iPhone17,3": "iPhone 16",
+            "iPhone17,4": "iPhone 16 Plus",
+            // iPhone 15 Series (2023)
+            "iPhone15,4": "iPhone 15",
+            "iPhone15,5": "iPhone 15 Plus",
+            "iPhone16,1": "iPhone 15 Pro",
+            "iPhone16,2": "iPhone 15 Pro Max",
+            // iPhone 14 Series (2022)
+            "iPhone14,7": "iPhone 14",
+            "iPhone14,8": "iPhone 14 Plus",
+            "iPhone15,2": "iPhone 14 Pro",
+            "iPhone15,3": "iPhone 14 Pro Max",
+            // iPhone SE
+            "iPhone14,6": "iPhone SE (3rd)",
+            // Simulator
+            "x86_64": "Simulator",
+            "arm64": "Simulator",
+        ]
+        return mapping[identifier] ?? identifier
     }
 
     var body: some View {

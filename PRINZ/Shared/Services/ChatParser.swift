@@ -90,9 +90,10 @@ class ChatParser {
     private let symbolBlacklist: Set<Character> = ["<", ">", "＜", "＞", "←", "→", "↑", "↓", "○", "×", "◎", "△", "▽", "●", "■", "◆", "♪", "♡", "☆", "★"]
     
     // MARK: - Y座標フィルタ閾値
-    
-    /// 有効なY座標範囲（UI要素除外用、下部20%をカット）
-    private let validYRange: ClosedRange<CGFloat> = 0.15...0.80
+
+    /// 有効なY座標範囲（UI要素除外用、上部8%・下部5%をカット）
+    /// キーボード非表示時は最下部までメッセージがあるため範囲を広げる
+    private let validYRange: ClosedRange<CGFloat> = 0.05...0.92
     
     /// 自分のメッセージ判定用X座標閾値
     private let selfMessageXThreshold: CGFloat = 0.7
@@ -228,20 +229,30 @@ class ChatParser {
     /// ブラックリストに該当するか判定
     private func shouldExclude(_ text: String) -> Bool {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        
+
         // 空文字列は除外
         if trimmed.isEmpty { return true }
-        
+
         // 1文字の記号は除外
         if trimmed.count == 1 && symbolBlacklist.contains(trimmed.first!) {
             return true
         }
-        
+
         // 2文字以下の記号のみは除外
         if trimmed.count <= 2 && trimmed.allSatisfy({ symbolBlacklist.contains($0) || $0.isWhitespace }) {
             return true
         }
-        
+
+        // 1-2文字のひらがな/カタカナのみは除外（スタンプの誤認識パターン）
+        if trimmed.count <= 2 && trimmed.allSatisfy({ $0.isHiraganaOrKatakana }) {
+            return true
+        }
+
+        // 数字のみの短い文字列は除外（時刻の断片など）
+        if trimmed.count <= 4 && trimmed.allSatisfy({ $0.isNumber || $0 == ":" }) {
+            return true
+        }
+
         // キーワードブラックリストチェック
         for keyword in blacklistKeywords {
             // 完全一致
@@ -251,7 +262,7 @@ class ChatParser {
                 return true
             }
         }
-        
+
         return false
     }
     
@@ -285,11 +296,37 @@ class ChatParser {
         return patterns.contains { line.range(of: $0, options: .regularExpression) != nil }
     }
     
+    /// 「既読」マーカーをテキストから除去
+    /// LINEの「既読」がメッセージ本文に混入するケースに対応
+    private func removeReadMarker(_ text: String) -> String {
+        var cleaned = text
+        // 「既読」+ 時刻パターンを除去
+        let patterns = [
+            "既読\\s*\\d{1,2}:\\d{2}",  // 既読 20:30
+            "既読\\d{1,2}:\\d{2}",      // 既読20:30
+            "既読$",                     // 末尾の「既読」
+            "^既読",                     // 先頭の「既読」
+        ]
+        for pattern in patterns {
+            if let regex = try? NSRegularExpression(pattern: pattern, options: []) {
+                cleaned = regex.stringByReplacingMatches(
+                    in: cleaned,
+                    options: [],
+                    range: NSRange(cleaned.startIndex..., in: cleaned),
+                    withTemplate: ""
+                )
+            }
+        }
+        return cleaned.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
     /// OCR誤認識の絵文字ゴミ文字を除去
     /// Vision frameworkはスクショ内の絵文字を「ぎ」「き」等の1文字として誤認識する
     private func cleanEmojiArtifacts(_ text: String) -> String {
+        // まず「既読」マーカーを除去
+        let withoutReadMarker = removeReadMarker(text)
         // Unicode絵文字を除去（Visionが稀にそのまま出力する場合）
-        var cleaned = text.unicodeScalars.filter { scalar in
+        var cleaned = withoutReadMarker.unicodeScalars.filter { scalar in
             // 基本的な絵文字ブロックを除外
             !(0x1F600...0x1F64F).contains(scalar.value) && // Emoticons
             !(0x1F300...0x1F5FF).contains(scalar.value) && // Misc Symbols
@@ -324,5 +361,17 @@ class ChatParser {
             seen.insert(normalized)
             return true
         }
+    }
+}
+
+// MARK: - Character Extension
+
+private extension Character {
+    /// ひらがなまたはカタカナかどうか
+    var isHiraganaOrKatakana: Bool {
+        guard let scalar = unicodeScalars.first else { return false }
+        let value = scalar.value
+        // ひらがな: U+3040-U+309F, カタカナ: U+30A0-U+30FF
+        return (0x3040...0x309F).contains(value) || (0x30A0...0x30FF).contains(value)
     }
 }

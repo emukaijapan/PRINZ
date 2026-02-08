@@ -104,13 +104,11 @@ struct PaywallView: View {
   private var featureComparisonView: some View {
     GlassCard(glowColor: .neonPurple) {
       VStack(spacing: 14) {
-        featureRow("1日の利用回数", free: "5回", premium: "100回")
+        featureRow("返信生成", free: "5回/日", premium: "無制限")
         Divider().background(Color.white.opacity(0.1))
         featureRow("チャット返信", free: "○", premium: "○")
         Divider().background(Color.white.opacity(0.1))
         featureRow("あいさつ作成", free: "○", premium: "○")
-        Divider().background(Color.white.opacity(0.1))
-        featureRow("広告", free: "あり", premium: "なし")
       }
     }
   }
