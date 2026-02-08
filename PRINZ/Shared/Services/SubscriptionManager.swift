@@ -13,16 +13,8 @@ import Combine
 class SubscriptionManager: NSObject, ObservableObject {
   static let shared = SubscriptionManager()
 
-  private let apiKey: String = {
-    guard let key = Bundle.main.infoDictionary?["REVENUECAT_API_KEY"] as? String,
-          !key.isEmpty, key != "appl_XXXXXXX" else {
-      #if DEBUG
-      print("⚠️ SubscriptionManager: RevenueCat API Key not configured in Info.plist")
-      #endif
-      return ""
-    }
-    return key
-  }()
+  /// RevenueCat Public API Key
+  private let apiKey = "appl_znImYznVHRLtSVMfNhepwAMNzNb"
 
   /// RevenueCat が正しく初期化されたかどうか
   private var isConfigured = false
@@ -38,17 +30,11 @@ class SubscriptionManager: NSObject, ObservableObject {
   // MARK: - Setup
 
   func configure() {
-    guard !apiKey.isEmpty else {
-      #if DEBUG
-      print("⚠️ SubscriptionManager: Skipping RevenueCat configuration (API key not set)")
-      #endif
-      return
-    }
-    Purchases.logLevel = .warn
+    Purchases.logLevel = .debug
     Purchases.configure(withAPIKey: apiKey)
     Purchases.shared.delegate = self
     isConfigured = true
-    print("✅ RevenueCat initialized")
+    print("✅ RevenueCat initialized with API key")
 
     Task { await checkSubscriptionStatus() }
   }
