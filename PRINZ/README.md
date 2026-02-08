@@ -1,204 +1,299 @@
-# PRINZ - iOS Share Extension PoC
+# PRINZ
 
-<div align="center">
+既読のまま、終わらせない。
 
-![PRINZ Logo](https://img.shields.io/badge/PRINZ-👑-D000FF?style=for-the-badge)
-![Swift](https://img.shields.io/badge/Swift-5.9+-FA7343?style=for-the-badge&logo=swift&logoColor=white)
-![SwiftUI](https://img.shields.io/badge/SwiftUI-iOS%2017+-0066CC?style=for-the-badge&logo=swift&logoColor=white)
-![Vision](https://img.shields.io/badge/Vision-Framework-00FFFF?style=for-the-badge)
-
-**サイバーパンク × 魔法の鏡**
-
-LINEのスクリーンショットから返信案を生成するiOSアプリ
-
-</div>
+LINEやマッチングアプリのスクリーンショットからAI返信案を生成するiOSアプリ。
 
 ---
 
-## 🎯 概要
+## 概要
 
-**PRINZ**は、Share ExtensionとVision Frameworkを使用した、オンデバイスOCRベースの返信案生成アプリです。
-
-### 主な機能
-
-- 📸 **Share Extension**: 写真アプリやLINEから直接スクリーンショットを共有
-- 🔍 **オンデバイスOCR**: Vision Frameworkで日本語テキストを抽出（プライバシー重視）
-- 🎭 **コンテキスト選択**: 状況に応じた返信案を生成（マッチ直後、デート打診、喧嘩、脈あり確認）
-- 💬 **3つの返信パターン**: 安牌、ちょい攻め、変化球
-- 📋 **ワンタップコピー**: 返信案をタップしてクリップボードにコピー
-- 📜 **履歴機能**: 過去の返信案を確認
+PRINZは、Share ExtensionとVision Frameworkを使ったOCRベースの返信案生成アプリ。
+スクリーンショットを共有するだけで、3つのトーン（安牌・ちょい攻め・変化球）で返信案を提示する。
 
 ---
 
-## 🎨 デザインコンセプト
+## 機能一覧
 
-**「ゲーミングPC × 魔法の鏡」**
-
-- **カラーパレット**:
-  - 背景: ピュアブラック (#000000)
-  - アクセント1: ネオンパープル (#D000FF)
-  - アクセント2: ネオンシアン (#00FFFF)
-- **スタイル**: すりガラス効果（Glassmorphism）とネオングロー
-- **ロゴ**: 王冠（👑）モチーフ
-
----
-
-## 🏗️ プロジェクト構成
-
-```
-PRINZ/
-├── PRINZ/                          # メインアプリ
-│   ├── PRINZApp.swift             # アプリエントリーポイント
-│   ├── ContentView.swift          # タブビュー
-│   ├── DesignSystem/              # デザインシステム
-│   │   ├── Color+Extensions.swift
-│   │   ├── NeonButtonStyle.swift
-│   │   └── GlassCard.swift
-│   ├── Views/                     # メインアプリビュー
-│   │   ├── HistoryView.swift     # 履歴画面
-│   │   └── SettingsView.swift    # 設定画面
-│   ├── Shared/                    # 共有コード
-│   │   ├── Models/
-│   │   │   ├── Reply.swift
-│   │   │   └── Context.swift
-│   │   └── Services/
-│   │       ├── OCRService.swift
-│   │       ├── ReplyGenerator.swift
-│   │       └── DataManager.swift
-│   └── PRINZ.entitlements
-│
-└── ShareExtension/                # Share Extension
-    ├── ShareViewController.swift  # メインロジック
-    ├── Views/
-    │   ├── ContextSelectionView.swift
-    │   ├── ScanningAnimationView.swift
-    │   └── ReplyOptionsView.swift
-    ├── Info.plist
-    └── ShareExtension.entitlements
-```
+| 機能 | 説明 |
+|------|------|
+| チャット返信生成 | LINEトーク画面のスクショからAI返信案を3パターン生成 |
+| プロフィール挨拶生成 | マッチングアプリのプロフィール画面から初回メッセージを生成 |
+| テキスト入力 | スクショ不要、テキスト直接入力で返信生成 |
+| Share Extension | 写真アプリやLINEから直接共有して処理 |
+| トーン選択 | 安牌 / ちょい攻め / 変化球 の3カテゴリ |
+| 長さ選択 | 短文（30文字以内）/ 長文（50〜80文字） |
+| フォーカス指定 | 「触れてほしい話題」をユーザーが指定可能 |
+| コピー&履歴 | タップでコピー、最大30件の履歴保存 |
+| サブスクリプション | 無料5回/日、プレミアム100回/日（RevenueCat） |
+| オンボーディング | 初回起動時6ステップのチュートリアル+設定 |
 
 ---
 
-## 🚀 セットアップ手順
-
-### 1. Xcodeプロジェクトを開く
-
-```bash
-cd s:\01_Dev\004_PRINZ\PRINZ
-open PRINZ.xcodeproj
-```
-
-### 2. App Groupを有効化
-
-**メインアプリ:**
-1. `PRINZ` ターゲットを選択
-2. `Signing & Capabilities` タブを開く
-3. `+ Capability` → `App Groups` を追加
-4. `group.com.prinz.app` にチェック
-
-**Share Extension:**
-1. `ShareExtension` ターゲットを選択
-2. 同様に `App Groups` を追加
-3. `group.com.prinz.app` にチェック
-
-### 3. ビルドと実行
-
-1. シミュレーターまたは実機を選択
-2. `PRINZ` スキームを選択してビルド
-3. アプリを起動
-
----
-
-## 📱 使い方
-
-### Share Extensionの使用
-
-1. **写真アプリ**または**LINE**でスクリーンショットを開く
-2. **共有ボタン**（□↑）をタップ
-3. **PRINZ**を選択
-4. **状況を選択**（マッチ直後、デート打診、喧嘩、脈あり確認）
-5. **解析中...**（OCR実行）
-6. **3つの返信案**が表示される
-7. **タップしてコピー**
-8. LINEに戻って貼り付け
-
-### メインアプリ
-
-- **履歴タブ**: 過去の返信案を確認
-- **設定タブ**: 年齢・性別を設定（将来的にパーソナライズに使用）
-
----
-
-## 🔒 プライバシーとセキュリティ
-
-- ✅ **画像は一切サーバーに送信されません**
-- ✅ **OCRは100%オンデバイス処理**（Vision Framework）
-- ✅ **データはApp Group内でローカル保存のみ**
-- ✅ **メモリクラッシュ防止**: 画像を最大2048pxにリサイズ
-
----
-
-## 🛠️ 技術スタック
+## 技術スタック
 
 | カテゴリ | 技術 |
 |---------|------|
 | 言語 | Swift 5.9+ |
-| UIフレームワーク | SwiftUI |
-| OCR | Vision Framework (`VNRecognizeTextRequest`) |
-| データ共有 | App Groups |
-| 拡張機能 | Share Extension |
-| 言語設定 | 日本語 (`ja-JP`) |
+| UI | SwiftUI (iOS 17+) |
+| OCR | Vision Framework (ja-JP, en-US) |
+| AI | OpenAI GPT-4o-mini (Firebase Functions経由) |
+| Backend | Firebase Cloud Functions (Node.js 20, asia-northeast1) |
+| DB | Firestore (利用回数・プレミアムステータス管理) |
+| 課金 | RevenueCat |
+| プロセス間共有 | App Groups (`group.com.prinz.app`) |
 
 ---
 
-## 📝 実装の詳細
+## アーキテクチャ
 
-### OCRサービス（`OCRService.swift`）
+```
+[iOS App / Share Extension]
+    │
+    ├─ Vision Framework (オンデバイスOCR)
+    │     ├─ ChatParser (トーク画面解析、座標ベース左右判定)
+    │     └─ ProfileParser (プロフィール情報抽出)
+    │
+    ├─ FirebaseService (API Client)
+    │     └─ httpsCallable("generateReply")
+    │
+    └─ App Group (UserDefaults + JSON + 画像共有)
 
-- **日本語認識**: `recognitionLanguages = ["ja-JP", "en-US"]`
-- **高精度モード**: `recognitionLevel = .accurate`
-- **メモリ最適化**: 画像を2048pxにリサイズ
-
-### モックAI（`ReplyGenerator.swift`）
-
-現在はモックデータを返します。将来的にはLLM APIと統合可能。
-
-```swift
-// コンテキストに応じた返信案
-case .matchStart:
-    - "楽しかった！また行こう！" (安牌)
-    - "おつー、今度は飲みね🍻" (ちょい攻め)
-    - "逆にいつ空いてるの？笑" (変化球)
+[Firebase Cloud Functions]
+    │
+    ├─ generateReply (onCall)
+    │     ├─ 認証チェック (Firebase Auth)
+    │     ├─ Rate Limiting (Firestore)
+    │     ├─ プロンプト生成 (パーソナルタイプ/性別/年代に応じた動的構築)
+    │     └─ OpenAI GPT-4o-mini → JSON形式で3パターン返信
+    │
+    └─ handleRevenueCatWebhook (onRequest)
+          └─ Firestore users/{userId}.isPremium 更新
 ```
 
 ---
 
-## 🎯 今後の拡張案
+## ディレクトリ構成
 
-- [ ] 実際のLLM API統合（OpenAI、Claude、Gemini）
-- [ ] ユーザー属性に基づくパーソナライズ
-- [ ] 返信案の編集機能
-- [ ] お気に入り機能
-- [ ] iCloudバックアップ
-- [ ] ウィジェット対応
+```
+20_PRINZ/
+├── PRINZ/
+│   ├── PRINZApp.swift               # エントリポイント (Firebase/RevenueCat初期化)
+│   ├── ContentView.swift            # タブビュー (ホーム/テキスト入力/履歴/設定)
+│   │
+│   ├── Views/
+│   │   ├── HomeView.swift           # メイン画面 (写真選択→OCR→トーン選択→結果)
+│   │   ├── ReplyResultView.swift    # AI返信表示 (タイピングアニメーション/カスタマイズ)
+│   │   ├── ReplyCustomizeView.swift # トーンタグ再選択UI
+│   │   ├── ManualInputView.swift    # テキスト入力モード
+│   │   ├── HistoryView.swift        # 履歴一覧
+│   │   ├── SettingsView.swift       # ユーザー設定
+│   │   ├── OnboardingView.swift     # 初回チュートリアル (6ステップ)
+│   │   └── PaywallView.swift        # 課金UI (RevenueCat)
+│   │
+│   ├── Shared/
+│   │   ├── Models/
+│   │   │   ├── Context.swift        # 会話状況 (マッチ直後/デート打診/脈あり確認/日常/デート後/フォロー)
+│   │   │   ├── PersonalType.swift   # 性格10種 (知的/熱血/優しい/おもしろ/クール/誠実/アクティブ/シャイ/ミステリアス/ナチュラル)
+│   │   │   ├── Reply.swift          # 返信データ + ReplyType (safe/chill/witty)
+│   │   │   ├── ToneTag.swift        # トーンタグEnum
+│   │   │   └── UserAttributes.swift # UserGender / UserAgeGroup
+│   │   └── Services/
+│   │       ├── FirebaseService.swift      # Cloud Functions APIクライアント
+│   │       ├── OCRService.swift           # Vision Framework OCR (バックグラウンド処理)
+│   │       ├── ChatParser.swift           # チャット画面OCRテキスト解析 (座標ベース)
+│   │       ├── ProfileParser.swift        # プロフィール情報抽出 (名前/年齢/趣味/自己紹介)
+│   │       ├── DataManager.swift          # ローカル履歴管理 (JSON, シリアルキュー)
+│   │       ├── SharedImageManager.swift   # App Group画像共有
+│   │       ├── SubscriptionManager.swift  # RevenueCat課金管理
+│   │       ├── ReplyGenerator.swift       # モック返信生成 (フォールバック)
+│   │       ├── OpenAIService.swift        # OpenAI直接呼び出し (開発用)
+│   │       └── PromptFactory.swift        # プロンプト生成
+│   │
+│   ├── DesignSystem/
+│   │   ├── Color+Extensions.swift   # カラーパレット (ネオンパープル/シアン/グラス)
+│   │   ├── GlassCard.swift          # ガラスモーフィズムカード
+│   │   ├── NeonButtonStyle.swift    # ネオンボタン
+│   │   ├── SkeletonLoaderView.swift # ローディングUI
+│   │   └── TypingTextView.swift     # タイピングアニメーション
+│   │
+│   ├── PRINZ.entitlements           # App Groups
+│   └── GoogleService-Info.plist     # Firebase設定
+│
+├── ShareExtension/
+│   ├── ShareViewController.swift    # Share Extension本体 (Firebase初期化/OCR/AI生成)
+│   └── Views/
+│       ├── ContextSelectionView.swift   # 状況選択UI
+│       ├── ReplyOptionsView.swift       # 返信表示UI
+│       └── ScanningAnimationView.swift  # 解析中アニメーション
+│
+├── firebase/
+│   ├── functions/
+│   │   ├── index.js                 # Cloud Functions (generateReply / handleRevenueCatWebhook)
+│   │   └── package.json             # Node.js 20, firebase-functions 5, openai 4
+│   ├── firestore.rules
+│   └── firebase.json
+│
+└── docs/                            # 開発ドキュメント
+```
 
 ---
 
-## 📄 ライセンス
+## データフロー
 
-このプロジェクトはPoCとして作成されました。
+### チャット返信生成
+
+```
+写真選択 → OCRService.recognizeTextWithCoordinates()
+         → ChatParser.parseWithCoordinates()
+             ├── 座標ベースで左(相手)/右(自分)を分離
+             ├── 相手の名前を抽出
+             └── 直近の自分の発言を抽出
+         → FirebaseService.generateReplies()
+             └── Cloud Functions → OpenAI GPT-4o-mini
+         → ReplyResultView (3パターン表示 + タイピングアニメーション)
+         → タップでコピー + 履歴保存
+```
+
+### プロフィール挨拶生成
+
+```
+写真選択 → OCRService.recognizeText()
+         → ProfileParser.parse()
+             └── 年齢/居住地/趣味/自己紹介を抽出
+         → FirebaseService.generateReplies(mode: "profileGreeting")
+         → ReplyResultView
+```
 
 ---
 
-## 👤 作成者
+## 環境変数・シークレット
 
-Senior iOS Engineer Agent  
-Specializing in SwiftUI, Share Extensions, and Vision Framework
+| キー | 管理場所 | 用途 |
+|------|---------|------|
+| `OPENAI_API_KEY` | Firebase Secret | Cloud Functionsで使用 |
+| `REVENUECAT_API_KEY` | Xcode Build Settings → Info.plist | RevenueCat SDK初期化 |
 
 ---
 
-<div align="center">
+## セットアップ
 
-**Made with 💜 and 🔮**
+### 1. Firebase
 
-</div>
+```bash
+cd firebase/functions
+npm install
+
+# ローカル実行
+firebase emulators:start
+
+# デプロイ
+firebase deploy --only functions
+```
+
+### 2. Xcode
+
+1. `PRINZ.xcodeproj` を開く
+2. SPMで以下を追加:
+   - `firebase-ios-sdk`
+   - `purchases-ios` (RevenueCat)
+3. 両ターゲット (PRINZ, ShareExtension) で App Groups を有効化: `group.com.prinz.app`
+4. Build Settings > User-Defined に `REVENUECAT_API_KEY` を設定
+5. Info.plist に `<key>REVENUECAT_API_KEY</key><string>$(REVENUECAT_API_KEY)</string>` を追加
+6. `GoogleService-Info.plist` を両ターゲットに含める
+
+### 3. RevenueCat
+
+1. RevenueCat Dashboardでプロジェクト作成
+2. Entitlement `premium` を作成
+3. App Store Connect で商品IDを登録
+4. Webhook URLをCloud Functions のエンドポイントに設定
+
+---
+
+## Free vs Premium
+
+| | Free | Premium |
+|---|---|---|
+| 1日の利用回数 | 5回 | 100回 |
+| チャット返信 | 可 | 可 |
+| あいさつ作成 | 可 | 可 |
+| トーン選択 | 可 | 可 |
+
+### 価格設定
+- 週額: 480円 (ローンチ: 240円)
+- 年額: 9,800円 (ローンチ: 4,900円)
+- トライアル: 3日間無料
+
+---
+
+## セキュリティ
+
+- **OCRはオンデバイス処理** — 画像はサーバーに送信しない
+- **Cloud Functions経由のAI呼び出し** — OpenAI APIキーはクライアントに露出しない
+- **Firebase認証必須** (DEV_MODE=false)
+- **Rate Limiting** — Firestoreで利用回数を管理
+- **デバッグログ** — `#if DEBUG` でリリースビルドでは出力・永続化しない
+- **APIキー管理** — Info.plist (Build Settings経由)、ハードコードなし
+
+---
+
+## デザイン
+
+- **テーマ**: ゲーミングPC x 魔法の鏡
+- **背景**: Magic Gradient (深紫→ローズピンク)
+- **アクセント**: ネオンパープル (#D000FF) / ネオンシアン (#00FFFF)
+- **エフェクト**: ガラスモーフィズム (UltraThinMaterial + グラデーション)
+- **アニメーション**: タイピングテキスト、BOX順次出現、スケルトンローダー
+
+---
+
+## 状態管理
+
+| データ | 保存先 | スコープ |
+|--------|-------|---------|
+| ユーザー設定 (性別/年齢/パーソナルタイプ) | UserDefaults (AppGroup) | Main + ShareExt |
+| オンボーディング完了フラグ | UserDefaults (AppGroup) | Main + ShareExt |
+| 返信履歴 (最大30件) | JSON (AppGroup Container) | Main + ShareExt |
+| サブスク状態 | RevenueCat → メモリ | Main App |
+| デバッグログ (DEBUGのみ) | UserDefaults (AppGroup) | ShareExt |
+
+---
+
+## Cloud Functions API
+
+### generateReply (onCall)
+
+**リクエスト:**
+```json
+{
+  "message": "相手のメッセージ",
+  "personalType": "ナチュラル系",
+  "gender": "男性",
+  "ageGroup": "20代後半",
+  "relationship": "マッチ直後",
+  "partnerName": "相手の名前 (optional)",
+  "userMessage": "ユーザーの意図 (optional)",
+  "replyLength": "short | long",
+  "selectedTone": "safe | aggressive | unique (optional)",
+  "mode": "chatReply | profileGreeting",
+  "profileInfo": { ... }
+}
+```
+
+**レスポンス:**
+```json
+{
+  "success": true,
+  "replies": [
+    { "type": "safe", "text": "返信テキスト", "reasoning": "解説" },
+    { "type": "aggressive", "text": "...", "reasoning": "..." },
+    { "type": "unique", "text": "...", "reasoning": "..." }
+  ],
+  "remainingToday": 4
+}
+```
+
+### handleRevenueCatWebhook (onRequest)
+
+RevenueCatからのイベント (INITIAL_PURCHASE, RENEWAL, CANCELLATION, EXPIRATION等) を受信し、Firestore `users/{userId}.isPremium` を更新。
