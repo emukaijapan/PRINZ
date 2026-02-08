@@ -1,0 +1,7 @@
+//
+//  Untitled 5.swift
+//  PRINZ
+//
+//  Created by あいまっくみにM4 on 2026/01/29.
+//
+

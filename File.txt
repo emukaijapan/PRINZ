@@ -1,0 +1,1 @@
+Media.xcassets を 開く
