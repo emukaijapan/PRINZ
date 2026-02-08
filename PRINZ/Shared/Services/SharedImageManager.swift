@@ -49,22 +49,22 @@ class SharedImageManager {
         }
         
         do {
-            try imageData.write(to: imageURL)
+            try imageData.write(to: imageURL, options: .completeFileProtection)
             print("✅ SharedImageManager: Image saved to \(imageURL.path)")
         } catch {
             print("❌ SharedImageManager: Failed to save image: \(error)")
             return false
         }
-        
+
         // コンテキストをJSONとして保存
         let contextData: [String: String] = [
             "context": context.rawValue,
             "timestamp": ISO8601DateFormatter().string(from: Date())
         ]
-        
+
         do {
             let jsonData = try JSONEncoder().encode(contextData)
-            try jsonData.write(to: contextURL)
+            try jsonData.write(to: contextURL, options: .completeFileProtection)
             print("✅ SharedImageManager: Context saved")
         } catch {
             print("❌ SharedImageManager: Failed to save context: \(error)")
