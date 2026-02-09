@@ -102,11 +102,11 @@ struct ReplyResultView: View {
         .fullScreenCover(isPresented: $showPaywall) {
             PaywallView()
         }
-        .alert("本日の利用上限に達しました", isPresented: $showRateLimitAlert) {
-            Button("プレミアムを見る") { showPaywall = true }
-            Button("OK", role: .cancel) {}
+        .alert("本日の無料回数を使い切りました", isPresented: $showRateLimitAlert) {
+            Button("プレミアムにアップグレード", role: .none) { showPaywall = true }
+            Button("\(UsageManager.shared.timeUntilResetString())にリセット", role: .cancel) {}
         } message: {
-            Text("無料プランでは1日5回まで利用できます。プレミアムにアップグレードすると100回まで利用できます。")
+            Text("無料プランは1日5回まで。プレミアムなら無制限で使えます！")
         }
     }
     
@@ -347,6 +347,12 @@ struct ReplyResultView: View {
     // MARK: - Actions
     
     private func generateReply() {
+        // 利用回数チェック（プレミアムユーザーはスキップ）
+        if !SubscriptionManager.shared.isProUser && !UsageManager.shared.canUse() {
+            showRateLimitAlert = true
+            return
+        }
+
         isAnalyzing = true
 
         guard let image = image else {
@@ -466,13 +472,16 @@ struct ReplyResultView: View {
 
                 await MainActor.run {
                     generationSuccessCount += 1
+                    // ローカル利用回数を消費
+                    _ = UsageManager.shared.consumeUsage()
+
                     withAnimation {
                         isAnalyzing = false
                         hasGenerated = true
                     }
                     allReplies = result.replies
                     // 残り回数0でPaywall表示
-                    if result.remainingToday <= 0 {
+                    if result.remainingToday <= 0 || UsageManager.shared.getRemainingCount() <= 0 {
                         showRateLimitAlert = true
                     }
                 }
@@ -530,13 +539,16 @@ struct ReplyResultView: View {
 
                 await MainActor.run {
                     generationSuccessCount += 1
+                    // ローカル利用回数を消費
+                    _ = UsageManager.shared.consumeUsage()
+
                     withAnimation {
                         isAnalyzing = false
                         hasGenerated = true
                     }
                     allReplies = result.replies
                     // 残り回数0でPaywall表示
-                    if result.remainingToday <= 0 {
+                    if result.remainingToday <= 0 || UsageManager.shared.getRemainingCount() <= 0 {
                         showRateLimitAlert = true
                     }
                 }

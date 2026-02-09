@@ -118,12 +118,15 @@ struct ShareExtensionView: View {
     // タイピングアニメーション用
     @State private var displayedTexts: [UUID: String] = [:]
     @State private var animationTimers: [UUID: Timer] = [:]
-    
+
     // BOX順次出現用
     @State private var visibleBoxCount = 0
 
     // フォーカスする言葉
     @State private var mainMessage = ""
+
+    // レート制限アラート
+    @State private var showRateLimitAlert = false
     
     enum ShareStep {
         case loading
@@ -171,6 +174,14 @@ struct ShareExtensionView: View {
         .onAppear {
             ShareExtensionLogger.shared.log("ShareExtensionView appeared")
             loadSharedImage()
+        }
+        .alert("本日の無料回数を使い切りました", isPresented: $showRateLimitAlert) {
+            Button("PRINZを開いてアップグレード", role: .none) {
+                openMainApp()
+            }
+            Button("\(UsageManager.shared.timeUntilResetString())にリセット", role: .cancel) {}
+        } message: {
+            Text("プレミアムにアップグレードすると無制限でご利用いただけます")
         }
     }
     
@@ -703,10 +714,17 @@ struct ShareExtensionView: View {
     
     private func selectToneAndGenerate(_ tone: ReplyType) {
         ShareExtensionLogger.shared.log("selectToneAndGenerate: \(tone.displayName)")
-        
+
+        // 利用回数チェック（プレミアムユーザーはスキップ）
+        if !SubscriptionManager.shared.isProUser && !UsageManager.shared.canUse() {
+            ShareExtensionLogger.shared.log("Rate limit reached")
+            showRateLimitAlert = true
+            return
+        }
+
         selectedTone = tone
         currentStep = .generating
-        
+
         // OCR実行 → AI生成
         performOCRAndGenerate()
     }
@@ -807,6 +825,10 @@ struct ShareExtensionView: View {
                 await MainActor.run {
                     generatedReplies = result.replies
 
+                    // 利用回数を消費
+                    _ = UsageManager.shared.consumeUsage()
+                    ShareExtensionLogger.shared.log("Usage consumed, remaining: \(UsageManager.shared.remainingCount)")
+
                     currentStep = .results
                     ShareExtensionLogger.shared.log("Transitioned to results: \(generatedReplies.count) replies")
                 }
@@ -836,6 +858,14 @@ struct ShareExtensionView: View {
     
     private func regenerateWithTone() {
         ShareExtensionLogger.shared.log("regenerateWithTone: tone=\(selectedTone.displayName), short=\(isShortMode)")
+
+        // 利用回数チェック（プレミアムユーザーはスキップ）
+        if !SubscriptionManager.shared.isProUser && !UsageManager.shared.canUse() {
+            ShareExtensionLogger.shared.log("Rate limit reached on regenerate")
+            showRateLimitAlert = true
+            return
+        }
+
         currentStep = .generating
         performOCRAndGenerate()
     }
