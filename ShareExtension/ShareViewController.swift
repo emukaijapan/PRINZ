@@ -127,7 +127,10 @@ struct ShareExtensionView: View {
 
     // レート制限アラート
     @State private var showRateLimitAlert = false
-    
+
+    // AI生成タスク（キャンセル用）
+    @State private var generationTask: Task<Void, Never>?
+
     enum ShareStep {
         case loading
         case modeSelection   // モード選択（チャット返信 / プロフ挨拶）
@@ -298,7 +301,7 @@ struct ShareExtensionView: View {
     }
 
     // MARK: - Tone Selection View (新UI：安牌・攻め・変化球)
-    
+
     private var toneSelectionView: some View {
         VStack(spacing: 24) {
             // 画像プレビュー
@@ -314,19 +317,19 @@ struct ShareExtensionView: View {
                     )
                     .shadow(color: .black.opacity(0.3), radius: 10)
             }
-            
+
             // タイトル
             VStack(spacing: 8) {
                 Text("どんな返信にする？")
                     .font(.title3)
                     .fontWeight(.bold)
                     .foregroundColor(.white)
-                
+
                 Text("タップで選択 → AI生成開始")
                     .font(.caption)
                     .foregroundColor(.white.opacity(0.6))
             }
-            
+
             // 3ボタン選択（安牌・攻め・変化球）
             VStack(spacing: 14) {
                 // 安牌
@@ -340,7 +343,7 @@ struct ShareExtensionView: View {
                 ) {
                     selectToneAndGenerate(.safe)
                 }
-                
+
                 // ちょい攻め
                 ToneButton(
                     tone: .chill,
@@ -352,7 +355,7 @@ struct ShareExtensionView: View {
                 ) {
                     selectToneAndGenerate(.chill)
                 }
-                
+
                 // 変化球
                 ToneButton(
                     tone: .witty,
@@ -366,7 +369,20 @@ struct ShareExtensionView: View {
                 }
             }
             .padding(.horizontal)
-            
+
+            // キャンセルボタン
+            Button(action: {
+                currentStep = .modeSelection
+            }) {
+                HStack {
+                    Image(systemName: "chevron.left")
+                    Text("戻る")
+                }
+                .font(.subheadline)
+                .foregroundColor(.white.opacity(0.6))
+            }
+            .padding(.top, 8)
+
             Spacer().frame(height: 20)
         }
         .padding(.horizontal, 20)
@@ -392,8 +408,27 @@ struct ShareExtensionView: View {
             Text("「\(selectedTone.displayName)」の返信を作成しています")
                 .font(.subheadline)
                 .foregroundColor(.white.opacity(0.6))
+
+            // キャンセルボタン
+            Button(action: cancelGeneration) {
+                HStack {
+                    Image(systemName: "xmark.circle")
+                    Text("キャンセル")
+                }
+                .font(.subheadline)
+                .foregroundColor(.white.opacity(0.6))
+            }
+            .padding(.top, 8)
         }
         .padding(.vertical, 20)
+    }
+
+    /// 生成をキャンセル
+    private func cancelGeneration() {
+        ShareExtensionLogger.shared.log("Generation cancelled by user")
+        generationTask?.cancel()
+        generationTask = nil
+        currentStep = .toneSelection
     }
     
     // MARK: - Results View (RIZZスタイル: 3件リスト表示)
@@ -806,7 +841,10 @@ struct ShareExtensionView: View {
 
         ShareExtensionLogger.shared.log("Generating AI replies: partner=\(partnerMessage.prefix(50))...")
 
-        Task {
+        // 既存のタスクをキャンセル
+        generationTask?.cancel()
+
+        generationTask = Task {
             do {
                 // Firebase経由でAI返信を生成
                 let result = try await FirebaseService.shared.generateReplies(
@@ -821,7 +859,13 @@ struct ShareExtensionView: View {
                     selectedTone: selectedTone,
                     mode: selectedMode == .profileGreeting ? "profileGreeting" : "chatReply"
                 )
-                
+
+                // キャンセルされていたら何もしない
+                guard !Task.isCancelled else {
+                    ShareExtensionLogger.shared.log("Task was cancelled, skipping result handling")
+                    return
+                }
+
                 await MainActor.run {
                     generatedReplies = result.replies
 
@@ -832,8 +876,14 @@ struct ShareExtensionView: View {
                     currentStep = .results
                     ShareExtensionLogger.shared.log("Transitioned to results: \(generatedReplies.count) replies")
                 }
-                
+
             } catch {
+                // キャンセルされていたら何もしない
+                guard !Task.isCancelled else {
+                    ShareExtensionLogger.shared.log("Task was cancelled during error handling")
+                    return
+                }
+
                 await MainActor.run {
                     ShareExtensionLogger.shared.log("AI generation error: \(error)")
                     fallbackToMockReplies()
