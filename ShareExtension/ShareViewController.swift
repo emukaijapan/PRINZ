@@ -277,6 +277,12 @@ struct ShareExtensionView: View {
                     icon: "bubble.left.and.bubble.right.fill",
                     color: .neonPurple
                 ) {
+                    // 利用回数を事前チェック
+                    if !SubscriptionManager.shared.isProUserThreadSafe && !UsageManager.shared.canUse() {
+                        ShareExtensionLogger.shared.log("Rate limit reached at mode selection")
+                        showRateLimitAlert = true
+                        return
+                    }
                     selectedMode = .chatReply
                     currentStep = .toneSelection
                 }
@@ -288,6 +294,12 @@ struct ShareExtensionView: View {
                     icon: "hand.wave.fill",
                     color: .orange
                 ) {
+                    // 利用回数を事前チェック
+                    if !SubscriptionManager.shared.isProUserThreadSafe && !UsageManager.shared.canUse() {
+                        ShareExtensionLogger.shared.log("Rate limit reached at mode selection")
+                        showRateLimitAlert = true
+                        return
+                    }
                     selectedMode = .profileGreeting
                     currentStep = .toneSelection
                 }
