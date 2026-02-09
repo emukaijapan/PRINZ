@@ -39,7 +39,7 @@ class UsageManager: ObservableObject {
     /// 利用可能かチェック（プレミアムユーザーは常にtrue）
     func canUse() -> Bool {
         // プレミアムユーザーは無制限
-        if SubscriptionManager.shared.isProUser {
+        if SubscriptionManager.shared.isProUserThreadSafe {
             return true
         }
 
@@ -52,7 +52,7 @@ class UsageManager: ObservableObject {
     /// 利用回数を消費（成功時にtrue）
     func consumeUsage() -> Bool {
         // プレミアムユーザーは消費しない
-        if SubscriptionManager.shared.isProUser {
+        if SubscriptionManager.shared.isProUserThreadSafe {
             return true
         }
 
@@ -74,7 +74,7 @@ class UsageManager: ObservableObject {
 
     /// 残り回数を取得
     func getRemainingCount() -> Int {
-        if SubscriptionManager.shared.isProUser {
+        if SubscriptionManager.shared.isProUserThreadSafe {
             return 999  // 無制限
         }
 
