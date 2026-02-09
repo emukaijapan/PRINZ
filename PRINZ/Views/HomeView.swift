@@ -82,6 +82,10 @@ struct HomeView: View {
                     onSelect: { _ in
                         showToneSelection = false
                         showReplyResult = true
+                    },
+                    onCancel: {
+                        showToneSelection = false
+                        resetState()
                     }
                 )
             }
@@ -91,6 +95,10 @@ struct HomeView: View {
                     onSelect: { _ in
                         showProfileToneSelection = false
                         showProfileResult = true
+                    },
+                    onCancel: {
+                        showProfileToneSelection = false
+                        resetProfileState()
                     }
                 )
             }
@@ -428,21 +436,33 @@ struct HomeView: View {
 struct ToneSelectionSheet: View {
     @Binding var selectedTone: ReplyType
     let onSelect: (ReplyType) -> Void  // 選択時のコールバック
-    
+    var onCancel: (() -> Void)?  // キャンセル時のコールバック（オプション）
+
     private let toneOptions: [(type: ReplyType, icon: String, color: Color, description: String)] = [
         (.safe, "shield.fill", .cyan, "無難で安心な返信"),
         (.chill, "flame.fill", .orange, "少し踏み込んだ返信"),
         (.witty, "sparkles", .purple, "意外性のある返信")
     ]
-    
+
     var body: some View {
         ZStack {
             Color.magicGradient.ignoresSafeArea()
-            
+
             VStack(spacing: 24) {
-                Spacer()
-                    .frame(height: 60)  // ノッチ/ダイナミックアイランド回避
-                
+                // キャンセルボタン（右上）
+                HStack {
+                    Spacer()
+                    Button(action: {
+                        onCancel?()
+                    }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.title2)
+                            .foregroundColor(.white.opacity(0.6))
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 60)  // ノッチ/ダイナミックアイランド回避
+
                 // タイトル
                 VStack(spacing: 12) {
                     Image(systemName: "sparkles")
@@ -454,20 +474,20 @@ struct ToneSelectionSheet: View {
                                 endPoint: .bottomTrailing
                             )
                         )
-                    
+
                     Text("どんな雰囲気で返信する？")
                         .font(.title)
                         .fontWeight(.bold)
                         .foregroundColor(.white)
-                    
+
                     Text("タップで回答生成を開始")
                         .font(.subheadline)
                         .foregroundColor(.white.opacity(0.6))
                 }
-                
+
                 Spacer()
                     .frame(height: 20)
-                
+
                 // トーン選択ボタン（タップで即座に遷移）
                 VStack(spacing: 16) {
                     ForEach(toneOptions, id: \.type) { option in
@@ -493,9 +513,9 @@ struct ToneSelectionSheet: View {
                                         .font(.subheadline)
                                         .foregroundColor(.white.opacity(0.7))
                                 }
-                                
+
                                 Spacer()
-                                
+
                                 Image(systemName: "chevron.right.circle.fill")
                                     .font(.title2)
                                     .foregroundColor(.white.opacity(0.4))
@@ -516,11 +536,21 @@ struct ToneSelectionSheet: View {
                     }
                 }
                 .padding(.horizontal, 20)
-                
+
+                // キャンセルリンク（下部）
+                Button(action: {
+                    onCancel?()
+                }) {
+                    HStack {
+                        Image(systemName: "chevron.left")
+                        Text("キャンセル")
+                    }
+                    .font(.subheadline)
+                    .foregroundColor(.white.opacity(0.6))
+                }
+                .padding(.top, 16)
+
                 Spacer()
-            }
-            .safeAreaInset(edge: .top) {
-                Color.clear.frame(height: 0)
             }
         }
     }
