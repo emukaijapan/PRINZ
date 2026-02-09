@@ -751,9 +751,13 @@ struct ShareExtensionView: View {
         ShareExtensionLogger.shared.log("selectToneAndGenerate: \(tone.displayName)")
 
         // 利用回数チェック（プレミアムユーザーはスキップ）
-        if !SubscriptionManager.shared.isProUser && !UsageManager.shared.canUse() {
+        // Note: Share ExtensionではisProUserThreadSafeを使用（スレッドセーフ）
+        if !SubscriptionManager.shared.isProUserThreadSafe && !UsageManager.shared.canUse() {
             ShareExtensionLogger.shared.log("Rate limit reached")
-            showRateLimitAlert = true
+            // アラートが既に表示中でない場合のみ表示
+            if !showRateLimitAlert {
+                showRateLimitAlert = true
+            }
             return
         }
 
@@ -910,9 +914,12 @@ struct ShareExtensionView: View {
         ShareExtensionLogger.shared.log("regenerateWithTone: tone=\(selectedTone.displayName), short=\(isShortMode)")
 
         // 利用回数チェック（プレミアムユーザーはスキップ）
-        if !SubscriptionManager.shared.isProUser && !UsageManager.shared.canUse() {
+        // Note: Share ExtensionではisProUserThreadSafeを使用（スレッドセーフ）
+        if !SubscriptionManager.shared.isProUserThreadSafe && !UsageManager.shared.canUse() {
             ShareExtensionLogger.shared.log("Rate limit reached on regenerate")
-            showRateLimitAlert = true
+            if !showRateLimitAlert {
+                showRateLimitAlert = true
+            }
             return
         }
 
