@@ -55,9 +55,9 @@ struct PaywallView: View {
     }
     .task {
       await subscriptionManager.fetchOfferings()
-      // 年額パッケージをデフォルト選択
+      // 週額パッケージをデフォルト選択
       if let offering = subscriptionManager.currentOffering {
-        selectedPackage = offering.annual ?? offering.weekly
+        selectedPackage = offering.weekly ?? offering.annual
       }
     }
     .alert("エラー", isPresented: $showError) {
@@ -140,11 +140,19 @@ struct PaywallView: View {
       if let offering = subscriptionManager.currentOffering {
         // 週額プラン
         if let weekly = offering.weekly {
-          planCard(
-            package: weekly,
-            title: "週額プラン",
-            badge: nil
-          )
+          VStack(spacing: 6) {
+            // 背中を押すメッセージ
+            Text("1週間でジュース2本ガマンでOK!")
+              .font(.caption)
+              .fontWeight(.medium)
+              .foregroundColor(.neonCyan)
+
+            planCard(
+              package: weekly,
+              title: "週額プラン",
+              badge: nil
+            )
+          }
         }
 
         // 年額プラン
