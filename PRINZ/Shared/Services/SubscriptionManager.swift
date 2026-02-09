@@ -19,7 +19,21 @@ class SubscriptionManager: NSObject, ObservableObject {
   /// RevenueCat が正しく初期化されたかどうか
   private var isConfigured = false
 
-  @Published var isProUser = false
+  /// App Group UserDefaults（スレッドセーフなプレミアム状態保存用）
+  private static let appGroupDefaults = UserDefaults(suiteName: "group.com.mgolworks.prinz")
+  private static let isProUserKey = "isProUser"
+
+  @Published var isProUser = false {
+    didSet {
+      // App Group UserDefaultsにも保存（スレッドセーフアクセス用）
+      Self.appGroupDefaults?.set(isProUser, forKey: Self.isProUserKey)
+    }
+  }
+
+  /// スレッドセーフなプレミアム状態チェック（Share Extension等から利用可能）
+  nonisolated var isProUserThreadSafe: Bool {
+    Self.appGroupDefaults?.bool(forKey: Self.isProUserKey) ?? false
+  }
   @Published var currentOffering: Offering?
   @Published var isPurchasing = false
 
