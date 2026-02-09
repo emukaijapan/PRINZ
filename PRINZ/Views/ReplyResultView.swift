@@ -480,9 +480,11 @@ struct ReplyResultView: View {
                         hasGenerated = true
                     }
                     allReplies = result.replies
-                    // 残り回数0でPaywall表示
+                    // 残り回数0でPaywall表示（ローディング終了後に遅延表示）
                     if result.remainingToday <= 0 || UsageManager.shared.getRemainingCount() <= 0 {
-                        showRateLimitAlert = true
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                            showRateLimitAlert = true
+                        }
                     }
                 }
             } catch let error as FirebaseError where error == .rateLimitExceeded {
@@ -490,8 +492,13 @@ struct ReplyResultView: View {
                 print("⚠️ [ProfileGreeting] レート制限到達")
                 #endif
                 await MainActor.run {
-                    isAnalyzing = false
-                    showRateLimitAlert = true
+                    withAnimation {
+                        isAnalyzing = false
+                    }
+                    // ローディング終了後にアラート表示
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        showRateLimitAlert = true
+                    }
                 }
             } catch {
                 #if DEBUG
@@ -547,9 +554,11 @@ struct ReplyResultView: View {
                         hasGenerated = true
                     }
                     allReplies = result.replies
-                    // 残り回数0でPaywall表示
+                    // 残り回数0でPaywall表示（ローディング終了後に遅延表示）
                     if result.remainingToday <= 0 || UsageManager.shared.getRemainingCount() <= 0 {
-                        showRateLimitAlert = true
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                            showRateLimitAlert = true
+                        }
                     }
                 }
             } catch let error as FirebaseError where error == .rateLimitExceeded {
@@ -557,8 +566,13 @@ struct ReplyResultView: View {
                 print("⚠️ [ChatReply] レート制限到達")
                 #endif
                 await MainActor.run {
-                    isAnalyzing = false
-                    showRateLimitAlert = true
+                    withAnimation {
+                        isAnalyzing = false
+                    }
+                    // ローディング終了後にアラート表示
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        showRateLimitAlert = true
+                    }
                 }
             } catch {
                 await MainActor.run {
