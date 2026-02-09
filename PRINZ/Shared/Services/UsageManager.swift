@@ -145,13 +145,35 @@ class UsageManager: ObservableObject {
 
     /// 次のリセットまでの残り時間を文字列で取得
     func timeUntilResetString() -> String {
-        let hours = hoursUntilReset()
-        if hours >= 24 {
+        guard let lastResetDate = defaults?.object(forKey: lastResetDateKey) as? Date else {
             return "24時間後"
-        } else if hours == 0 {
+        }
+
+        // リセット予定時刻を計算
+        let resetDate = lastResetDate.addingTimeInterval(24 * 60 * 60)
+        let now = Date()
+
+        if resetDate <= now {
             return "まもなく"
+        }
+
+        // 日付フォーマッター
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "ja_JP")
+
+        let calendar = Calendar.current
+        if calendar.isDateInToday(resetDate) {
+            // 今日中にリセット
+            formatter.dateFormat = "H:mm"
+            return "今日 \(formatter.string(from: resetDate)) に解禁"
+        } else if calendar.isDateInTomorrow(resetDate) {
+            // 明日リセット
+            formatter.dateFormat = "H:mm"
+            return "明日 \(formatter.string(from: resetDate)) に解禁"
         } else {
-            return "\(hours)時間後"
+            // それ以降
+            formatter.dateFormat = "M/d H:mm"
+            return "\(formatter.string(from: resetDate)) に解禁"
         }
     }
 }
