@@ -30,6 +30,12 @@ struct HomeView: View {
 
     // アプリ情報
     @State private var showAppInfo = false
+
+    // 利用制限
+    @State private var showRateLimitAlert = false
+    @State private var showPaywall = false
+    @State private var showChatPhotoPicker = false
+    @State private var showProfilePhotoPicker = false
     
     var body: some View {
         NavigationStack {
@@ -121,9 +127,24 @@ struct HomeView: View {
             .sheet(isPresented: $showAppInfo) {
                 AppInfoSheet()
             }
+            // チャット返信用PhotosPicker
+            .photosPicker(isPresented: $showChatPhotoPicker, selection: $selectedItem, matching: .images)
+            // プロフィール挨拶用PhotosPicker
+            .photosPicker(isPresented: $showProfilePhotoPicker, selection: $profileSelectedItem, matching: .images)
+            // 利用制限アラート
+            .alert("本日の無料回数を使い切りました", isPresented: $showRateLimitAlert) {
+                Button("プレミアムにアップグレード", role: .none) { showPaywall = true }
+                Button("\(UsageManager.shared.timeUntilResetString())", role: .cancel) {}
+            } message: {
+                Text("無料プランは1日5回まで。プレミアムなら無制限で使えます！")
+            }
+            // Paywall
+            .fullScreenCover(isPresented: $showPaywall) {
+                PaywallView()
+            }
         }
     }
-    
+
     // MARK: - Header
     
     private var headerView: some View {
@@ -266,11 +287,18 @@ struct HomeView: View {
     }
     
     // MARK: - Bottom Buttons
-    
+
     private var bottomButtonsView: some View {
         VStack(spacing: 12) {
             // メインボタン: チャット返信を作成
-            PhotosPicker(selection: $selectedItem, matching: .images) {
+            Button(action: {
+                // 利用回数チェック（プレミアムユーザーはスキップ）
+                if !SubscriptionManager.shared.isProUser && !UsageManager.shared.canUse() {
+                    showRateLimitAlert = true
+                } else {
+                    showChatPhotoPicker = true
+                }
+            }) {
                 HStack {
                     if isProcessing {
                         ProgressView()
@@ -298,7 +326,14 @@ struct HomeView: View {
             .disabled(isProcessing || isProfileProcessing)
 
             // サブボタン: あいさつメッセージを作成
-            PhotosPicker(selection: $profileSelectedItem, matching: .images) {
+            Button(action: {
+                // 利用回数チェック（プレミアムユーザーはスキップ）
+                if !SubscriptionManager.shared.isProUser && !UsageManager.shared.canUse() {
+                    showRateLimitAlert = true
+                } else {
+                    showProfilePhotoPicker = true
+                }
+            }) {
                 HStack {
                     if isProfileProcessing {
                         ProgressView()
