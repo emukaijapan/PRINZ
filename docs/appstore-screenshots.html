@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PRINZ - App Store Screenshots</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #e8e8e8;
+    font-family: 'Noto Sans JP', -apple-system, sans-serif;
+    color: #1a1a1a;
+    padding: 40px;
+  }
+
+  h1 {
+    text-align: center;
+    font-size: 24px;
+    color: #999;
+    margin-bottom: 12px;
+    font-weight: 400;
+  }
+
+  .instructions {
+    text-align: center;
+    color: #aaa;
+    font-size: 13px;
+    margin-bottom: 40px;
+    line-height: 1.8;
+  }
+
+  .gallery {
+    display: flex;
+    gap: 32px;
+    overflow-x: auto;
+    padding: 20px 0 40px;
+    scroll-snap-type: x mandatory;
+  }
+
+  /* ─── Screenshot Panel (white, clean) ─── */
+  .screenshot {
+    flex-shrink: 0;
+    width: 430px;
+    height: 932px;
+    border-radius: 32px;
+    overflow: hidden;
+    scroll-snap-align: start;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: #fff;
+  }
+
+  .content {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 52px 28px 32px;
+  }
+
+  /* ─── Headline (dark text + purple accent) ─── */
+  .headline {
+    font-size: 32px;
+    font-weight: 900;
+    text-align: center;
+    line-height: 1.4;
+    letter-spacing: -0.02em;
+    margin-bottom: 8px;
+    color: #1a1a1a;
+  }
+
+  .headline .accent { color: #8B00FF; }
+
+  .subheadline {
+    font-size: 15px;
+    color: #999;
+    text-align: center;
+    margin-bottom: 32px;
+    font-weight: 400;
+    line-height: 1.6;
+  }
+
+  /* ─── Phone Frame ─── */
+  .phone {
+    width: 272px;
+    height: 588px;
+    background: #000;
+    border-radius: 36px;
+    padding: 4px;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.15);
+    flex-shrink: 0;
+  }
+
+  .phone-inner {
+    width: 100%;
+    height: 100%;
+    border-radius: 32px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .phone-notch {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 110px;
+    height: 26px;
+    background: #000;
+    border-radius: 0 0 18px 18px;
+    z-index: 10;
+  }
+
+  /* ─── Mock App Screen ─── */
+  .app-bg {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(180deg, #1a0533 0%, #0d0d2b 50%, #1a0a2e 100%);
+    padding: 38px 14px 14px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .app-header {
+    text-align: center;
+    margin-bottom: 14px;
+  }
+
+  .app-logo {
+    font-size: 20px;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    background: linear-gradient(135deg, #D000FF, #00FFFF);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .app-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #fff;
+    text-align: center;
+    margin-bottom: 4px;
+  }
+
+  .app-subtitle-inner {
+    font-size: 10px;
+    color: rgba(255,255,255,0.5);
+    text-align: center;
+    margin-bottom: 10px;
+  }
+
+  /* ─── Buttons ─── */
+  .neon-btn {
+    padding: 13px;
+    border-radius: 14px;
+    text-align: center;
+    font-weight: 700;
+    font-size: 12px;
+  }
+
+  .neon-btn-primary {
+    background: linear-gradient(135deg, #D000FF, #8B00FF);
+    color: #fff;
+    box-shadow: 0 4px 16px rgba(208,0,255,0.3);
+  }
+
+  .neon-btn-secondary {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(208,0,255,0.3);
+    color: #D580FF;
+  }
+
+  /* ─── Tab Bar ─── */
+  .tab-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 48px;
+    background: rgba(0,0,0,0.85);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    border-top: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .tab-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    font-size: 8px;
+    color: rgba(255,255,255,0.3);
+  }
+
+  .tab-item.active { color: #D000FF; }
+  .tab-icon { font-size: 13px; }
+
+  /* ─── Reply Cards ─── */
+  .reply-card {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 14px;
+    padding: 11px;
+    margin-bottom: 7px;
+  }
+
+  .reply-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 6px;
+    margin-bottom: 5px;
+  }
+
+  .label-safe { background: rgba(208,0,255,0.15); color: #D580FF; border: 1px solid rgba(208,0,255,0.3); }
+  .label-chill { background: rgba(0,255,255,0.1); color: #00FFFF; border: 1px solid rgba(0,255,255,0.25); }
+  .label-witty { background: rgba(255,140,66,0.12); color: #FF8C42; border: 1px solid rgba(255,140,66,0.25); }
+
+  .reply-text {
+    font-size: 11px;
+    line-height: 1.6;
+    color: rgba(255,255,255,0.85);
+  }
+
+  .reply-reasoning {
+    font-size: 8px;
+    color: rgba(255,255,255,0.3);
+    margin-top: 5px;
+    padding-top: 5px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+  }
+
+  /* ─── Tone Tags ─── */
+  .tone-tags {
+    display: flex;
+    gap: 5px;
+    margin: 6px 0;
+    flex-wrap: wrap;
+  }
+
+  .tone-tag {
+    padding: 4px 9px;
+    border-radius: 20px;
+    font-size: 9px;
+    font-weight: 600;
+  }
+
+  .tone-safe { background: rgba(208,0,255,0.12); border: 1px solid rgba(208,0,255,0.3); color: #D580FF; }
+  .tone-chill { background: rgba(0,255,255,0.08); border: 1px solid rgba(0,255,255,0.25); color: #00FFFF; }
+  .tone-witty { background: rgba(255,140,66,0.1); border: 1px solid rgba(255,140,66,0.25); color: #FF8C42; }
+  .tone-tag.active { box-shadow: 0 0 8px currentColor; }
+
+  /* ─── Chat Bubbles ─── */
+  .bubble {
+    max-width: 82%;
+    padding: 9px 11px;
+    border-radius: 14px;
+    font-size: 10px;
+    line-height: 1.5;
+    margin-bottom: 5px;
+  }
+
+  .bubble-them {
+    background: rgba(255,255,255,0.08);
+    color: rgba(255,255,255,0.8);
+    align-self: flex-start;
+    border-bottom-left-radius: 4px;
+  }
+
+  .bubble-me {
+    background: linear-gradient(135deg, rgba(208,0,255,0.25), rgba(139,0,255,0.2));
+    border: 1px solid rgba(208,0,255,0.3);
+    color: #fff;
+    align-self: flex-end;
+    border-bottom-right-radius: 4px;
+  }
+
+  /* ─── Glass Card ─── */
+  .glass-card {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 14px;
+    padding: 12px;
+    margin-bottom: 8px;
+  }
+
+  /* ─── Steps ─── */
+  .step-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    margin-bottom: 6px;
+  }
+
+  .step-num {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 900;
+    color: #fff;
+    flex-shrink: 0;
+  }
+
+  .step-1 { background: linear-gradient(135deg, #D000FF, #8B00FF); }
+  .step-2 { background: linear-gradient(135deg, #00CCCC, #00FFFF); }
+  .step-3 { background: linear-gradient(135deg, #FF6B00, #FF8C42); }
+
+  /* ─── Type Grid ─── */
+  .type-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 5px;
+    flex: 1;
+    align-content: start;
+  }
+
+  .type-chip {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    padding: 9px 6px;
+    text-align: center;
+    font-size: 10px;
+    color: rgba(255,255,255,0.7);
+  }
+
+  .type-chip.selected {
+    background: rgba(208,0,255,0.15);
+    border-color: rgba(208,0,255,0.5);
+    color: #D580FF;
+  }
+
+  .type-emoji {
+    display: block;
+    font-size: 16px;
+    margin-bottom: 3px;
+  }
+
+  /* ─── Progress dots ─── */
+  .progress-dots {
+    display: flex;
+    gap: 5px;
+    justify-content: center;
+    margin: 10px 0;
+  }
+
+  .dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.15);
+  }
+
+  .dot.active {
+    width: 18px;
+    border-radius: 3px;
+    background: linear-gradient(90deg, #D000FF, #8B00FF);
+  }
+
+  /* ─── Profile Card ─── */
+  .profile-card {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 14px;
+    padding: 12px;
+    margin-bottom: 8px;
+  }
+
+  .profile-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #D000FF22, #00FFFF22);
+    border: 1px solid rgba(255,255,255,0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  .profile-tags {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    margin-top: 6px;
+  }
+
+  .profile-tag {
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 8px;
+    background: rgba(255,255,255,0.08);
+    color: rgba(255,255,255,0.5);
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+
+  /* ─── Share Mock ─── */
+  .share-header {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .share-thumb {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #2a1848, #1a0a2e);
+    border: 1px solid rgba(255,255,255,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+
+  /* ─── Bottom Badge ─── */
+  .bottom-badge {
+    margin-top: auto;
+    padding-top: 16px;
+    text-align: center;
+  }
+
+  .badge-logo {
+    font-size: 18px;
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    color: #1a1a1a;
+  }
+
+  /* ─── Focus Input ─── */
+  .focus-input {
+    background: rgba(255,255,255,0.04);
+    border: 1px dashed rgba(255,255,255,0.15);
+    border-radius: 10px;
+    padding: 7px 10px;
+    font-size: 9px;
+    color: rgba(255,255,255,0.35);
+    margin: 5px 0;
+  }
+
+  /* ─── Export info ─── */
+  .export-note {
+    text-align: center;
+    color: #999;
+    font-size: 12px;
+    margin-top: 30px;
+    line-height: 1.8;
+  }
+
+  .export-note code {
+    background: #ddd;
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: #666;
+  }
+</style>
+</head>
+<body>
+
+<h1>PRINZ — App Store Screenshots (6枚)</h1>
+<p class="instructions">
+  白背景 × ダークアプリ画面 — iPhone 6.7" アスペクト比<br>
+  実機スクショが撮れたら phone-inner 内を &lt;img&gt; に差し替え
+</p>
+
+<div class="gallery">
+
+  <!-- ════════════════════════════════════════ -->
+  <!-- 1. Hero -->
+  <!-- ════════════════════════════════════════ -->
+  <div class="screenshot">
+    <div class="content">
+      <div class="headline">
+        既読のまま、<br><span class="accent">終わらせない。</span>
+      </div>
+      <div class="subheadline">
+        AIがあなたのキャラに合った<br>返信案を3パターン即生成
+      </div>
+
+      <div class="phone">
+        <div class="phone-inner">
+          <div class="phone-notch"></div>
+          <div class="app-bg">
+            <div class="app-header">
+              <div class="app-logo">PRINZ</div>
+            </div>
+            <div class="app-title" style="margin-top:16px;">
+              スクショをアップ<br>チャットやプロフィールの
+            </div>
+            <div style="flex:1; display:flex; align-items:center; justify-content:center; padding: 0 10px;">
+              <!-- sample chat preview -->
+              <div style="width:100%;">
+                <div class="bubble bubble-them" style="margin-bottom:6px;">週末なにしてた？😊</div>
+                <div class="bubble bubble-me" style="margin-bottom:6px;">友達と渋谷でごはん行ってきたよ！</div>
+                <div class="bubble bubble-them">いいな〜！どんなお店？</div>
+                <div style="text-align:center; margin-top:14px; font-size:9px; color:rgba(255,255,255,0.25);">↓ ここから返信案を生成 ↓</div>
+              </div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:8px; margin-top:auto; padding-bottom:54px;">
+              <div class="neon-btn neon-btn-primary">💬 チャットの返信を作成</div>
+              <div class="neon-btn neon-btn-secondary">👋 あいさつメッセージを作成</div>
+            </div>
+            <div class="tab-bar">
+              <div class="tab-item active"><div class="tab-icon">💜</div>Home</div>
+              <div class="tab-item"><div class="tab-icon">✏️</div>入力</div>
+              <div class="tab-item"><div class="tab-icon">📋</div>履歴</div>
+              <div class="tab-item"><div class="tab-icon">⚙️</div>設定</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bottom-badge">
+        <div class="badge-logo">PRINZ</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════ -->
+  <!-- 2. Reply Result (3 tones) -->
+  <!-- ════════════════════════════════════════ -->
+  <div class="screenshot">
+    <div class="content">
+      <div class="headline">
+        3つのトーンで、<br><span class="accent">あなたらしく。</span>
+      </div>
+      <div class="subheadline">
+        安牌・ちょい攻め・変化球<br>同じ会話でも全く違うアプローチ
+      </div>
+
+      <div class="phone">
+        <div class="phone-inner">
+          <div class="phone-notch"></div>
+          <div class="app-bg">
+            <div class="app-header">
+              <div class="app-logo">PRINZ</div>
+            </div>
+
+            <div class="tone-tags" style="justify-content:center;">
+              <span class="tone-tag tone-safe active">🛡 安牌</span>
+              <span class="tone-tag tone-chill">⚡ ちょい攻め</span>
+              <span class="tone-tag tone-witty">🎯 変化球</span>
+            </div>
+
+            <div style="flex:1; display:flex; flex-direction:column; gap:6px; padding-top:6px;">
+              <div class="reply-card">
+                <div class="reply-label label-safe">🛡 安牌</div>
+                <div class="reply-text">イタリアンいいね！僕もパスタ好きだよ。おすすめの店あったら教えて😊</div>
+                <div class="reply-reasoning">→ 共通点で距離を縮める自然な返信</div>
+              </div>
+              <div class="reply-card">
+                <div class="reply-label label-chill">⚡ ちょい攻め</div>
+                <div class="reply-text">え、渋谷でごはんとか楽しそう。今度一緒に行かない？いい店知ってるんだ</div>
+                <div class="reply-reasoning">→ 次のアクションにつなげる積極的な返信</div>
+              </div>
+              <div class="reply-card">
+                <div class="reply-label label-witty">🎯 変化球</div>
+                <div class="reply-text">渋谷のごはん屋さん…当ててみていい？なんかイタリアンの雰囲気するんだよね</div>
+                <div class="reply-reasoning">→ 遊び心で会話を盛り上げる返信</div>
+              </div>
+            </div>
+
+            <div class="tab-bar">
+              <div class="tab-item active"><div class="tab-icon">💜</div>Home</div>
+              <div class="tab-item"><div class="tab-icon">✏️</div>入力</div>
+              <div class="tab-item"><div class="tab-icon">📋</div>履歴</div>
+              <div class="tab-item"><div class="tab-icon">⚙️</div>設定</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bottom-badge">
+        <div class="badge-logo">PRINZ</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════ -->
+  <!-- 3. Profile Greeting -->
+  <!-- ════════════════════════════════════════ -->
+  <div class="screenshot">
+    <div class="content">
+      <div class="headline">
+        プロフィールから、<br><span class="accent">最初の一言。</span>
+      </div>
+      <div class="subheadline">
+        相手の趣味や特徴をAIが分析<br>印象に残るあいさつを生成
+      </div>
+
+      <div class="phone">
+        <div class="phone-inner">
+          <div class="phone-notch"></div>
+          <div class="app-bg">
+            <div class="app-header">
+              <div class="app-logo">PRINZ</div>
+            </div>
+
+            <div class="app-subtitle-inner">👋 あいさつメッセージ作成</div>
+
+            <!-- Profile Card -->
+            <div class="profile-card">
+              <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+                <div class="profile-avatar">👩</div>
+                <div>
+                  <div style="font-size:13px; font-weight:700; color:#fff;">Yui, 25</div>
+                  <div style="font-size:9px; color:rgba(255,255,255,0.4);">東京 / 看護師</div>
+                </div>
+              </div>
+              <div class="profile-tags">
+                <span class="profile-tag">☕ カフェ巡り</span>
+                <span class="profile-tag">🎬 映画鑑賞</span>
+                <span class="profile-tag">🐱 猫好き</span>
+                <span class="profile-tag">📷 カメラ</span>
+              </div>
+              <div style="font-size:9px; color:rgba(255,255,255,0.5); margin-top:8px; line-height:1.5;">
+                休日はカフェ巡りしてます☕<br>猫カフェも好き🐱 映画はジブリ派！
+              </div>
+            </div>
+
+            <div style="text-align:center; font-size:9px; color:rgba(255,255,255,0.2); margin:4px 0;">↓ AIが分析して生成 ↓</div>
+
+            <div class="reply-card">
+              <div class="reply-label label-safe">🛡 安牌</div>
+              <div class="reply-text">猫カフェ好きなんですね！僕も最近ハマってて。おすすめの場所とかありますか？😊</div>
+            </div>
+            <div class="reply-card">
+              <div class="reply-label label-chill">⚡ ちょい攻め</div>
+              <div class="reply-text">ジブリ派って聞いて気になりました！今度一緒に観ません？🎬</div>
+            </div>
+            <div class="reply-card">
+              <div class="reply-label label-witty">🎯 変化球</div>
+              <div class="reply-text">カフェ巡り×猫×カメラって最強の組み合わせでは…？写真見せてほしいです📷</div>
+            </div>
+
+            <div class="tab-bar">
+              <div class="tab-item active"><div class="tab-icon">💜</div>Home</div>
+              <div class="tab-item"><div class="tab-icon">✏️</div>入力</div>
+              <div class="tab-item"><div class="tab-icon">📋</div>履歴</div>
+              <div class="tab-item"><div class="tab-icon">⚙️</div>設定</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bottom-badge">
+        <div class="badge-logo">PRINZ</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════ -->
+  <!-- 4. Share Extension (Photos → PRINZ) -->
+  <!-- ════════════════════════════════════════ -->
+  <div class="screenshot">
+    <div class="content">
+      <div class="headline">
+        <span class="accent">写真アプリ</span>から<br>直接共有。
+      </div>
+      <div class="subheadline">
+        スクショを選んで共有ボタンを押すだけ<br>アプリを切り替える必要なし
+      </div>
+
+      <div class="phone">
+        <div class="phone-inner">
+          <div class="phone-notch"></div>
+          <div class="app-bg">
+            <div class="app-header" style="margin-top:6px;">
+              <div class="app-logo" style="font-size:16px;">PRINZ</div>
+              <div style="font-size:9px; color:rgba(255,255,255,0.35); margin-top:3px;">Share Extension</div>
+            </div>
+
+            <!-- Share flow -->
+            <div style="flex:1; display:flex; flex-direction:column; justify-content:center; gap:8px;">
+
+              <div class="share-header">
+                <div class="share-thumb">💬</div>
+                <div>
+                  <div style="font-size:10px; font-weight:700; color:#fff;">LINEトークのスクショ</div>
+                  <div style="font-size:8px; color:rgba(255,255,255,0.35); margin-top:2px;">写真アプリから共有されました</div>
+                </div>
+              </div>
+
+              <div class="step-row">
+                <div class="step-num step-1">1</div>
+                <div>
+                  <div style="font-size:11px; font-weight:700; color:#fff;">スクショを共有</div>
+                  <div style="font-size:8px; color:rgba(255,255,255,0.3); margin-top:1px;">📷 → 共有 → PRINZを選択</div>
+                </div>
+              </div>
+
+              <div style="text-align:center; color:rgba(255,255,255,0.12); font-size:14px;">↓</div>
+
+              <div class="step-row">
+                <div class="step-num step-2">2</div>
+                <div>
+                  <div style="font-size:11px; font-weight:700; color:#fff;">トーンを選ぶ</div>
+                  <div class="tone-tags" style="margin:3px 0 0;">
+                    <span class="tone-tag tone-safe" style="font-size:8px; padding:2px 6px;">🛡 安牌</span>
+                    <span class="tone-tag tone-chill active" style="font-size:8px; padding:2px 6px;">⚡ 攻め</span>
+                    <span class="tone-tag tone-witty" style="font-size:8px; padding:2px 6px;">🎯 変化球</span>
+                  </div>
+                </div>
+              </div>
+
+              <div style="text-align:center; color:rgba(255,255,255,0.12); font-size:14px;">↓</div>
+
+              <div class="step-row">
+                <div class="step-num step-3">3</div>
+                <div>
+                  <div style="font-size:11px; font-weight:700; color:#fff;">タップしてコピー</div>
+                  <div style="font-size:8px; color:rgba(255,255,255,0.3); margin-top:1px;">LINEに戻ってそのまま貼り付け</div>
+                </div>
+              </div>
+
+              <div class="glass-card" style="margin-top:6px;">
+                <div style="font-size:9px; color:#00FFFF; margin-bottom:3px;">⚡ ちょい攻め</div>
+                <div style="font-size:10px; color:rgba(255,255,255,0.85); line-height:1.5;">渋谷でごはんとか楽しそう。<br>今度一緒に行かない？😏</div>
+                <div style="text-align:right; margin-top:6px; font-size:8px; color:rgba(208,0,255,0.6);">📋 タップでコピー</div>
+              </div>
+
+            </div>
+
+            <div class="tab-bar">
+              <div class="tab-item active"><div class="tab-icon">💜</div>Home</div>
+              <div class="tab-item"><div class="tab-icon">✏️</div>入力</div>
+              <div class="tab-item"><div class="tab-icon">📋</div>履歴</div>
+              <div class="tab-item"><div class="tab-icon">⚙️</div>設定</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bottom-badge">
+        <div class="badge-logo">PRINZ</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════ -->
+  <!-- 5. Personalization -->
+  <!-- ════════════════════════════════════════ -->
+  <div class="screenshot">
+    <div class="content">
+      <div class="headline">
+        あなたの<span class="accent">キャラ</span>を<br>反映する。
+      </div>
+      <div class="subheadline">
+        10種類のパーソナルタイプから選択<br>AIがあなたらしい返信を生成
+      </div>
+
+      <div class="phone">
+        <div class="phone-inner">
+          <div class="phone-notch"></div>
+          <div class="app-bg">
+            <div class="app-header">
+              <div class="app-logo" style="font-size:16px;">PRINZ</div>
+            </div>
+
+            <div class="progress-dots">
+              <div class="dot"></div>
+              <div class="dot"></div>
+              <div class="dot"></div>
+              <div class="dot"></div>
+              <div class="dot"></div>
+              <div class="dot active"></div>
+            </div>
+
+            <div class="app-title" style="margin:6px 0 3px; font-size:14px;">✨ あなたのタイプは？</div>
+            <div class="app-subtitle-inner">返信のトーンに反映されます</div>
+
+            <div class="type-grid">
+              <div class="type-chip"><span class="type-emoji">🤓</span>知的系</div>
+              <div class="type-chip"><span class="type-emoji">🔥</span>熱血系</div>
+              <div class="type-chip"><span class="type-emoji">🕊️</span>優しい系</div>
+              <div class="type-chip selected"><span class="type-emoji">🤣</span>おもしろ系</div>
+              <div class="type-chip"><span class="type-emoji">😎</span>クール系</div>
+              <div class="type-chip"><span class="type-emoji">💯</span>誠実系</div>
+              <div class="type-chip"><span class="type-emoji">⚡</span>アクティブ系</div>
+              <div class="type-chip"><span class="type-emoji">😊</span>シャイ系</div>
+              <div class="type-chip"><span class="type-emoji">🌙</span>ミステリアス系</div>
+              <div class="type-chip"><span class="type-emoji">🌿</span>ナチュラル系</div>
+            </div>
+
+            <div style="margin-top:auto; padding-bottom:54px;">
+              <div class="neon-btn neon-btn-primary" style="font-size:11px;">はじめる →</div>
+            </div>
+
+            <div class="tab-bar" style="opacity:0;"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bottom-badge">
+        <div class="badge-logo">PRINZ</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════ -->
+  <!-- 6. Text Input -->
+  <!-- ════════════════════════════════════════ -->
+  <div class="screenshot">
+    <div class="content">
+      <div class="headline">
+        <span class="accent">手入力</span>にも<br>対応。
+      </div>
+      <div class="subheadline">
+        スクショがなくても大丈夫<br>テキストを入力するだけで返信生成
+      </div>
+
+      <div class="phone">
+        <div class="phone-inner">
+          <div class="phone-notch"></div>
+          <div class="app-bg">
+            <div class="app-header">
+              <div class="app-logo" style="font-size:16px;">PRINZ</div>
+            </div>
+
+            <div class="tone-tags" style="justify-content:center; margin-bottom:3px;">
+              <span class="tone-tag" style="font-size:8px; padding:3px 7px; background:rgba(208,0,255,0.12); border:1px solid rgba(208,0,255,0.2); color:#D580FF;">💬 チャット返信</span>
+              <span class="tone-tag" style="font-size:8px; padding:3px 7px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); color:rgba(255,255,255,0.4);">👋 あいさつ</span>
+            </div>
+
+            <div style="flex:1; display:flex; flex-direction:column; justify-content:flex-end; padding-bottom:8px;">
+              <div class="bubble bubble-them">旅行とか好き？どこか行ってみたい場所ある？</div>
+              <div class="bubble bubble-me">めっちゃ好き！最近は沖縄行ったよ🏖️</div>
+              <div class="bubble bubble-them">沖縄いいな〜！海きれいだった？写真見たい！</div>
+            </div>
+
+            <div class="focus-input">💡 フォーカスする言葉を教えて（任意）</div>
+
+            <div class="tone-tags" style="margin:5px 0;">
+              <span class="tone-tag tone-safe" style="font-size:8px; padding:3px 6px;">🛡 安牌</span>
+              <span class="tone-tag tone-chill" style="font-size:8px; padding:3px 6px;">⚡ 攻め</span>
+              <span class="tone-tag tone-witty" style="font-size:8px; padding:3px 6px;">🎯 変化球</span>
+            </div>
+
+            <div style="padding-bottom:54px;">
+              <div class="neon-btn neon-btn-primary" style="font-size:11px;">返信を生成 ✨</div>
+            </div>
+
+            <div class="tab-bar">
+              <div class="tab-item"><div class="tab-icon">💜</div>Home</div>
+              <div class="tab-item active"><div class="tab-icon">✏️</div>入力</div>
+              <div class="tab-item"><div class="tab-icon">📋</div>履歴</div>
+              <div class="tab-item"><div class="tab-icon">⚙️</div>設定</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bottom-badge">
+        <div class="badge-logo">PRINZ</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<p class="export-note">
+  <strong>書き出し方法:</strong><br>
+  ① Figmaにコピーして 1290x2796 px で書き出す<br>
+  ② ブラウザのDevToolsでスクショ（<code>Ctrl+Shift+P</code> → "screenshot"）<br>
+  ③ 実機スクショが撮れたら <code>.phone-inner</code> 内を <code>&lt;img&gt;</code> に差し替え
+</p>
+
+</body>
+</html>

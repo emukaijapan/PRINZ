@@ -946,34 +946,49 @@ struct ShareExtensionView: View {
     }
     
     private func openMainApp() {
-        let urlScheme = "prinz://"
+        let urlScheme = "prinz://paywall"
         ShareExtensionLogger.shared.log("openMainApp: Attempting to open URL scheme '\(urlScheme)'")
-        
+
         guard let url = URL(string: urlScheme) else {
             ShareExtensionLogger.shared.log("openMainApp: Failed to create URL from scheme")
             closeExtension()
             return
         }
-        
-        ShareExtensionLogger.shared.log("openMainApp: URL created successfully: \(url.absoluteString)")
-        ShareExtensionLogger.shared.log("openMainApp: Calling extensionContext?.open()")
-        
-        // extensionContext経由でURLを開く
-        extensionContext?.open(url) { success in
-            ShareExtensionLogger.shared.log("openMainApp: completionHandler called with success=\(success)")
-            
-            DispatchQueue.main.async {
-                if success {
-                    ShareExtensionLogger.shared.log("openMainApp: Successfully opened main app")
-                } else {
-                    ShareExtensionLogger.shared.log("openMainApp: Failed to open via extensionContext")
+
+        // メインスレッドで実行を保証
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+
+            // 方法1: extensionContext経由（推奨）
+            if let extensionContext = self.extensionContext {
+                extensionContext.open(url) { success in
+                    ShareExtensionLogger.shared.log("openMainApp: extensionContext.open result=\(success)")
+                    DispatchQueue.main.async {
+                        self.closeExtension()
+                    }
                 }
-                
-                // 遷移後に閉じる
-                ShareExtensionLogger.shared.log("openMainApp: Calling closeExtension")
+            } else {
+                // 方法2: UIResponder チェーン経由（フォールバック）
+                self.openURLViaResponderChain(url)
                 self.closeExtension()
             }
         }
+    }
+
+    /// UIResponder チェーンを使ってURLを開く（Share Extension用フォールバック）
+    private func openURLViaResponderChain(_ url: URL) {
+        var responder: UIResponder? = self as UIResponder
+        let selector = sel_registerName("openURL:")
+
+        while responder != nil {
+            if responder!.responds(to: selector) {
+                responder!.perform(selector, with: url)
+                ShareExtensionLogger.shared.log("openMainApp: Opened via responder chain")
+                return
+            }
+            responder = responder?.next
+        }
+        ShareExtensionLogger.shared.log("openMainApp: Failed to find responder")
     }
     
     private func showError(_ message: String) {

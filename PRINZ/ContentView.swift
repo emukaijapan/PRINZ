@@ -55,6 +55,10 @@ struct ContentView: View {
             SharedResultView()
                 .environmentObject(appState)
         }
+        // URLスキーム経由でPaywall表示
+        .fullScreenCover(isPresented: $appState.shouldShowPaywall) {
+            PaywallView()
+        }
     }
 }
 
