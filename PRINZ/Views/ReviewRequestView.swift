@@ -10,6 +10,9 @@ import SwiftUI
 struct ReviewRequestView: View {
     @Binding var isPresented: Bool
 
+    // URLを開く（Share Extension対応）
+    @Environment(\.openURL) private var openURL
+
     // App Store App ID（App Store Connectで確認）
     private let appStoreId = "6740875498"  // TODO: 実際のApp IDに変更
 
@@ -116,7 +119,7 @@ struct ReviewRequestView: View {
         // App Storeのレビュー画面（コメント入力可能）を開く
         let urlString = "https://apps.apple.com/app/id\(appStoreId)?action=write-review"
         if let url = URL(string: urlString) {
-            UIApplication.shared.open(url)
+            openURL(url)
         }
         isPresented = false
     }
