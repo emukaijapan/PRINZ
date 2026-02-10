@@ -921,10 +921,12 @@ struct ShareExtensionView: View {
         generationTask?.cancel()
 
         generationTask = Task {
+            // 処理時間計測用（catchブロックからも参照するためdoの外で定義）
+            let startTime = Date()
+
             do {
                 // Firebase経由でAI返信を生成
                 ShareExtensionLogger.shared.log("🚀 Starting Firebase Functions call...")
-                let startTime = Date()
 
                 let result = try await FirebaseService.shared.generateReplies(
                     message: partnerMessage,
