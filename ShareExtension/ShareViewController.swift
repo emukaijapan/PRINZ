@@ -115,19 +115,24 @@ class ShareViewController: UIViewController {
         extensionContext?.completeRequest(returningItems: nil, completionHandler: nil)
     }
 
-    /// メインアプリを開く（Paywall表示）- フラグ保存方式
+    /// メインアプリを開く（Paywall表示）- Web URL方式
     private func openMainApp() {
-        ShareExtensionLogger.shared.log("openMainApp: Setting paywall flag for main app")
+        let upgradeURL = "https://prinz-1f0bf.web.app/upgrade?auto=1"
+        ShareExtensionLogger.shared.log("openMainApp: Opening upgrade URL: \(upgradeURL)")
 
-        // App Groupにフラグを保存（メインアプリでPaywallを表示）
-        if let defaults = UserDefaults(suiteName: "group.com.mgolworks.prinz") {
-            defaults.set(true, forKey: "shouldShowPaywallFromExtension")
-            defaults.synchronize()
-            ShareExtensionLogger.shared.log("openMainApp: Flag saved successfully")
+        guard let url = URL(string: upgradeURL) else {
+            ShareExtensionLogger.shared.log("openMainApp: Failed to create URL")
+            closeExtension()
+            return
         }
 
-        // Share Extensionを閉じる（ユーザーが手動でPRINZアプリを開く）
-        closeExtension()
+        // HTTPS URLを開く（Share Extensionから確実に開ける）
+        extensionContext?.open(url) { [weak self] success in
+            ShareExtensionLogger.shared.log("openMainApp: extensionContext.open(https) result=\(success)")
+            DispatchQueue.main.async {
+                self?.closeExtension()
+            }
+        }
     }
 }
 
@@ -212,20 +217,27 @@ struct ShareExtensionView: View {
             loadSharedImage()
         }
         .alert("本日の無料回数を使い切りました", isPresented: $showRateLimitAlert) {
-            Button("PRINZアプリを開く", role: .none) {
-                // App Groupにフラグを保存（メインアプリでPaywallを表示）
-                if let defaults = UserDefaults(suiteName: "group.com.mgolworks.prinz") {
-                    defaults.set(true, forKey: "shouldShowPaywallFromExtension")
-                    defaults.synchronize()
-                    ShareExtensionLogger.shared.log("Set shouldShowPaywallFromExtension flag")
+            Button("アップグレード画面を開く", role: .none) {
+                // Web URLを開く（Share Extensionから確実に開ける）
+                let upgradeURL = "https://prinz-1f0bf.web.app/upgrade?auto=1"
+                ShareExtensionLogger.shared.log("Opening upgrade URL: \(upgradeURL)")
+
+                if let url = URL(string: upgradeURL) {
+                    extensionContext?.open(url) { success in
+                        ShareExtensionLogger.shared.log("extensionContext.open(https) result=\(success)")
+                    }
                 }
-                onClose()
+
+                // 少し待ってから閉じる
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    onClose()
+                }
             }
             Button("\(UsageManager.shared.timeUntilResetString())にリセット", role: .cancel) {
                 onClose()
             }
         } message: {
-            Text("PRINZアプリを開いてプレミアムにアップグレードしてください")
+            Text("プレミアムにアップグレードすると無制限でご利用いただけます")
         }
     }
     
