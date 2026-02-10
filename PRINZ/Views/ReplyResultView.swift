@@ -46,6 +46,7 @@ struct ReplyResultView: View {
     // レビュー誘導用
     @AppStorage("generationSuccessCount") private var generationSuccessCount: Int = 0
     @AppStorage("hasRequestedReview") private var hasRequestedReview: Bool = false
+    @State private var showReviewRequest = false
 
     // ユーザー設定（App Group共有）
     @AppStorage("userGender", store: UserDefaults(suiteName: "group.com.mgolworks.prinz"))
@@ -90,7 +91,15 @@ struct ReplyResultView: View {
             } else {
                 mainContentView
             }
+
+            // レビュー依頼画面（31回利用後に表示）
+            if showReviewRequest {
+                ReviewRequestView(isPresented: $showReviewRequest)
+                    .transition(.opacity)
+                    .zIndex(100)
+            }
         }
+        .animation(.easeInOut, value: showReviewRequest)
         .navigationTitle("AI回答")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
@@ -601,15 +610,12 @@ struct ReplyResultView: View {
         copiedReplyId = reply.id
         DataManager.shared.saveReply(reply)
 
-        // レビュー誘導: 3回以上生成成功 + 未レビュー
+        // レビュー誘導: 31回以上生成成功 + 未レビュー → カスタム画面を表示
         #if !APP_EXTENSION
-        if generationSuccessCount >= 3 && !hasRequestedReview {
+        if generationSuccessCount >= 31 && !hasRequestedReview {
             hasRequestedReview = true
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                if let scene = UIApplication.shared.connectedScenes
-                    .first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene {
-                    SKStoreReviewController.requestReview(in: scene)
-                }
+                showReviewRequest = true
             }
         }
         #endif
