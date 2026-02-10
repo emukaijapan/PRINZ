@@ -150,7 +150,7 @@ struct PaywallView: View {
         if let weekly = offering.weekly {
           VStack(spacing: 6) {
             // 背中を押すメッセージ
-            Text("1週間でジュース2本ガマンでOK!")
+            Text("トライアルキャンペーン中")
               .font(.caption)
               .fontWeight(.medium)
               .foregroundColor(.neonCyan)
