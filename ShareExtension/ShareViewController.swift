@@ -923,6 +923,9 @@ struct ShareExtensionView: View {
         generationTask = Task {
             do {
                 // Firebase経由でAI返信を生成
+                ShareExtensionLogger.shared.log("🚀 Starting Firebase Functions call...")
+                let startTime = Date()
+
                 let result = try await FirebaseService.shared.generateReplies(
                     message: partnerMessage,
                     personalType: personalType,
@@ -935,6 +938,9 @@ struct ShareExtensionView: View {
                     selectedTone: selectedTone,
                     mode: selectedMode == .profileGreeting ? "profileGreeting" : "chatReply"
                 )
+
+                let elapsed = Date().timeIntervalSince(startTime)
+                ShareExtensionLogger.shared.log("✅ Firebase Functions completed in \(String(format: "%.1f", elapsed))s")
 
                 // キャンセルされていたら何もしない
                 guard !Task.isCancelled else {
@@ -954,6 +960,9 @@ struct ShareExtensionView: View {
                 }
 
             } catch {
+                let elapsed = Date().timeIntervalSince(startTime)
+                ShareExtensionLogger.shared.log("❌ Firebase Functions failed after \(String(format: "%.1f", elapsed))s: \(error.localizedDescription)")
+
                 // キャンセルされていたら何もしない
                 guard !Task.isCancelled else {
                     ShareExtensionLogger.shared.log("Task was cancelled during error handling")

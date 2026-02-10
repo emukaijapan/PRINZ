@@ -77,7 +77,11 @@ class FirebaseService {
             // 認証を確実に完了させてからFunctions呼び出し
             try await AuthManager.shared.ensureAuthenticated()
 
-            let result = try await functions.httpsCallable("generateReply").call(data)
+            // タイムアウト付きでFunctions呼び出し（Share Extension対応）
+            let callable = functions.httpsCallable("generateReply")
+            callable.timeoutInterval = 25  // 25秒でタイムアウト（Share Extensionの制限対策）
+
+            let result = try await callable.call(data)
             
             guard let response = result.data as? [String: Any],
                   let success = response["success"] as? Bool,
