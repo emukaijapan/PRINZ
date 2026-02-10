@@ -115,46 +115,19 @@ class ShareViewController: UIViewController {
         extensionContext?.completeRequest(returningItems: nil, completionHandler: nil)
     }
 
-    /// メインアプリを開く（Paywall表示）
+    /// メインアプリを開く（Paywall表示）- フラグ保存方式
     private func openMainApp() {
-        let urlScheme = "prinz://paywall"
-        ShareExtensionLogger.shared.log("openMainApp: Attempting to open URL scheme '\(urlScheme)'")
+        ShareExtensionLogger.shared.log("openMainApp: Setting paywall flag for main app")
 
-        guard let url = URL(string: urlScheme) else {
-            ShareExtensionLogger.shared.log("openMainApp: Failed to create URL from scheme")
-            closeExtension()
-            return
+        // App Groupにフラグを保存（メインアプリでPaywallを表示）
+        if let defaults = UserDefaults(suiteName: "group.com.mgolworks.prinz") {
+            defaults.set(true, forKey: "shouldShowPaywallFromExtension")
+            defaults.synchronize()
+            ShareExtensionLogger.shared.log("openMainApp: Flag saved successfully")
         }
 
-        // 方法1: extensionContext経由（推奨）
-        if let extensionContext = extensionContext {
-            extensionContext.open(url) { [weak self] success in
-                ShareExtensionLogger.shared.log("openMainApp: extensionContext.open result=\(success)")
-                DispatchQueue.main.async {
-                    self?.closeExtension()
-                }
-            }
-        } else {
-            // 方法2: UIResponder チェーン経由（フォールバック）
-            openURLViaResponderChain(url)
-            closeExtension()
-        }
-    }
-
-    /// UIResponder チェーンを使ってURLを開く（Share Extension用フォールバック）
-    private func openURLViaResponderChain(_ url: URL) {
-        var responder: UIResponder? = self
-        let selector = sel_registerName("openURL:")
-
-        while responder != nil {
-            if responder!.responds(to: selector) {
-                responder!.perform(selector, with: url)
-                ShareExtensionLogger.shared.log("openMainApp: Opened via responder chain")
-                return
-            }
-            responder = responder?.next
-        }
-        ShareExtensionLogger.shared.log("openMainApp: Failed to find responder")
+        // Share Extensionを閉じる（ユーザーが手動でPRINZアプリを開く）
+        closeExtension()
     }
 }
 
@@ -239,12 +212,20 @@ struct ShareExtensionView: View {
             loadSharedImage()
         }
         .alert("本日の無料回数を使い切りました", isPresented: $showRateLimitAlert) {
-            Button("PRINZを開いてアップグレード", role: .none) {
-                openMainApp()
+            Button("PRINZアプリを開く", role: .none) {
+                // App Groupにフラグを保存（メインアプリでPaywallを表示）
+                if let defaults = UserDefaults(suiteName: "group.com.mgolworks.prinz") {
+                    defaults.set(true, forKey: "shouldShowPaywallFromExtension")
+                    defaults.synchronize()
+                    ShareExtensionLogger.shared.log("Set shouldShowPaywallFromExtension flag")
+                }
+                onClose()
             }
-            Button("\(UsageManager.shared.timeUntilResetString())にリセット", role: .cancel) {}
+            Button("\(UsageManager.shared.timeUntilResetString())にリセット", role: .cancel) {
+                onClose()
+            }
         } message: {
-            Text("プレミアムにアップグレードすると無制限でご利用いただけます")
+            Text("PRINZアプリを開いてプレミアムにアップグレードしてください")
         }
     }
     

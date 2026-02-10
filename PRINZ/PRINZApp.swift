@@ -133,5 +133,25 @@ struct PRINZApp: App {
         if SharedImageManager.shared.hasSharedData {
             appState.loadSharedData()
         }
+
+        // Share Extensionからのペイウォール表示フラグをチェック
+        checkForPaywallFlag()
+    }
+
+    /// Share Extensionからのペイウォール表示フラグをチェック
+    private func checkForPaywallFlag() {
+        guard let defaults = UserDefaults(suiteName: "group.com.mgolworks.prinz") else { return }
+
+        if defaults.bool(forKey: "shouldShowPaywallFromExtension") {
+            print("📱 Found paywall flag from Share Extension")
+            // フラグをクリア
+            defaults.removeObject(forKey: "shouldShowPaywallFromExtension")
+            defaults.synchronize()
+
+            // 少し遅延してからPaywallを表示（UIの準備を待つ）
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                self.appState.shouldShowPaywall = true
+            }
+        }
     }
 }
