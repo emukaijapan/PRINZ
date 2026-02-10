@@ -126,19 +126,21 @@ class ShareViewController: UIViewController {
             return
         }
 
-        // URL Schemeでメインアプリを開く
-        extensionContext?.open(url) { [weak self] success in
-            ShareExtensionLogger.shared.log("openMainApp: extensionContext.open result=\(success)")
-            if !success {
-                // 失敗した場合はフラグを保存
-                if let defaults = UserDefaults(suiteName: "group.com.mgolworks.prinz") {
-                    defaults.set(true, forKey: "shouldShowPaywallFromExtension")
-                    defaults.synchronize()
-                    ShareExtensionLogger.shared.log("openMainApp: Saved paywall flag as fallback")
+        // 必ずメインスレッドで実行（成功率向上のため）
+        DispatchQueue.main.async { [weak self] in
+            self?.extensionContext?.open(url) { [weak self] success in
+                ShareExtensionLogger.shared.log("openMainApp: extensionContext.open result=\(success)")
+                if !success {
+                    // 失敗した場合はフラグを保存（次回起動時にPaywall表示）
+                    if let defaults = UserDefaults(suiteName: "group.com.mgolworks.prinz") {
+                        defaults.set(true, forKey: "shouldShowPaywallFromExtension")
+                        defaults.synchronize()
+                        ShareExtensionLogger.shared.log("openMainApp: Saved paywall flag as fallback")
+                    }
                 }
-            }
-            DispatchQueue.main.async {
-                self?.closeExtension()
+                DispatchQueue.main.async {
+                    self?.closeExtension()
+                }
             }
         }
     }
@@ -226,25 +228,27 @@ struct ShareExtensionView: View {
         }
         .alert("本日の無料回数を使い切りました", isPresented: $showRateLimitAlert) {
             Button("PRINZを開いてアップグレード", role: .none) {
-                // URL Schemeでメインアプリを開く
+                // URL Schemeでメインアプリを開く（必ずメインスレッドで）
                 let urlScheme = "prinz://paywall?plan=weekly"
                 ShareExtensionLogger.shared.log("Opening URL Scheme: \(urlScheme)")
 
                 if let url = URL(string: urlScheme) {
-                    extensionContext?.open(url) { success in
-                        ShareExtensionLogger.shared.log("extensionContext.open result=\(success)")
-                        if !success {
-                            // 失敗した場合はフラグを保存（ユーザーが手動でアプリを開いた時用）
-                            if let defaults = UserDefaults(suiteName: "group.com.mgolworks.prinz") {
-                                defaults.set(true, forKey: "shouldShowPaywallFromExtension")
-                                defaults.synchronize()
+                    DispatchQueue.main.async {
+                        extensionContext?.open(url) { success in
+                            ShareExtensionLogger.shared.log("extensionContext.open result=\(success)")
+                            if !success {
+                                // 失敗した場合はフラグを保存（ユーザーが手動でアプリを開いた時用）
+                                if let defaults = UserDefaults(suiteName: "group.com.mgolworks.prinz") {
+                                    defaults.set(true, forKey: "shouldShowPaywallFromExtension")
+                                    defaults.synchronize()
+                                }
                             }
                         }
                     }
                 }
 
                 // 少し待ってから閉じる
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                     onClose()
                 }
             }
