@@ -15,6 +15,9 @@ struct PaywallView: View {
   @State private var errorMessage: String?
   @State private var showError = false
 
+  /// 初期選択プラン（"weekly" or "yearly"）
+  var preferredPlan: String?
+
   var body: some View {
     ZStack {
       MagicBackground()
@@ -55,9 +58,14 @@ struct PaywallView: View {
     }
     .task {
       await subscriptionManager.fetchOfferings()
-      // 週額パッケージをデフォルト選択
+      // プラン選択（preferredPlanがあればそれを優先）
       if let offering = subscriptionManager.currentOffering {
-        selectedPackage = offering.weekly ?? offering.annual
+        if preferredPlan == "yearly", let annual = offering.annual {
+          selectedPackage = annual
+        } else {
+          // デフォルトは週額
+          selectedPackage = offering.weekly ?? offering.annual
+        }
       }
     }
     .alert("エラー", isPresented: $showError) {
@@ -142,7 +150,7 @@ struct PaywallView: View {
         if let weekly = offering.weekly {
           VStack(spacing: 6) {
             // 背中を押すメッセージ
-            Text("1週間でジュース2本ガマンでOK!")
+            Text("トライアルキャンペーン中")
               .font(.caption)
               .fontWeight(.medium)
               .foregroundColor(.neonCyan)

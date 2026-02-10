@@ -26,6 +26,9 @@ class AppState: ObservableObject {
     /// Paywallを表示するか（URLスキーム経由）
     @Published var shouldShowPaywall = false
 
+    /// Paywallで初期選択するプラン（weekly/yearly）
+    @Published var preferredPlan: String?
+
     private init() {}
     
     /// ShareExtensionからのデータをロード
@@ -120,6 +123,14 @@ struct PRINZApp: App {
         case "paywall":
             // Paywall表示（Share Extensionから利用制限時）
             print("📱 Opening Paywall from URL scheme")
+
+            // プランパラメータを取得（?plan=weekly or ?plan=yearly）
+            if let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+               let planParam = components.queryItems?.first(where: { $0.name == "plan" })?.value {
+                appState.preferredPlan = planParam
+                print("📱 Preferred plan: \(planParam)")
+            }
+
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                 self.appState.shouldShowPaywall = true
             }
@@ -132,6 +143,26 @@ struct PRINZApp: App {
     private func checkForSharedData() {
         if SharedImageManager.shared.hasSharedData {
             appState.loadSharedData()
+        }
+
+        // Share Extensionからのペイウォール表示フラグをチェック
+        checkForPaywallFlag()
+    }
+
+    /// Share Extensionからのペイウォール表示フラグをチェック
+    private func checkForPaywallFlag() {
+        guard let defaults = UserDefaults(suiteName: "group.com.mgolworks.prinz") else { return }
+
+        if defaults.bool(forKey: "shouldShowPaywallFromExtension") {
+            print("📱 Found paywall flag from Share Extension")
+            // フラグをクリア
+            defaults.removeObject(forKey: "shouldShowPaywallFromExtension")
+            defaults.synchronize()
+
+            // 少し遅延してからPaywallを表示（UIの準備を待つ）
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                self.appState.shouldShowPaywall = true
+            }
         }
     }
 }

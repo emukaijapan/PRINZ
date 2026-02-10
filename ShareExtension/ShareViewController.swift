@@ -115,46 +115,24 @@ class ShareViewController: UIViewController {
         extensionContext?.completeRequest(returningItems: nil, completionHandler: nil)
     }
 
-    /// メインアプリを開く（Paywall表示）
+    /// メインアプリを開く（Paywall表示）- Web URL方式
     private func openMainApp() {
-        let urlScheme = "prinz://paywall"
-        ShareExtensionLogger.shared.log("openMainApp: Attempting to open URL scheme '\(urlScheme)'")
+        let upgradeURL = "https://prinz-1f0bf.web.app/upgrade?auto=1"
+        ShareExtensionLogger.shared.log("openMainApp: Opening upgrade URL: \(upgradeURL)")
 
-        guard let url = URL(string: urlScheme) else {
-            ShareExtensionLogger.shared.log("openMainApp: Failed to create URL from scheme")
+        guard let url = URL(string: upgradeURL) else {
+            ShareExtensionLogger.shared.log("openMainApp: Failed to create URL")
             closeExtension()
             return
         }
 
-        // 方法1: extensionContext経由（推奨）
-        if let extensionContext = extensionContext {
-            extensionContext.open(url) { [weak self] success in
-                ShareExtensionLogger.shared.log("openMainApp: extensionContext.open result=\(success)")
-                DispatchQueue.main.async {
-                    self?.closeExtension()
-                }
+        // HTTPS URLを開く（Share Extensionから確実に開ける）
+        extensionContext?.open(url) { [weak self] success in
+            ShareExtensionLogger.shared.log("openMainApp: extensionContext.open(https) result=\(success)")
+            DispatchQueue.main.async {
+                self?.closeExtension()
             }
-        } else {
-            // 方法2: UIResponder チェーン経由（フォールバック）
-            openURLViaResponderChain(url)
-            closeExtension()
         }
-    }
-
-    /// UIResponder チェーンを使ってURLを開く（Share Extension用フォールバック）
-    private func openURLViaResponderChain(_ url: URL) {
-        var responder: UIResponder? = self
-        let selector = sel_registerName("openURL:")
-
-        while responder != nil {
-            if responder!.responds(to: selector) {
-                responder!.perform(selector, with: url)
-                ShareExtensionLogger.shared.log("openMainApp: Opened via responder chain")
-                return
-            }
-            responder = responder?.next
-        }
-        ShareExtensionLogger.shared.log("openMainApp: Failed to find responder")
     }
 }
 
@@ -239,10 +217,25 @@ struct ShareExtensionView: View {
             loadSharedImage()
         }
         .alert("本日の無料回数を使い切りました", isPresented: $showRateLimitAlert) {
-            Button("PRINZを開いてアップグレード", role: .none) {
-                openMainApp()
+            Button("アップグレード画面を開く", role: .none) {
+                // Web URLを開く（Share Extensionから確実に開ける）
+                let upgradeURL = "https://prinz-1f0bf.web.app/upgrade?auto=1"
+                ShareExtensionLogger.shared.log("Opening upgrade URL: \(upgradeURL)")
+
+                if let url = URL(string: upgradeURL) {
+                    extensionContext?.open(url) { success in
+                        ShareExtensionLogger.shared.log("extensionContext.open(https) result=\(success)")
+                    }
+                }
+
+                // 少し待ってから閉じる
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    onClose()
+                }
             }
-            Button("\(UsageManager.shared.timeUntilResetString())にリセット", role: .cancel) {}
+            Button("\(UsageManager.shared.timeUntilResetString())にリセット", role: .cancel) {
+                onClose()
+            }
         } message: {
             Text("プレミアムにアップグレードすると無制限でご利用いただけます")
         }

@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PRINZ Premium - アップグレード</title>
+<meta name="description" content="PRINZ Premiumにアップグレードして、無制限で返信生成を楽しもう">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Noto Sans JP', -apple-system, sans-serif;
+    min-height: 100vh;
+    background: linear-gradient(180deg, #1a0533 0%, #0d0d2b 100%);
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .container {
+    max-width: 400px;
+    text-align: center;
+  }
+
+  .logo {
+    font-size: 32px;
+    font-weight: 900;
+    letter-spacing: 0.1em;
+    background: linear-gradient(135deg, #D000FF, #00FFFF);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 8px;
+  }
+
+  .crown {
+    font-size: 48px;
+    margin-bottom: 16px;
+    filter: drop-shadow(0 0 20px rgba(208, 0, 255, 0.5));
+  }
+
+  h1 {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    line-height: 1.4;
+  }
+
+  .subtitle {
+    font-size: 14px;
+    color: rgba(255,255,255,0.7);
+    margin-bottom: 32px;
+    line-height: 1.8;
+  }
+
+  .pricing-card {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 20px;
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+
+  .price {
+    font-size: 36px;
+    font-weight: 900;
+    background: linear-gradient(135deg, #D000FF, #00FFFF);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 8px;
+  }
+
+  .price span {
+    font-size: 16px;
+    font-weight: 400;
+  }
+
+  .trial {
+    font-size: 14px;
+    color: #00FFFF;
+    margin-bottom: 16px;
+  }
+
+  .features {
+    text-align: left;
+    margin-bottom: 16px;
+  }
+
+  .features li {
+    list-style: none;
+    padding: 8px 0;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: rgba(255,255,255,0.8);
+  }
+
+  .features li::before {
+    content: "✓";
+    color: #00FFFF;
+    font-weight: 700;
+  }
+
+  .open-app-btn {
+    display: block;
+    width: 100%;
+    background: linear-gradient(135deg, #D000FF, #8B00FF);
+    color: #fff;
+    padding: 16px 32px;
+    border-radius: 30px;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 16px;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 4px 20px rgba(208, 0, 255, 0.4);
+  }
+
+  .open-app-btn:hover {
+    transform: scale(1.02);
+    box-shadow: 0 6px 30px rgba(208, 0, 255, 0.6);
+  }
+
+  .app-store-btn {
+    display: block;
+    width: 100%;
+    background: #000;
+    color: #fff;
+    padding: 16px 32px;
+    border-radius: 30px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+    margin-top: 12px;
+    border: 1px solid rgba(255,255,255,0.2);
+  }
+
+  .footer-links {
+    margin-top: 32px;
+    display: flex;
+    gap: 24px;
+    justify-content: center;
+  }
+
+  .footer-links a {
+    color: rgba(255,255,255,0.5);
+    text-decoration: none;
+    font-size: 12px;
+  }
+
+  .footer-links a:hover {
+    color: #fff;
+  }
+
+  .loading {
+    display: none;
+    margin-top: 16px;
+    font-size: 14px;
+    color: rgba(255,255,255,0.6);
+  }
+
+  .loading.show {
+    display: block;
+  }
+
+  .open-app-btn.yearly {
+    background: linear-gradient(135deg, #00CCCC, #00FFFF);
+    margin-top: 12px;
+    box-shadow: 0 4px 20px rgba(0, 255, 255, 0.4);
+  }
+
+  .open-app-btn.yearly:hover {
+    box-shadow: 0 6px 30px rgba(0, 255, 255, 0.6);
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="crown">👑</div>
+  <div class="logo">PRINZ</div>
+  <h1>本日の無料回数を<br>使い切りました</h1>
+  <p class="subtitle">
+    プレミアムにアップグレードすると<br>
+    1日100回まで返信生成ができます
+  </p>
+
+  <div class="pricing-card">
+    <div class="price">480円<span>/週〜</span></div>
+    <div class="trial">3日間無料トライアル付き</div>
+    <ul class="features">
+      <li>1日100回まで返信生成</li>
+      <li>3つのトーン選択</li>
+      <li>履歴保存（最新30件）</li>
+      <li>週額480円 / 年額9,800円</li>
+    </ul>
+  </div>
+
+  <button class="open-app-btn" onclick="openApp('weekly')">
+    週額プランで始める
+  </button>
+  <button class="open-app-btn yearly" onclick="openApp('yearly')">
+    年額プランで始める（お得）
+  </button>
+  <a href="https://apps.apple.com/app/id6740875498" class="app-store-btn">
+    App Storeで見る
+  </a>
+
+  <p class="loading" id="loading">アプリを開いています...</p>
+
+  <div class="footer-links">
+    <a href="/privacy-policy.html">プライバシーポリシー</a>
+    <a href="/terms.html">利用規約</a>
+    <a href="/support.html">サポート</a>
+  </div>
+</div>
+
+<script>
+  function openApp(plan) {
+    document.getElementById('loading').classList.add('show');
+
+    // URL Schemeでアプリを開く（プラン指定付き）
+    var url = 'prinz://paywall';
+    if (plan) {
+      url += '?plan=' + plan;
+    }
+    window.location.href = url;
+
+    // 2秒後にローディング非表示
+    setTimeout(function() {
+      document.getElementById('loading').classList.remove('show');
+    }, 2000);
+  }
+
+  // ページ読み込み時に自動でアプリを開く試行
+  window.onload = function() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('auto') === '1') {
+      // autoパラメータにプラン指定があれば使用
+      var plan = params.get('plan') || 'weekly';
+      openApp(plan);
+    }
+  };
+</script>
+
+</body>
+</html>
