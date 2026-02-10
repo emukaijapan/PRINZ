@@ -115,22 +115,32 @@ class ShareViewController: UIViewController {
         extensionContext?.completeRequest(returningItems: nil, completionHandler: nil)
     }
 
-    /// メインアプリを開く（Paywall表示）- Web URL方式
+    /// メインアプリを開く（Paywall表示）- URL Scheme方式
     private func openMainApp() {
-        let upgradeURL = "https://prinz-1f0bf.web.app/upgrade?auto=1"
-        ShareExtensionLogger.shared.log("openMainApp: Opening upgrade URL: \(upgradeURL)")
+        let urlScheme = "prinz://paywall?plan=weekly"
+        ShareExtensionLogger.shared.log("openMainApp: Opening URL Scheme: \(urlScheme)")
 
-        guard let url = URL(string: upgradeURL) else {
+        guard let url = URL(string: urlScheme) else {
             ShareExtensionLogger.shared.log("openMainApp: Failed to create URL")
             closeExtension()
             return
         }
 
-        // HTTPS URLを開く（Share Extensionから確実に開ける）
-        extensionContext?.open(url) { [weak self] success in
-            ShareExtensionLogger.shared.log("openMainApp: extensionContext.open(https) result=\(success)")
-            DispatchQueue.main.async {
-                self?.closeExtension()
+        // 必ずメインスレッドで実行（成功率向上のため）
+        DispatchQueue.main.async { [weak self] in
+            self?.extensionContext?.open(url) { [weak self] success in
+                ShareExtensionLogger.shared.log("openMainApp: extensionContext.open result=\(success)")
+                if !success {
+                    // 失敗した場合はフラグを保存（次回起動時にPaywall表示）
+                    if let defaults = UserDefaults(suiteName: "group.com.mgolworks.prinz") {
+                        defaults.set(true, forKey: "shouldShowPaywallFromExtension")
+                        defaults.synchronize()
+                        ShareExtensionLogger.shared.log("openMainApp: Saved paywall flag as fallback")
+                    }
+                }
+                DispatchQueue.main.async {
+                    self?.closeExtension()
+                }
             }
         }
     }
@@ -217,19 +227,28 @@ struct ShareExtensionView: View {
             loadSharedImage()
         }
         .alert("本日の無料回数を使い切りました", isPresented: $showRateLimitAlert) {
-            Button("アップグレード画面を開く", role: .none) {
-                // Web URLを開く（Share Extensionから確実に開ける）
-                let upgradeURL = "https://prinz-1f0bf.web.app/upgrade?auto=1"
-                ShareExtensionLogger.shared.log("Opening upgrade URL: \(upgradeURL)")
+            Button("PRINZを開いてアップグレード", role: .none) {
+                // URL Schemeでメインアプリを開く（必ずメインスレッドで）
+                let urlScheme = "prinz://paywall?plan=weekly"
+                ShareExtensionLogger.shared.log("Opening URL Scheme: \(urlScheme)")
 
-                if let url = URL(string: upgradeURL) {
-                    extensionContext?.open(url) { success in
-                        ShareExtensionLogger.shared.log("extensionContext.open(https) result=\(success)")
+                if let url = URL(string: urlScheme) {
+                    DispatchQueue.main.async {
+                        extensionContext?.open(url) { success in
+                            ShareExtensionLogger.shared.log("extensionContext.open result=\(success)")
+                            if !success {
+                                // 失敗した場合はフラグを保存（ユーザーが手動でアプリを開いた時用）
+                                if let defaults = UserDefaults(suiteName: "group.com.mgolworks.prinz") {
+                                    defaults.set(true, forKey: "shouldShowPaywallFromExtension")
+                                    defaults.synchronize()
+                                }
+                            }
+                        }
                     }
                 }
 
                 // 少し待ってから閉じる
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                     onClose()
                 }
             }
