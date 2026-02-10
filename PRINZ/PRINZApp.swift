@@ -13,16 +13,19 @@ import Combine
 /// アプリ全体の状態管理
 class AppState: ObservableObject {
     static let shared = AppState()
-    
+
     /// ShareExtensionから起動されたか
     @Published var launchedFromShare = false
-    
+
     /// 共有された画像
     @Published var sharedImage: UIImage?
-    
+
     /// 共有されたコンテキスト
     @Published var sharedContext: Context?
-    
+
+    /// Paywallを表示するか（URLスキーム経由）
+    @Published var shouldShowPaywall = false
+
     private init() {}
     
     /// ShareExtensionからのデータをロード
@@ -107,12 +110,21 @@ struct PRINZApp: App {
     /// URL Schemeを処理
     private func handleOpenURL(_ url: URL) {
         print("📱 Received URL: \(url)")
-        
-        if url.scheme == "prinz" {
-            if url.host == "open" {
-                // ShareExtensionからの起動
-                appState.loadSharedData()
+
+        guard url.scheme == "prinz" else { return }
+
+        switch url.host {
+        case "open":
+            // ShareExtensionからの起動
+            appState.loadSharedData()
+        case "paywall":
+            // Paywall表示（Share Extensionから利用制限時）
+            print("📱 Opening Paywall from URL scheme")
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                self.appState.shouldShowPaywall = true
             }
+        default:
+            break
         }
     }
     
