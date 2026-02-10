@@ -57,7 +57,11 @@ struct ContentView: View {
         }
         // URLスキーム経由でPaywall表示
         .fullScreenCover(isPresented: $appState.shouldShowPaywall) {
-            PaywallView()
+            PaywallView(preferredPlan: appState.preferredPlan)
+                .onDisappear {
+                    // Paywall閉じたらプラン設定をリセット
+                    appState.preferredPlan = nil
+                }
         }
     }
 }

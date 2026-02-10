@@ -170,6 +170,16 @@
   .loading.show {
     display: block;
   }
+
+  .open-app-btn.yearly {
+    background: linear-gradient(135deg, #00CCCC, #00FFFF);
+    margin-top: 12px;
+    box-shadow: 0 4px 20px rgba(0, 255, 255, 0.4);
+  }
+
+  .open-app-btn.yearly:hover {
+    box-shadow: 0 6px 30px rgba(0, 255, 255, 0.6);
+  }
 </style>
 </head>
 <body>
@@ -194,8 +204,11 @@
     </ul>
   </div>
 
-  <button class="open-app-btn" onclick="openApp()">
-    PRINZアプリを開く
+  <button class="open-app-btn" onclick="openApp('weekly')">
+    週額プランで始める
+  </button>
+  <button class="open-app-btn yearly" onclick="openApp('yearly')">
+    年額プランで始める（お得）
   </button>
   <a href="https://apps.apple.com/app/id6740875498" class="app-store-btn">
     App Storeで見る
@@ -211,13 +224,17 @@
 </div>
 
 <script>
-  function openApp() {
+  function openApp(plan) {
     document.getElementById('loading').classList.add('show');
 
-    // URL Schemeでアプリを開く
-    window.location.href = 'prinz://paywall';
+    // URL Schemeでアプリを開く（プラン指定付き）
+    var url = 'prinz://paywall';
+    if (plan) {
+      url += '?plan=' + plan;
+    }
+    window.location.href = url;
 
-    // 2秒後にApp Storeにフォールバック
+    // 2秒後にローディング非表示
     setTimeout(function() {
       document.getElementById('loading').classList.remove('show');
     }, 2000);
@@ -225,10 +242,11 @@
 
   // ページ読み込み時に自動でアプリを開く試行
   window.onload = function() {
-    // URLパラメータで自動オープンを制御
     const params = new URLSearchParams(window.location.search);
     if (params.get('auto') === '1') {
-      openApp();
+      // autoパラメータにプラン指定があれば使用
+      var plan = params.get('plan') || 'weekly';
+      openApp(plan);
     }
   };
 </script>

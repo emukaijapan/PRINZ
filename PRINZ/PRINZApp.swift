@@ -26,6 +26,9 @@ class AppState: ObservableObject {
     /// Paywallを表示するか（URLスキーム経由）
     @Published var shouldShowPaywall = false
 
+    /// Paywallで初期選択するプラン（weekly/yearly）
+    @Published var preferredPlan: String?
+
     private init() {}
     
     /// ShareExtensionからのデータをロード
@@ -120,6 +123,14 @@ struct PRINZApp: App {
         case "paywall":
             // Paywall表示（Share Extensionから利用制限時）
             print("📱 Opening Paywall from URL scheme")
+
+            // プランパラメータを取得（?plan=weekly or ?plan=yearly）
+            if let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+               let planParam = components.queryItems?.first(where: { $0.name == "plan" })?.value {
+                appState.preferredPlan = planParam
+                print("📱 Preferred plan: \(planParam)")
+            }
+
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                 self.appState.shouldShowPaywall = true
             }
