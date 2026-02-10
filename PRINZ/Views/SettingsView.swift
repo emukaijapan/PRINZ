@@ -17,6 +17,8 @@ struct SettingsView: View {
 
     @ObservedObject private var subscriptionManager = SubscriptionManager.shared
     @State private var showPaywall = false
+    @State private var shareExtensionLogs: [String] = []
+    @State private var showDebugLogs = false
 
     private var personalType: PersonalType {
         PersonalType(rawValue: personalTypeRaw) ?? .natural
@@ -50,6 +52,11 @@ struct SettingsView: View {
 
                         // 性別設定
                         genderSettingView
+
+                        // デバッグ用：Share Extensionログ
+                        #if DEBUG
+                        debugLogsSection
+                        #endif
 
                         Spacer(minLength: 40)
                     }
@@ -300,6 +307,79 @@ struct SettingsView: View {
             }
         }
     }
+
+    // MARK: - Debug Logs Section
+
+    #if DEBUG
+    private var debugLogsSection: some View {
+        GlassCard(glowColor: .orange) {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Image(systemName: "ant.fill")
+                        .foregroundColor(.orange)
+                    Text("デバッグ")
+                        .font(.headline)
+                        .foregroundColor(.white)
+                    Spacer()
+                }
+
+                Button(action: {
+                    loadShareExtensionLogs()
+                    showDebugLogs.toggle()
+                }) {
+                    HStack {
+                        Text("Share Extension ログを表示")
+                            .foregroundColor(.white.opacity(0.8))
+                        Spacer()
+                        Image(systemName: showDebugLogs ? "chevron.up" : "chevron.down")
+                            .foregroundColor(.white.opacity(0.5))
+                    }
+                }
+
+                if showDebugLogs {
+                    VStack(alignment: .leading, spacing: 4) {
+                        if shareExtensionLogs.isEmpty {
+                            Text("ログがありません")
+                                .font(.caption)
+                                .foregroundColor(.white.opacity(0.5))
+                        } else {
+                            ScrollView {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    ForEach(shareExtensionLogs.reversed(), id: \.self) { log in
+                                        Text(log)
+                                            .font(.system(size: 10, design: .monospaced))
+                                            .foregroundColor(.white.opacity(0.7))
+                                    }
+                                }
+                            }
+                            .frame(maxHeight: 200)
+
+                            Button(action: clearShareExtensionLogs) {
+                                Text("ログをクリア")
+                                    .font(.caption)
+                                    .foregroundColor(.red)
+                            }
+                        }
+                    }
+                    .padding(.top, 8)
+                }
+            }
+        }
+    }
+
+    private func loadShareExtensionLogs() {
+        let logKey = "com.prinz.shareExtension.logs"
+        if let defaults = UserDefaults(suiteName: "group.com.mgolworks.prinz") {
+            shareExtensionLogs = defaults.stringArray(forKey: logKey) ?? []
+        }
+    }
+
+    private func clearShareExtensionLogs() {
+        let logKey = "com.prinz.shareExtension.logs"
+        UserDefaults(suiteName: "group.com.mgolworks.prinz")?.removeObject(forKey: logKey)
+        shareExtensionLogs = []
+    }
+    #endif
 }
 
 #Preview {
