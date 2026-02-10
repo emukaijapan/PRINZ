@@ -62,14 +62,14 @@ class ShareExtensionLogger {
 // MARK: - ShareViewController
 
 class ShareViewController: UIViewController {
-    
+
     private var hostingController: UIHostingController<ShareExtensionView>?
-    
+
     override func viewDidLoad() {
         super.viewDidLoad()
-        
+
         ShareExtensionLogger.shared.log("viewDidLoad started")
-        
+
         // Firebase初期化（Share Extensionは別プロセスなので必要）
         if FirebaseApp.app() == nil {
             FirebaseApp.configure()
@@ -80,9 +80,17 @@ class ShareViewController: UIViewController {
                 await AuthManager.shared.signInAnonymouslyIfNeeded()
             }
         }
-        
-        // SwiftUIビューをホスト
-        let shareView = ShareExtensionView(extensionContext: extensionContext)
+
+        // SwiftUIビューをホスト（コールバックを渡す）
+        let shareView = ShareExtensionView(
+            extensionContext: extensionContext,
+            onClose: { [weak self] in
+                self?.closeExtension()
+            },
+            onOpenMainApp: { [weak self] in
+                self?.openMainApp()
+            }
+        )
         hostingController = UIHostingController(rootView: shareView)
         
         if let hostingController = hostingController {
@@ -95,8 +103,58 @@ class ShareViewController: UIViewController {
         
         // 背景を透明に
         view.backgroundColor = .clear
-        
+
         ShareExtensionLogger.shared.log("viewDidLoad completed")
+    }
+
+    // MARK: - Extension Actions
+
+    /// Share Extensionを閉じる
+    private func closeExtension() {
+        ShareExtensionLogger.shared.log("closeExtension called from ViewController")
+        extensionContext?.completeRequest(returningItems: nil, completionHandler: nil)
+    }
+
+    /// メインアプリを開く（Paywall表示）
+    private func openMainApp() {
+        let urlScheme = "prinz://paywall"
+        ShareExtensionLogger.shared.log("openMainApp: Attempting to open URL scheme '\(urlScheme)'")
+
+        guard let url = URL(string: urlScheme) else {
+            ShareExtensionLogger.shared.log("openMainApp: Failed to create URL from scheme")
+            closeExtension()
+            return
+        }
+
+        // 方法1: extensionContext経由（推奨）
+        if let extensionContext = extensionContext {
+            extensionContext.open(url) { [weak self] success in
+                ShareExtensionLogger.shared.log("openMainApp: extensionContext.open result=\(success)")
+                DispatchQueue.main.async {
+                    self?.closeExtension()
+                }
+            }
+        } else {
+            // 方法2: UIResponder チェーン経由（フォールバック）
+            openURLViaResponderChain(url)
+            closeExtension()
+        }
+    }
+
+    /// UIResponder チェーンを使ってURLを開く（Share Extension用フォールバック）
+    private func openURLViaResponderChain(_ url: URL) {
+        var responder: UIResponder? = self
+        let selector = sel_registerName("openURL:")
+
+        while responder != nil {
+            if responder!.responds(to: selector) {
+                responder!.perform(selector, with: url)
+                ShareExtensionLogger.shared.log("openMainApp: Opened via responder chain")
+                return
+            }
+            responder = responder?.next
+        }
+        ShareExtensionLogger.shared.log("openMainApp: Failed to find responder")
     }
 }
 
@@ -104,7 +162,9 @@ class ShareViewController: UIViewController {
 
 struct ShareExtensionView: View {
     let extensionContext: NSExtensionContext?
-    
+    let onClose: () -> Void
+    let onOpenMainApp: () -> Void
+
     @State private var currentStep: ShareStep = .loading
     @State private var loadedImage: UIImage?
     @State private var selectedTone: ReplyType = .safe
@@ -941,54 +1001,13 @@ struct ShareExtensionView: View {
     
     
     private func closeExtension() {
-        ShareExtensionLogger.shared.log("closeExtension called")
-        extensionContext?.completeRequest(returningItems: nil, completionHandler: nil)
+        ShareExtensionLogger.shared.log("closeExtension called from View")
+        onClose()
     }
-    
+
     private func openMainApp() {
-        let urlScheme = "prinz://paywall"
-        ShareExtensionLogger.shared.log("openMainApp: Attempting to open URL scheme '\(urlScheme)'")
-
-        guard let url = URL(string: urlScheme) else {
-            ShareExtensionLogger.shared.log("openMainApp: Failed to create URL from scheme")
-            closeExtension()
-            return
-        }
-
-        // メインスレッドで実行を保証
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self else { return }
-
-            // 方法1: extensionContext経由（推奨）
-            if let extensionContext = self.extensionContext {
-                extensionContext.open(url) { success in
-                    ShareExtensionLogger.shared.log("openMainApp: extensionContext.open result=\(success)")
-                    DispatchQueue.main.async {
-                        self.closeExtension()
-                    }
-                }
-            } else {
-                // 方法2: UIResponder チェーン経由（フォールバック）
-                self.openURLViaResponderChain(url)
-                self.closeExtension()
-            }
-        }
-    }
-
-    /// UIResponder チェーンを使ってURLを開く（Share Extension用フォールバック）
-    private func openURLViaResponderChain(_ url: URL) {
-        var responder: UIResponder? = self as UIResponder
-        let selector = sel_registerName("openURL:")
-
-        while responder != nil {
-            if responder!.responds(to: selector) {
-                responder!.perform(selector, with: url)
-                ShareExtensionLogger.shared.log("openMainApp: Opened via responder chain")
-                return
-            }
-            responder = responder?.next
-        }
-        ShareExtensionLogger.shared.log("openMainApp: Failed to find responder")
+        ShareExtensionLogger.shared.log("openMainApp called from View")
+        onOpenMainApp()
     }
     
     private func showError(_ message: String) {
