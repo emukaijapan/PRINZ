@@ -226,17 +226,17 @@ struct ShareExtensionView: View {
             ShareExtensionLogger.shared.log("ShareExtensionView appeared")
             loadSharedImage()
         }
-        .alert("本日の無料回数を使い切りました", isPresented: $showRateLimitAlert) {
-            Button("PRINZを開いてアップグレード", role: .none) {
+        .alert("本日の無料枠に達しました", isPresented: $showRateLimitAlert) {
+            Button("アプリを開く", role: .none) {
                 // ViewControllerのopenMainAppを呼ぶ（main thread + 遅延 + フォールバック処理済み）
                 ShareExtensionLogger.shared.log("Alert: Opening main app via VC callback")
                 onOpenMainApp()
             }
-            Button("\(UsageManager.shared.timeUntilResetString())にリセット", role: .cancel) {
+            Button("閉じる", role: .cancel) {
                 onClose()
             }
         } message: {
-            Text("プレミアムにアップグレードすると無制限でご利用いただけます")
+            Text("続けて使うにはアプリでアップグレードしてください")
         }
     }
     

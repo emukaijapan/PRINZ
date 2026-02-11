@@ -155,13 +155,20 @@ struct PRINZApp: App {
 
         if defaults.bool(forKey: "shouldShowPaywallFromExtension") {
             print("📱 Found paywall flag from Share Extension")
-            // フラグをクリア
+            // フラグをクリア（表示するかに関わらず消す）
             defaults.removeObject(forKey: "shouldShowPaywallFromExtension")
             defaults.synchronize()
 
-            // 少し遅延してからPaywallを表示（UIの準備を待つ）
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                self.appState.shouldShowPaywall = true
+            // 無料枠に達している人だけPaywallを表示
+            // 条件: プレミアムユーザーでない && 残り回数が0以下
+            if !SubscriptionManager.shared.isProUser && UsageManager.shared.getRemainingCount() <= 0 {
+                print("📱 User is not pro and has no remaining usage, showing Paywall")
+                // 少し遅延してからPaywallを表示（UIの準備を待つ）
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    self.appState.shouldShowPaywall = true
+                }
+            } else {
+                print("📱 Skipping Paywall: isPro=\(SubscriptionManager.shared.isProUser), remaining=\(UsageManager.shared.getRemainingCount())")
             }
         }
     }
