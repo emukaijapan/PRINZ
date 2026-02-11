@@ -612,9 +612,9 @@ struct ReplyResultView: View {
         copiedReplyId = reply.id
         DataManager.shared.saveReply(reply)
 
-        // レビュー誘導: 3回以上生成成功 && 未表示 → カスタム画面を表示
+        // レビュー誘導: 31回以上生成成功 && 未表示 → カスタム画面を表示
         #if !APP_EXTENSION
-        if generationSuccessCount >= 3 && !hasRequestedReview {
+        if generationSuccessCount >= 31 && !hasRequestedReview {
             hasRequestedReview = true
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 showReviewRequest = true
