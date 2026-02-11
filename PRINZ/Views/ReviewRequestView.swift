@@ -2,7 +2,7 @@
 //  ReviewRequestView.swift
 //  PRINZ
 //
-//  カスタムレビュー依頼画面（31回利用後に表示）
+//  カスタムレビュー依頼画面（テスト用: 3回、本番: 31回利用後に表示）
 //
 
 import SwiftUI

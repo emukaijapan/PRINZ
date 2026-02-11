@@ -137,12 +137,30 @@ class ShareViewController: UIViewController {
                         defaults.synchronize()
                         ShareExtensionLogger.shared.log("openMainApp: Saved paywall flag as fallback")
                     }
-                }
-                DispatchQueue.main.async {
-                    self?.closeExtension()
+                    // 手動でアプリを開くよう案内
+                    DispatchQueue.main.async {
+                        self?.showManualOpenAlert()
+                    }
+                } else {
+                    DispatchQueue.main.async {
+                        self?.closeExtension()
+                    }
                 }
             }
         }
+    }
+
+    /// 手動でアプリを開くよう案内するアラート
+    private func showManualOpenAlert() {
+        let alert = UIAlertController(
+            title: "PRINZを手動で開いてください",
+            message: "アプリを自動で開けませんでした。ホーム画面からPRINZを起動するとアップグレード画面が表示されます。",
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "OK", style: .default) { [weak self] _ in
+            self?.closeExtension()
+        })
+        present(alert, animated: true)
     }
 }
 

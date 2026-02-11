@@ -62,6 +62,7 @@ struct PRINZApp: App {
     @StateObject private var appState = AppState.shared
     @AppStorage("hasCompletedOnboarding", store: UserDefaults(suiteName: "group.com.mgolworks.prinz"))
     private var hasCompletedOnboarding: Bool = false
+    @Environment(\.scenePhase) private var scenePhase
 
     init() {
         // Firebase初期化
@@ -92,6 +93,12 @@ struct PRINZApp: App {
                     .onAppear {
                         // 起動時に共有データがあればロード
                         checkForSharedData()
+                    }
+                    .onChange(of: scenePhase) { _, newPhase in
+                        if newPhase == .active {
+                            // フォアグラウンド復帰時にPaywallフラグをチェック
+                            checkForPaywallFlag()
+                        }
                     }
             } else {
                 OnboardingView()
