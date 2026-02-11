@@ -92,7 +92,7 @@ struct ReplyResultView: View {
                 mainContentView
             }
 
-            // レビュー依頼画面（31回利用後に表示）
+            // レビュー依頼画面（テスト用: 3回利用後に表示、本番は31回）
             if showReviewRequest {
                 ReviewRequestView(isPresented: $showReviewRequest)
                     .transition(.opacity)
@@ -481,6 +481,7 @@ struct ReplyResultView: View {
 
                 await MainActor.run {
                     generationSuccessCount += 1
+                    print("📊 [ProfileGreeting] Generation success! New count: \(generationSuccessCount)")
                     // ローカル利用回数を消費
                     _ = UsageManager.shared.consumeUsage()
 
@@ -555,6 +556,7 @@ struct ReplyResultView: View {
 
                 await MainActor.run {
                     generationSuccessCount += 1
+                    print("📊 [ChatReply] Generation success! New count: \(generationSuccessCount)")
                     // ローカル利用回数を消費
                     _ = UsageManager.shared.consumeUsage()
 
@@ -610,10 +612,13 @@ struct ReplyResultView: View {
         copiedReplyId = reply.id
         DataManager.shared.saveReply(reply)
 
-        // レビュー誘導: 31回以上生成成功 + 未レビュー → カスタム画面を表示
+        // レビュー誘導: 3回以上生成成功 → カスタム画面を表示（テスト用: hasRequestedReview チェック無効化）
         #if !APP_EXTENSION
-        if generationSuccessCount >= 31 && !hasRequestedReview {
-            hasRequestedReview = true
+        print("📊 Review check: count=\(generationSuccessCount), hasRequested=\(hasRequestedReview)")
+        // テスト用: hasRequestedReview を無視して毎回表示可能にする
+        if generationSuccessCount >= 3 {
+            // hasRequestedReview = true  // テスト中は無効化
+            print("📊 Showing review request popup!")
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 showReviewRequest = true
             }

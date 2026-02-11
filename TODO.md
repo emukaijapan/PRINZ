@@ -32,6 +32,8 @@
 - [x] アラートボタンをVC経由に修正（View→通知のみ、VC→open実行）
 - [x] アラート文言統一（「本日の無料枠に達しました」「アプリを開く」/「閉じる」）
 - [x] Paywall表示条件厳格化（無料枠に達している人のみ表示）
+- [x] フォアグラウンド復帰時にPaywallフラグをチェック（scenePhase監視）
+- [x] extensionContext.open失敗時に手動起動案内アラート追加
 - [ ] **テスト**: URL Scheme経由でPaywallが開くか確認 ← **要実機テスト**
 
 ## Medium Priority
