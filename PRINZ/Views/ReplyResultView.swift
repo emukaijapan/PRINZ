@@ -612,13 +612,10 @@ struct ReplyResultView: View {
         copiedReplyId = reply.id
         DataManager.shared.saveReply(reply)
 
-        // レビュー誘導: 3回以上生成成功 → カスタム画面を表示（テスト用: hasRequestedReview チェック無効化）
+        // レビュー誘導: 3回以上生成成功 && 未表示 → カスタム画面を表示
         #if !APP_EXTENSION
-        print("📊 Review check: count=\(generationSuccessCount), hasRequested=\(hasRequestedReview)")
-        // テスト用: hasRequestedReview を無視して毎回表示可能にする
-        if generationSuccessCount >= 3 {
-            // hasRequestedReview = true  // テスト中は無効化
-            print("📊 Showing review request popup!")
+        if generationSuccessCount >= 3 && !hasRequestedReview {
+            hasRequestedReview = true
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 showReviewRequest = true
             }
