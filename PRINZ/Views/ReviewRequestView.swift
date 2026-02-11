@@ -25,12 +25,12 @@ struct ReviewRequestView: View {
                     isPresented = false
                 }
 
-            // カード
-            VStack(spacing: 24) {
+            // カード（白い吹き出し風）
+            VStack(spacing: 20) {
                 // ヘッダー
                 VStack(spacing: 12) {
                     Image(systemName: "crown.fill")
-                        .font(.system(size: 50))
+                        .font(.system(size: 44))
                         .foregroundStyle(
                             LinearGradient(
                                 colors: [.neonPurple, .neonCyan],
@@ -38,34 +38,33 @@ struct ReviewRequestView: View {
                                 endPoint: .trailing
                             )
                         )
-                        .shadow(color: .neonPurple.opacity(0.5), radius: 10)
 
                     Text("PRINZを気に入っていただけましたか？")
                         .font(.title3)
                         .fontWeight(.bold)
-                        .foregroundColor(.white)
+                        .foregroundColor(.black)
                         .multilineTextAlignment(.center)
 
                     Text("あなたのレビューが、PRINZをより良くする力になります")
                         .font(.subheadline)
-                        .foregroundColor(.white.opacity(0.7))
+                        .foregroundColor(.gray)
                         .multilineTextAlignment(.center)
                 }
 
-                // レビュー例（控えめに）
-                VStack(alignment: .leading, spacing: 8) {
+                // レビュー例
+                VStack(alignment: .leading, spacing: 6) {
                     Text("レビュー例")
                         .font(.caption)
-                        .foregroundColor(.white.opacity(0.5))
+                        .foregroundColor(.gray)
 
                     Text("「返信に悩む時間が減った！AIの提案がちょうどいい感じで助かってます」")
                         .font(.subheadline)
-                        .foregroundColor(.white.opacity(0.8))
+                        .foregroundColor(.black.opacity(0.8))
                         .italic()
-                        .padding()
+                        .padding(12)
                         .background(
                             RoundedRectangle(cornerRadius: 12)
-                                .fill(Color.white.opacity(0.1))
+                                .fill(Color.gray.opacity(0.1))
                         )
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -81,7 +80,7 @@ struct ReviewRequestView: View {
                         }
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
+                        .padding(.vertical, 14)
                         .background(
                             LinearGradient(
                                 colors: [.neonPurple, .neonCyan],
@@ -96,20 +95,17 @@ struct ReviewRequestView: View {
                     Button(action: { isPresented = false }) {
                         Text("また今度")
                             .font(.subheadline)
-                            .foregroundColor(.white.opacity(0.6))
+                            .foregroundColor(.gray)
                     }
                 }
             }
             .padding(24)
             .background(
-                RoundedRectangle(cornerRadius: 24)
-                    .fill(Color.glassBackground)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 24)
-                            .stroke(Color.glassBorder, lineWidth: 1)
-                    )
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(Color.white)
+                    .shadow(color: .black.opacity(0.2), radius: 20, x: 0, y: 10)
             )
-            .padding(.horizontal, 32)
+            .padding(.horizontal, 24)
         }
     }
 
