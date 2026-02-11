@@ -89,15 +89,7 @@
   }
 
   .phone-notch {
-    position: absolute;
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 80px;
-    height: 20px;
-    background: #000;
-    border-radius: 0 0 14px 14px;
-    z-index: 10;
+    display: none;
   }
 
   /* ─── Screenshot Image ─── */
@@ -169,78 +161,24 @@
 <div class="gallery">
 
   <!-- ════════════════════════════════════════ -->
-  <!-- Slide 1 -->
+  <!-- Slide 1: スクショを送るだけ。 -->
   <!-- ════════════════════════════════════════ -->
   <div class="screenshot">
     <div class="phones">
       <div class="phone-wrapper">
-        <!-- Back Phone (左上) -->
+        <!-- Back Phone (左): ホーム画面 -->
         <div class="phone phone-back">
           <div class="phone-inner">
             <div class="phone-notch"></div>
-            <!-- ↓ ここにスクショを入れる -->
-            <div class="phone-screen placeholder">
-              スクショ1-A<br>
-              (ホーム画面)
-            </div>
-            <!-- 実際のスクショ: <img src="screenshot-1a.png" class="phone-screen" alt=""> -->
+            <img src="screenshots/appstore/6.7-inch/01-home.png" class="phone-screen" alt="ホーム">
           </div>
         </div>
 
-        <!-- Front Phone (右下) -->
+        <!-- Front Phone (右): トーン選択画面 -->
         <div class="phone phone-front">
           <div class="phone-inner">
             <div class="phone-notch"></div>
-            <!-- ↓ ここにスクショを入れる -->
-            <div class="phone-screen placeholder">
-              スクショ1-B<br>
-              (返信結果画面)
-            </div>
-            <!-- 実際のスクショ: <img src="screenshot-1b.png" class="phone-screen" alt=""> -->
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="copy-area">
-      <div class="main-copy">
-        返信に悩む時間を<br>
-        <span class="highlight">0秒に。</span>
-      </div>
-      <div class="sub-copy">
-        AIが3パターンの返信を<br>
-        即座に生成してくれる
-      </div>
-    </div>
-  </div>
-
-  <!-- ════════════════════════════════════════ -->
-  <!-- Slide 2 -->
-  <!-- ════════════════════════════════════════ -->
-  <div class="screenshot">
-    <div class="phones">
-      <div class="phone-wrapper">
-        <!-- Back Phone (左上) -->
-        <div class="phone phone-back">
-          <div class="phone-inner">
-            <div class="phone-notch"></div>
-            <!-- ↓ ここにスクショを入れる -->
-            <div class="phone-screen placeholder">
-              スクショ2-A<br>
-              (トーン選択)
-            </div>
-          </div>
-        </div>
-
-        <!-- Front Phone (右下) -->
-        <div class="phone phone-front">
-          <div class="phone-inner">
-            <div class="phone-notch"></div>
-            <!-- ↓ ここにスクショを入れる -->
-            <div class="phone-screen placeholder">
-              スクショ2-B<br>
-              (コピー完了)
-            </div>
+            <img src="screenshots/appstore/6.7-inch/02-tone.png" class="phone-screen" alt="トーン選択">
           </div>
         </div>
       </div>
@@ -258,13 +196,48 @@
     </div>
   </div>
 
+  <!-- ════════════════════════════════════════ -->
+  <!-- Slide 2: 返信に悩む時間を0秒に。 -->
+  <!-- ════════════════════════════════════════ -->
+  <div class="screenshot">
+    <div class="phones">
+      <div class="phone-wrapper">
+        <!-- Back Phone (左): チャット解析画面 -->
+        <div class="phone phone-back">
+          <div class="phone-inner">
+            <div class="phone-notch"></div>
+            <img src="screenshots/appstore/6.7-inch/03-chat.png" class="phone-screen" alt="チャット解析">
+          </div>
+        </div>
+
+        <!-- Front Phone (右): 返信結果画面 -->
+        <div class="phone phone-front">
+          <div class="phone-inner">
+            <div class="phone-notch"></div>
+            <img src="screenshots/appstore/6.7-inch/04-result.png" class="phone-screen" alt="返信結果">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="copy-area">
+      <div class="main-copy">
+        返信に悩む時間を<br>
+        <span class="highlight">0秒に。</span>
+      </div>
+      <div class="sub-copy">
+        AIが3パターンの返信を<br>
+        即座に生成してくれる
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <p class="note">
-  <strong>スクショの入れ方:</strong><br>
-  1. 実機でスクショを撮影 → <code>docs/</code> フォルダに保存<br>
-  2. <code>&lt;div class="phone-screen placeholder"&gt;</code> を <code>&lt;img src="xxx.png" class="phone-screen"&gt;</code> に置換<br>
-  3. ブラウザで開いて DevTools → 要素を右クリック → 「ノードのスクリーンショットを撮影」
+  <strong>App Store用画像の書き出し方:</strong><br>
+  ブラウザで開く → DevTools (F12) → 各 <code>.screenshot</code> 要素を右クリック → 「ノードのスクリーンショットを撮影」<br>
+  出力サイズ: 1290×2796 px (3倍表示時)
 </p>
 
 </body>

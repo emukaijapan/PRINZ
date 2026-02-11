@@ -211,6 +211,8 @@ struct SettingsView: View {
                     Text(description)
                         .font(.caption)
                         .foregroundColor(.white.opacity(0.5))
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: .infinity)
                         .padding(.top, 4)
                 }
             }

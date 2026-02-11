@@ -41,16 +41,16 @@ enum PersonalType: String, Codable, CaseIterable {
     
     var description: String {
         switch self {
-        case .intellectual: return "博識で論理的。知的な語彙を使い、スマートな会話を展開する。"
-        case .passionate: return "情熱的でエネルギーに溢れている。ストレートな表現を好み、相手を引っ張る。"
-        case .gentle: return "とにかく優しく、包容力がある。相手を肯定し、安心感を与える言葉を選ぶ。"
-        case .funny: return "ユーモアセンス抜群。ボケやツッコミを交え、相手を笑わせることを最優先する。"
-        case .cool: return "感情を表に出しすぎず、余裕がある。短文で核心を突く、ミステリアスな色気を持つ。"
-        case .sincere: return "嘘をつかない誠実さ。丁寧な言葉遣いで、真剣に向き合う姿勢を見せる。"
-        case .active: return "フットワークが軽く、ノリが良い。絵文字も適度に使い、明るくテンポ良い会話をする。"
-        case .shy: return "少し奥手で謙虚。丁寧すぎるくらい丁寧だが、そこが可愛げに見えるように。"
-        case .mysterious: return "生活感を見せない。詩的な表現や、意味深な言葉で相手の興味を惹く。"
-        case .natural: return "飾らない等身大。親しみやすく、友達のような距離感でリラックスして話す。"
+        case .intellectual: return "博識で論理的\nスマートな会話を展開"
+        case .passionate: return "情熱的でストレート\n相手を引っ張るタイプ"
+        case .gentle: return "優しく包容力がある\n安心感を与える言葉選び"
+        case .funny: return "ユーモアセンス抜群\n相手を笑わせることが得意"
+        case .cool: return "余裕があり落ち着いた印象\n短文で核心を突く"
+        case .sincere: return "嘘をつかない誠実さ\n真剣に向き合う姿勢"
+        case .active: return "フットワーク軽くノリ良し\n明るくテンポ良い会話"
+        case .shy: return "少し奥手で謙虚\n丁寧さが可愛げに見える"
+        case .mysterious: return "意味深で興味を惹く\n詩的な表現が特徴"
+        case .natural: return "飾らない等身大\n友達のような距離感"
         }
     }
 }
