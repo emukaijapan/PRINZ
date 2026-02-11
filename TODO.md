@@ -29,6 +29,7 @@
   - [x] 失敗時フラグ保存 → 次回起動時Paywall表示（フォールバック）
 - [x] Paywall プラン指定機能（?plan=weekly / ?plan=yearly）
 - [x] 「トライアルキャンペーン中」メッセージに変更
+- [x] アラートボタンをVC経由に修正（View→通知のみ、VC→open実行）
 - [ ] **テスト**: URL Scheme経由でPaywallが開くか確認 ← **要実機テスト**
 
 ## Medium Priority

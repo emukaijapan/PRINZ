@@ -228,29 +228,9 @@ struct ShareExtensionView: View {
         }
         .alert("本日の無料回数を使い切りました", isPresented: $showRateLimitAlert) {
             Button("PRINZを開いてアップグレード", role: .none) {
-                // URL Schemeでメインアプリを開く（遅延実行で成功率向上）
-                let urlScheme = "prinz://paywall?plan=weekly"
-                ShareExtensionLogger.shared.log("Opening URL Scheme: \(urlScheme)")
-
-                if let url = URL(string: urlScheme) {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                        extensionContext?.open(url) { success in
-                            ShareExtensionLogger.shared.log("extensionContext.open result=\(success)")
-                            if !success {
-                                // 失敗した場合はフラグを保存（ユーザーが手動でアプリを開いた時用）
-                                if let defaults = UserDefaults(suiteName: "group.com.mgolworks.prinz") {
-                                    defaults.set(true, forKey: "shouldShowPaywallFromExtension")
-                                    defaults.synchronize()
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // 少し待ってから閉じる（URL Schemeより後に実行）
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) {
-                    onClose()
-                }
+                // ViewControllerのopenMainAppを呼ぶ（main thread + 遅延 + フォールバック処理済み）
+                ShareExtensionLogger.shared.log("Alert: Opening main app via VC callback")
+                onOpenMainApp()
             }
             Button("\(UsageManager.shared.timeUntilResetString())にリセット", role: .cancel) {
                 onClose()
