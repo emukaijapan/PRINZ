@@ -356,10 +356,22 @@ struct SettingsView: View {
                             }
                             .frame(maxHeight: 200)
 
-                            Button(action: clearShareExtensionLogs) {
-                                Text("ログをクリア")
-                                    .font(.caption)
-                                    .foregroundColor(.red)
+                            HStack {
+                                Button(action: {
+                                    UIPasteboard.general.string = shareExtensionLogs.reversed().joined(separator: "\n")
+                                }) {
+                                    Text("コピー")
+                                        .font(.caption)
+                                        .foregroundColor(.neonCyan)
+                                }
+
+                                Spacer()
+
+                                Button(action: clearShareExtensionLogs) {
+                                    Text("クリア")
+                                        .font(.caption)
+                                        .foregroundColor(.red)
+                                }
                             }
                         }
                     }
