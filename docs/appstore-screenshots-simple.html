@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PRINZ - App Store Screenshots</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #222;
+    font-family: 'Noto Sans JP', -apple-system, sans-serif;
+    padding: 40px;
+  }
+
+  h1 {
+    text-align: center;
+    font-size: 16px;
+    color: #666;
+    margin-bottom: 32px;
+  }
+
+  .gallery {
+    display: flex;
+    gap: 32px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  /* ─── App Store Screenshot Panel (6.7" = 1290x2796) ─── */
+  .screenshot {
+    width: 430px;  /* 1290/3 */
+    height: 932px; /* 2796/3 */
+    background: #fff;
+    border-radius: 12px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* ─── Phone Container ─── */
+  .phones {
+    position: absolute;
+    top: 40px;
+    left: 0;
+    right: 0;
+    height: 620px;
+    display: flex;
+    justify-content: center;
+  }
+
+  .phone-wrapper {
+    position: relative;
+    width: 360px;
+    height: 100%;
+  }
+
+  /* ─── iPhone Frame ─── */
+  .phone {
+    position: absolute;
+    width: 180px;
+    height: 390px;
+    background: #000;
+    border-radius: 28px;
+    padding: 4px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+  }
+
+  .phone-back {
+    left: 0;
+    top: 40px;
+    z-index: 1;
+  }
+
+  .phone-front {
+    right: 0;
+    top: 120px;
+    z-index: 2;
+  }
+
+  .phone-inner {
+    width: 100%;
+    height: 100%;
+    background: #1a1a1a;
+    border-radius: 24px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .phone-notch {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 20px;
+    background: #000;
+    border-radius: 0 0 14px 14px;
+    z-index: 10;
+  }
+
+  /* ─── Screenshot Image ─── */
+  .phone-screen {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top;
+  }
+
+  .phone-screen.placeholder {
+    background: linear-gradient(135deg, #1a0a2e, #0d0d2b);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255,255,255,0.3);
+    font-size: 12px;
+    text-align: center;
+  }
+
+  /* ─── Copy Text Area ─── */
+  .copy-area {
+    position: absolute;
+    bottom: 48px;
+    left: 32px;
+    right: 32px;
+  }
+
+  .main-copy {
+    font-size: 32px;
+    font-weight: 900;
+    color: #1a1a1a;
+    line-height: 1.4;
+    letter-spacing: -0.02em;
+  }
+
+  .sub-copy {
+    font-size: 14px;
+    color: #888;
+    margin-top: 12px;
+    line-height: 1.6;
+  }
+
+  .highlight {
+    color: #D000FF;
+  }
+
+  /* ─── Instructions ─── */
+  .note {
+    text-align: center;
+    color: #666;
+    font-size: 12px;
+    margin-top: 32px;
+    line-height: 2;
+  }
+
+  .note code {
+    background: #333;
+    padding: 2px 8px;
+    border-radius: 4px;
+    color: #aaa;
+  }
+</style>
+</head>
+<body>
+
+<h1>PRINZ App Store Screenshots - 2スライド構成</h1>
+
+<div class="gallery">
+
+  <!-- ════════════════════════════════════════ -->
+  <!-- Slide 1 -->
+  <!-- ════════════════════════════════════════ -->
+  <div class="screenshot">
+    <div class="phones">
+      <div class="phone-wrapper">
+        <!-- Back Phone (左上) -->
+        <div class="phone phone-back">
+          <div class="phone-inner">
+            <div class="phone-notch"></div>
+            <!-- ↓ ここにスクショを入れる -->
+            <div class="phone-screen placeholder">
+              スクショ1-A<br>
+              (ホーム画面)
+            </div>
+            <!-- 実際のスクショ: <img src="screenshot-1a.png" class="phone-screen" alt=""> -->
+          </div>
+        </div>
+
+        <!-- Front Phone (右下) -->
+        <div class="phone phone-front">
+          <div class="phone-inner">
+            <div class="phone-notch"></div>
+            <!-- ↓ ここにスクショを入れる -->
+            <div class="phone-screen placeholder">
+              スクショ1-B<br>
+              (返信結果画面)
+            </div>
+            <!-- 実際のスクショ: <img src="screenshot-1b.png" class="phone-screen" alt=""> -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="copy-area">
+      <div class="main-copy">
+        返信に悩む時間を<br>
+        <span class="highlight">0秒に。</span>
+      </div>
+      <div class="sub-copy">
+        AIが3パターンの返信を<br>
+        即座に生成してくれる
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════ -->
+  <!-- Slide 2 -->
+  <!-- ════════════════════════════════════════ -->
+  <div class="screenshot">
+    <div class="phones">
+      <div class="phone-wrapper">
+        <!-- Back Phone (左上) -->
+        <div class="phone phone-back">
+          <div class="phone-inner">
+            <div class="phone-notch"></div>
+            <!-- ↓ ここにスクショを入れる -->
+            <div class="phone-screen placeholder">
+              スクショ2-A<br>
+              (トーン選択)
+            </div>
+          </div>
+        </div>
+
+        <!-- Front Phone (右下) -->
+        <div class="phone phone-front">
+          <div class="phone-inner">
+            <div class="phone-notch"></div>
+            <!-- ↓ ここにスクショを入れる -->
+            <div class="phone-screen placeholder">
+              スクショ2-B<br>
+              (コピー完了)
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="copy-area">
+      <div class="main-copy">
+        スクショを<br>
+        <span class="highlight">送るだけ。</span>
+      </div>
+      <div class="sub-copy">
+        LINEやマッチングアプリの<br>
+        チャットを共有するだけでOK
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<p class="note">
+  <strong>スクショの入れ方:</strong><br>
+  1. 実機でスクショを撮影 → <code>docs/</code> フォルダに保存<br>
+  2. <code>&lt;div class="phone-screen placeholder"&gt;</code> を <code>&lt;img src="xxx.png" class="phone-screen"&gt;</code> に置換<br>
+  3. ブラウザで開いて DevTools → 要素を右クリック → 「ノードのスクリーンショットを撮影」
+</p>
+
+</body>
+</html>
