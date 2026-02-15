@@ -311,9 +311,9 @@ struct PaywallView: View {
 
   private var legalLinks: some View {
     HStack(spacing: 16) {
-      Link("利用規約", destination: URL(string: "https://prinz-app.com/terms")!)
+      Link("利用規約", destination: URL(string: "https://prinz-1f0bf.web.app/terms")!)
       Text("・").foregroundColor(.white.opacity(0.3))
-      Link("プライバシーポリシー", destination: URL(string: "https://prinz-app.com/privacy")!)
+      Link("プライバシーポリシー", destination: URL(string: "https://prinz-1f0bf.web.app/privacy")!)
     }
     .font(.caption2)
     .foregroundColor(.white.opacity(0.3))
