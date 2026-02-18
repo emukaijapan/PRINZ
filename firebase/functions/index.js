@@ -16,6 +16,7 @@ admin.initializeApp();
 
 // Secret定義
 const openaiApiKey = defineSecret("OPENAI_API_KEY");
+const revenuecatWebhookSecret = defineSecret("REVENUECAT_WEBHOOK_SECRET");
 
 // Firestore参照
 const db = admin.firestore();
@@ -43,7 +44,7 @@ function getOpenAIClient() {
 
 // Rate Limiting設定
 const DAILY_FREE_LIMIT = 5;  // 無料ユーザーの1日の上限
-const PREMIUM_LIMIT = 100;   // プレミアムユーザーの1日の上限
+const PREMIUM_LIMIT = 999999;   // プレミアムユーザー: 実質無制限
 
 // 本番モード（認証・Rate Limiting有効）
 const DEV_MODE = false;
@@ -286,11 +287,14 @@ async function checkPremiumStatus(userId) {
 }
 
 /**
- * 今日の日付文字列を取得（YYYY-MM-DD）
+ * 今日の日付文字列を取得（YYYY-MM-DD, JST基準）
  */
 function getTodayString() {
   const now = new Date();
-  return now.toISOString().split("T")[0];
+  // JSTオフセット（UTC+9）を適用
+  const jstOffset = 9 * 60 * 60 * 1000;
+  const jstDate = new Date(now.getTime() + jstOffset);
+  return jstDate.toISOString().split("T")[0];
 }
 
 /**
@@ -479,7 +483,7 @@ function createUserPrompt(message, relationship, userMessage) {
  * サブスクリプションイベントをFirestoreに反映
  */
 exports.handleRevenueCatWebhook = onRequest(
-  { region: "asia-northeast1" },
+  { region: "asia-northeast1", secrets: [revenuecatWebhookSecret] },
   async (req, res) => {
     if (req.method !== "POST") {
       res.status(405).send("Method Not Allowed");
@@ -490,6 +494,15 @@ exports.handleRevenueCatWebhook = onRequest(
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       console.warn("⚠️ Webhook: Missing or invalid Authorization header");
+      res.status(401).send("Unauthorized");
+      return;
+    }
+
+    // トークン値を検証
+    const token = authHeader.substring(7); // "Bearer " を除去
+    const expectedToken = revenuecatWebhookSecret.value();
+    if (!expectedToken || token !== expectedToken) {
+      console.warn("⚠️ Webhook: Invalid token");
       res.status(401).send("Unauthorized");
       return;
     }

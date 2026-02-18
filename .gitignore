@@ -1,4 +1,5 @@
 firebase/functions/node_modules/
+firebase/.firebase/
 firebase/GoogleService-Info.plist
 PRINZ/GoogleService-Info.plist
 **/GoogleService-Info.plist

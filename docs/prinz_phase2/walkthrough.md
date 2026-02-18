@@ -18,7 +18,7 @@
 ### 4. Firebase Cloud Functions構成
 - [x] `firebase/functions/index.js` - OpenAI APIプロキシ
 - [x] `FirebaseService.swift` - iOS側連携
-- [x] Rate Limiting: 無料5回/日、プレミアム100回/日
+- [x] Rate Limiting: 無料5回/日、プレミアム無制限
 
 ---
 

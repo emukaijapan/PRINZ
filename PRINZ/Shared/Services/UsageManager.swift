@@ -2,7 +2,7 @@
 //  UsageManager.swift
 //  PRINZ
 //
-//  利用回数制限を管理（無料ユーザー: 5回/24時間）
+//  利用回数制限を管理（無料ユーザー: 5回/日、毎日0時JSTリセット）
 //
 
 import Foundation
@@ -43,7 +43,7 @@ class UsageManager: ObservableObject {
             return true
         }
 
-        // 24時間経過チェック
+        // 日付変更チェック（JST 0時）
         checkAndResetIfNeeded()
 
         return remainingCount > 0
@@ -56,7 +56,7 @@ class UsageManager: ObservableObject {
             return true
         }
 
-        // 24時間経過チェック
+        // 日付変更チェック（JST 0時）
         checkAndResetIfNeeded()
 
         guard remainingCount > 0 else {
@@ -108,72 +108,61 @@ class UsageManager: ObservableObject {
         hasUsedTrial = defaults?.bool(forKey: hasUsedTrialKey) ?? false
     }
 
-    /// 24時間経過していたらカウントをリセット
+    /// JST 0時を跨いでいたらカウントをリセット
     private func checkAndResetIfNeeded() {
+        // JST (UTC+9) のカレンダー
+        var jstCalendar = Calendar(identifier: .gregorian)
+        jstCalendar.timeZone = TimeZone(identifier: "Asia/Tokyo")!
+
+        let now = Date()
+        let todayJST = jstCalendar.startOfDay(for: now)
+
         guard let lastResetDate = defaults?.object(forKey: lastResetDateKey) as? Date else {
-            // 初回起動: 現在時刻を記録
-            defaults?.set(Date(), forKey: lastResetDateKey)
+            // 初回起動: 今日の0時を記録
+            defaults?.set(todayJST, forKey: lastResetDateKey)
             defaults?.set(0, forKey: usageCountKey)
             remainingCount = dailyFreeLimit
             return
         }
 
-        let now = Date()
-        let hoursSinceReset = now.timeIntervalSince(lastResetDate) / 3600
+        let lastResetDayJST = jstCalendar.startOfDay(for: lastResetDate)
 
-        if hoursSinceReset >= 24 {
-            // 24時間以上経過: リセット
-            defaults?.set(now, forKey: lastResetDateKey)
+        if todayJST > lastResetDayJST {
+            // 日付が変わった（JST 0時を跨いだ）: リセット
+            defaults?.set(todayJST, forKey: lastResetDateKey)
             defaults?.set(0, forKey: usageCountKey)
             remainingCount = dailyFreeLimit
-            print("📊 UsageManager: 24h passed, count reset to \(dailyFreeLimit)")
+            print("📊 UsageManager: New day (JST), count reset to \(dailyFreeLimit)")
         }
     }
 
-    /// 次のリセットまでの残り時間（時間）
+    /// 次のリセットまでの残り時間（時間）- JST 0時までの時間
     func hoursUntilReset() -> Int {
-        guard let lastResetDate = defaults?.object(forKey: lastResetDateKey) as? Date else {
-            return 24
-        }
+        var jstCalendar = Calendar(identifier: .gregorian)
+        jstCalendar.timeZone = TimeZone(identifier: "Asia/Tokyo")!
 
         let now = Date()
-        let hoursSinceReset = now.timeIntervalSince(lastResetDate) / 3600
-        let hoursRemaining = max(0, 24 - hoursSinceReset)
+        let todayJST = jstCalendar.startOfDay(for: now)
+        let tomorrowJST = jstCalendar.date(byAdding: .day, value: 1, to: todayJST)!
+
+        let secondsUntilReset = tomorrowJST.timeIntervalSince(now)
+        let hoursRemaining = secondsUntilReset / 3600
 
         return Int(ceil(hoursRemaining))
     }
 
     /// 次のリセットまでの残り時間を文字列で取得
     func timeUntilResetString() -> String {
-        guard let lastResetDate = defaults?.object(forKey: lastResetDateKey) as? Date else {
-            return "24時間後"
-        }
+        let hours = hoursUntilReset()
 
-        // リセット予定時刻を計算
-        let resetDate = lastResetDate.addingTimeInterval(24 * 60 * 60)
-        let now = Date()
-
-        if resetDate <= now {
+        if hours <= 0 {
             return "まもなく"
-        }
-
-        // 日付フォーマッター
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "ja_JP")
-
-        let calendar = Calendar.current
-        if calendar.isDateInToday(resetDate) {
-            // 今日中にリセット
-            formatter.dateFormat = "H:mm"
-            return "今日 \(formatter.string(from: resetDate)) に解禁"
-        } else if calendar.isDateInTomorrow(resetDate) {
-            // 明日リセット
-            formatter.dateFormat = "H:mm"
-            return "明日 \(formatter.string(from: resetDate)) に解禁"
+        } else if hours == 1 {
+            return "あと1時間"
+        } else if hours < 24 {
+            return "あと\(hours)時間"
         } else {
-            // それ以降
-            formatter.dateFormat = "M/d H:mm"
-            return "\(formatter.string(from: resetDate)) に解禁"
+            return "明日 0:00 に解禁"
         }
     }
 }

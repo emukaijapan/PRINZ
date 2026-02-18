@@ -49,7 +49,7 @@ App Store Connect → 「マイApp」→ 「PRINZ」→ 「App内課金」→ �
 | 製品ID | `com.mgolworks.prinz.premium.weekly` |
 | タイプ | 自動更新サブスクリプション |
 | サブスクリプショングループ | Premium |
-| 価格 | ¥480/週（ローンチ価格: ¥240） |
+| 価格 | ¥330/週 |
 | 無料トライアル | 3日間 |
 
 #### 年額プラン
@@ -59,14 +59,14 @@ App Store Connect → 「マイApp」→ 「PRINZ」→ 「App内課金」→ �
 | 製品ID | `com.mgolworks.prinz.premium.yearly` |
 | タイプ | 自動更新サブスクリプション |
 | サブスクリプショングループ | Premium |
-| 価格 | ¥9,800/年（ローンチ価格: ¥4,900） |
+| 価格 | ¥9,800/年 |
 | 無料トライアル | 3日間 |
 
 ### 2.2 ローカライズ（日本語）
 
 各商品に以下を設定:
 - **表示名**: Premium（週額）/ Premium（年額）
-- **説明**: 1日100回まで返信生成、全機能アンロック
+- **説明**: 無制限で返信生成、全機能アンロック
 
 ### 2.3 審査用情報
 
@@ -115,8 +115,14 @@ App Store Connect → 「マイApp」→ 「PRINZ」→ 「App内課金」→ �
 ### 3.5 Webhook 設定（Firebase連携）
 
 1. RevenueCat → Integrations → Webhooks
-2. URL: `https://asia-northeast1-prinz-1f0bf.cloudfunctions.net/revenueCatWebhook`
-3. Authorization Header: `Bearer YOUR_SECRET_KEY`（Firebaseで設定したキー）
+2. URL: `https://asia-northeast1-prinz-1f0bf.cloudfunctions.net/handleRevenueCatWebhook`
+3. Authorization Header: `Bearer YOUR_SECRET_KEY`
+
+**Firebase側のSecret設定:**
+```bash
+firebase functions:secrets:set REVENUECAT_WEBHOOK_SECRET
+# RevenueCatで設定したYOUR_SECRET_KEYと同じ値を入力
+```
 
 ---
 
@@ -171,6 +177,53 @@ firebase deploy --only hosting
 - https://prinz-1f0bf.web.app/support.html
 - https://prinz-1f0bf.web.app/terms.html
 
+### 5.3 Firebase Functions デプロイ
+
+```bash
+# 初回のみ: Webhook Secret設定
+firebase functions:secrets:set REVENUECAT_WEBHOOK_SECRET
+
+# デプロイ
+firebase deploy --only functions
+
+# または一括デプロイ
+firebase deploy --only hosting,functions
+```
+
+### 5.4 デプロイ後チェックリスト
+
+**LP確認（キャッシュ回避: Cmd+Shift+R or シークレットウィンドウ）**
+- [ ] index.html: App Storeリンクが動作
+- [ ] index.html: 「無制限で返信生成」「330円/週」表記
+- [ ] support.html: 330円/週、0時JSTリセット表記
+- [ ] upgrade.html: 330円/週〜表記
+- [ ] terms.html: 330円/週表記
+
+**Functions検証**
+- [ ] Freeユーザー6回目 → `resource-exhausted` エラー
+- [ ] Premiumユーザー → 100回以上利用可能
+- [ ] 日付判定: JST 0時でusageドキュメントが新日付で作成
+
+**Webhook検証**
+- [ ] RevenueCat側URL: `handleRevenueCatWebhook` になっているか
+- [ ] 正しいトークン → 200
+- [ ] 誤トークン → 401
+- [ ] テストpayloadに `type` と `app_user_id` を含める
+
+```json
+{
+  "type": "INITIAL_PURCHASE",
+  "app_user_id": "test_user_123",
+  "product_id": "prinz_weekly"
+}
+```
+
+**ログ確認**
+```bash
+firebase functions:log --only handleRevenueCatWebhook
+firebase functions:log --only generateReply
+```
+
 ---
 
 ## Phase 6: テスト
@@ -219,7 +272,7 @@ PRINZはLINEやマッチングアプリのチャット返信をAIが提案する
 
 【課金について】
 - Free: 5回/日
-- Premium: 100回/日（週480円 or 年9,800円）
+- Premium: 無制限（週330円 or 年9,800円）
 - 3日間無料トライアルあり
 ```
 
@@ -267,4 +320,4 @@ PRINZはLINEやマッチングアプリのチャット返信をAIが提案する
 
 ---
 
-*最終更新: 2026年2月6日*
+*最終更新: 2026年2月18日*
