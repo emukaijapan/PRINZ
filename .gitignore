@@ -4,3 +4,6 @@ firebase/GoogleService-Info.plist
 PRINZ/GoogleService-Info.plist
 **/GoogleService-Info.plist
 docs/screenshots/raw/
+
+# Apple Private Keys (NEVER commit these)
+*.p8
