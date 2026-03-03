@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		B96505532F149081002A874C /* ShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = B96505492F149080002A874C /* ShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		B96C458C2F4F232F008D5893 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = B96C458B2F4F232F008D5893 /* InfoPlist.strings */; };
+		B96C458D2F4F232F008D5893 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = B96C458B2F4F232F008D5893 /* InfoPlist.strings */; };
 		B9E7DA002F1516E9007F2835 /* ManualInputView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9E7D9F62F1516E9007F2835 /* ManualInputView.swift */; };
 		B9E7DA022F1516E9007F2835 /* ReplyResultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9E7D9F82F1516E9007F2835 /* ReplyResultView.swift */; };
 		B9E7DA082F1516E9007F2835 /* ReplyCustomizeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9E7D9F72F1516E9007F2835 /* ReplyCustomizeView.swift */; };
@@ -120,6 +122,12 @@
 		B9E7DB162F3863C0007F2835 /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B9E7DB152F3863C0007F2835 /* StoreKit.framework */; };
 		B9E7DB182F38CF3B007F2835 /* ScannerOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9E7DB172F38CF3B007F2835 /* ScannerOverlayView.swift */; };
 		B9E7DB192F38CF3B007F2835 /* ScannerOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9E7DB172F38CF3B007F2835 /* ScannerOverlayView.swift */; };
+		B9E7DB1B2F38DCFF007F2835 /* AuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9E7DB1A2F38DCFF007F2835 /* AuthManager.swift */; };
+		B9E7DB1C2F38DCFF007F2835 /* AuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9E7DB1A2F38DCFF007F2835 /* AuthManager.swift */; };
+		B9E7DB1E2F3A08C7007F2835 /* UsageManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9E7DB1D2F3A08C7007F2835 /* UsageManager.swift */; };
+		B9E7DB1F2F3A08C7007F2835 /* UsageManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9E7DB1D2F3A08C7007F2835 /* UsageManager.swift */; };
+		B9E7DB212F3B0CC9007F2835 /* ReviewRequestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9E7DB202F3B0CC9007F2835 /* ReviewRequestView.swift */; };
+		B9E7DB222F3B0CC9007F2835 /* ReviewRequestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9E7DB202F3B0CC9007F2835 /* ReviewRequestView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -147,6 +155,7 @@
 /* Begin PBXFileReference section */
 		B92806C02F13F5F700736FB2 /* PRINZ.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PRINZ.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B96505492F149080002A874C /* ShareExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		B96C458A2F4F232F008D5893 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ja; path = ja.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		B9E7D9E62F1516E9007F2835 /* Color+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+Extensions.swift"; sourceTree = "<group>"; };
 		B9E7D9E72F1516E9007F2835 /* GlassCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassCard.swift; sourceTree = "<group>"; };
 		B9E7D9E82F1516E9007F2835 /* NeonButtonStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NeonButtonStyle.swift; sourceTree = "<group>"; };
@@ -206,6 +215,10 @@
 		B9E7DB122F3767E1007F2835 /* icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = icon.png; sourceTree = "<group>"; };
 		B9E7DB152F3863C0007F2835 /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
 		B9E7DB172F38CF3B007F2835 /* ScannerOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScannerOverlayView.swift; sourceTree = "<group>"; };
+		B9E7DB1A2F38DCFF007F2835 /* AuthManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthManager.swift; sourceTree = "<group>"; };
+		B9E7DB1D2F3A08C7007F2835 /* UsageManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageManager.swift; sourceTree = "<group>"; };
+		B9E7DB202F3B0CC9007F2835 /* ReviewRequestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewRequestView.swift; sourceTree = "<group>"; };
+		B9E7DB242F3B5ADC007F2835 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -250,6 +263,7 @@
 				B9E7DA492F1B2FA3007F2835 /* GoogleService-Info.plist */,
 				B9E7DADC2F2A5AFC007F2835 /* icon */,
 				B9E7DA972F1B374A007F2835 /* firebase */,
+				B96C458B2F4F232F008D5893 /* InfoPlist.strings */,
 			);
 			sourceTree = "<group>";
 		};
@@ -291,6 +305,8 @@
 		B9E7D9F22F1516E9007F2835 /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				B9E7DB1A2F38DCFF007F2835 /* AuthManager.swift */,
+				B9E7DB1D2F3A08C7007F2835 /* UsageManager.swift */,
 				B9E7DAF52F2F269D007F2835 /* ProfileParser.swift */,
 				B9E7DAD82F2A056B007F2835 /* ChatParser.swift */,
 				B9E7DA5E2F1B354B007F2835 /* DataManager.swift */,
@@ -324,6 +340,7 @@
 				B9E7DAF22F2F184F007F2835 /* OnboardingView.swift */,
 				B9E7D9F72F1516E9007F2835 /* ReplyCustomizeView.swift */,
 				B9E7D9F82F1516E9007F2835 /* ReplyResultView.swift */,
+				B9E7DB202F3B0CC9007F2835 /* ReviewRequestView.swift */,
 				B9E7D9F92F1516E9007F2835 /* SettingsView.swift */,
 			);
 			path = Views;
@@ -332,6 +349,7 @@
 		B9E7D9FE2F1516E9007F2835 /* PRINZ */ = {
 			isa = PBXGroup;
 			children = (
+				B9E7DB242F3B5ADC007F2835 /* Info.plist */,
 				B9E7D9E92F1516E9007F2835 /* DesignSystem */,
 				B9E7D9F32F1516E9007F2835 /* Shared */,
 				B9E7D9FA2F1516E9007F2835 /* Views */,
@@ -496,6 +514,7 @@
 			knownRegions = (
 				en,
 				Base,
+				ja,
 			);
 			mainGroup = B92806B72F13F5F700736FB2;
 			minimizedProjectReferenceProxies = 1;
@@ -519,6 +538,7 @@
 			isa = PBXResourcesBuildPhase;
 			files = (
 				B9E7DAA02F1B374A007F2835 /* index.js in Resources */,
+				B96C458C2F4F232F008D5893 /* InfoPlist.strings in Resources */,
 				B9E7DAA12F1B374A007F2835 /* firestore.rules in Resources */,
 				B9E7DAA22F1B374A007F2835 /* FIREBASE_SETUP.md in Resources */,
 				B9E7DAA32F1B374A007F2835 /* firestore.indexes.json in Resources */,
@@ -539,6 +559,7 @@
 			isa = PBXResourcesBuildPhase;
 			files = (
 				B9E7DA982F1B374A007F2835 /* index.js in Resources */,
+				B96C458D2F4F232F008D5893 /* InfoPlist.strings in Resources */,
 				B9E7DA992F1B374A007F2835 /* firestore.rules in Resources */,
 				B9E7DA9A2F1B374A007F2835 /* FIREBASE_SETUP.md in Resources */,
 				B9E7DA9B2F1B374A007F2835 /* firestore.indexes.json in Resources */,
@@ -570,6 +591,7 @@
 				B9E7DA412F1528FF007F2835 /* ManualInputView.swift in Sources */,
 				B9E7DA232F1516F6007F2835 /* ContextSelectionView.swift in Sources */,
 				B9E7DA2C2F151D98007F2835 /* HomeView.swift in Sources */,
+				B9E7DB1F2F3A08C7007F2835 /* UsageManager.swift in Sources */,
 				B9E7DA2F2F151E37007F2835 /* ContentView.swift in Sources */,
 				B9E7DA642F1B354B007F2835 /* FirebaseService.swift in Sources */,
 				B9E7DB0A2F372564007F2835 /* SubscriptionManager.swift in Sources */,
@@ -577,6 +599,7 @@
 				B9E7DAEF2F2A5EE0007F2835 /* SkeletonLoaderView.swift in Sources */,
 				B9E7DA652F1B354B007F2835 /* PromptFactory.swift in Sources */,
 				B9E7DA662F1B354B007F2835 /* ReplyGenerator.swift in Sources */,
+				B9E7DB222F3B0CC9007F2835 /* ReviewRequestView.swift in Sources */,
 				B9E7DA672F1B354B007F2835 /* OCRService.swift in Sources */,
 				B9E7DA682F1B354B007F2835 /* OpenAIService.swift in Sources */,
 				B9E7DA692F1B354B007F2835 /* DataManager.swift in Sources */,
@@ -590,6 +613,7 @@
 				B9E7DA5C2F1B352A007F2835 /* Context.swift in Sources */,
 				B9E7DA5D2F1B352A007F2835 /* Reply.swift in Sources */,
 				B9E7DA2E2F151DF5007F2835 /* HistoryView.swift in Sources */,
+				B9E7DB1C2F38DCFF007F2835 /* AuthManager.swift in Sources */,
 				B9E7DA272F151942007F2835 /* Color+Extensions.swift in Sources */,
 				B9E7DA352F151FAE007F2835 /* GlassCard.swift in Sources */,
 				B9E7DA422F152909007F2835 /* ReplyResultView.swift in Sources */,
@@ -624,11 +648,14 @@
 				B9E7DA6A2F1B354B007F2835 /* FirebaseService.swift in Sources */,
 				B9E7DA6B2F1B354B007F2835 /* PromptFactory.swift in Sources */,
 				B9E7DB072F372533007F2835 /* PaywallView.swift in Sources */,
+				B9E7DB212F3B0CC9007F2835 /* ReviewRequestView.swift in Sources */,
 				B9E7DA6C2F1B354B007F2835 /* ReplyGenerator.swift in Sources */,
+				B9E7DB1B2F38DCFF007F2835 /* AuthManager.swift in Sources */,
 				B9E7DA6D2F1B354B007F2835 /* OCRService.swift in Sources */,
 				B9E7DB092F372564007F2835 /* SubscriptionManager.swift in Sources */,
 				B9E7DB182F38CF3B007F2835 /* ScannerOverlayView.swift in Sources */,
 				B9E7DA6E2F1B354B007F2835 /* OpenAIService.swift in Sources */,
+				B9E7DB1E2F3A08C7007F2835 /* UsageManager.swift in Sources */,
 				B9E7DA6F2F1B354B007F2835 /* DataManager.swift in Sources */,
 				B9E7DA2A2F151CE9007F2835 /* NeonButtonStyle.swift in Sources */,
 			);
@@ -642,6 +669,17 @@
 			targetProxy = B96505512F149081002A874C /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
+
+/* Begin PBXVariantGroup section */
+		B96C458B2F4F232F008D5893 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				B96C458A2F4F232F008D5893 /* ja */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
 		B92806DF2F13F5F800736FB2 /* Debug configuration for PBXProject "PRINZ" */ = {
@@ -679,6 +717,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = 2JA5HA3F28;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -702,6 +741,7 @@
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -742,6 +782,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 2JA5HA3F28;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -758,6 +799,7 @@
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 			};
 			name = Release;
@@ -770,13 +812,15 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_ENTITLEMENTS = PRINZ/PRINZ.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 4;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = 4A63ZUV5CG;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = PRINZ/Info.plist;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -797,13 +841,14 @@
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TARGETED_DEVICE_FAMILY = 1;
 				XROS_DEPLOYMENT_TARGET = 26.2;
 			};
 			name = Debug;
@@ -816,13 +861,15 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
 				CODE_SIGN_ENTITLEMENTS = PRINZ/PRINZ.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 4;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = 4A63ZUV5CG;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = PRINZ/Info.plist;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -843,13 +890,14 @@
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TARGETED_DEVICE_FAMILY = 1;
 				XROS_DEPLOYMENT_TARGET = 26.2;
 			};
 			name = Release;
@@ -859,7 +907,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = ShareExtension/ShareExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_TEAM = 4A63ZUV5CG;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ShareExtension/Info.plist;
@@ -877,12 +925,16 @@
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "APP_EXTENSION DEBUG $(inherited)";
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
@@ -891,7 +943,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = ShareExtension/ShareExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_TEAM = 4A63ZUV5CG;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ShareExtension/Info.plist;
@@ -909,13 +961,17 @@
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = APP_EXTENSION;
 				"SWIFT_ACTIVE_COMPILATION_CONDITIONS[arch=*]" = "";
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
