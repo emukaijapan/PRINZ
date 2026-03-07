@@ -47,8 +47,11 @@ struct PaywallView: View {
           // 購入ボタン
           purchaseButton
 
-          // 復元リンク
-          restoreButton
+          // 復元リンク・コード引き換え
+          HStack(spacing: 16) {
+            restoreButton
+            redeemCodeButton
+          }
 
           // 法的リンク
           legalLinks
@@ -305,6 +308,18 @@ struct PaywallView: View {
         .foregroundColor(.white.opacity(0.5))
     }
     .disabled(subscriptionManager.isPurchasing)
+  }
+
+  // MARK: - Redeem Code
+
+  private var redeemCodeButton: some View {
+    Button(action: {
+      Purchases.shared.presentCodeRedemptionSheet()
+    }) {
+      Text("コードを引き換え")
+        .font(.subheadline)
+        .foregroundColor(.white.opacity(0.5))
+    }
   }
 
   // MARK: - Legal Links
